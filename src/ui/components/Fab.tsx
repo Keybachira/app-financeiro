@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
-import { colors, fonts, gradients, radius, spacing } from '../theme';
+import { colors, fonts, gradients, layout, spacing } from '../theme';
 
 export function Fab({
   icon: Icon,
@@ -31,9 +31,9 @@ export function Fab({
 const styles = StyleSheet.create({
   wrap: {
     position: 'absolute',
-    right: 16,
-    bottom: 104,
-    borderRadius: 26,
+    right: layout.screenPadding,
+    bottom: layout.fabBottom,
+    borderRadius: layout.fabHeight / 2,
     shadowColor: 'rgba(60,116,245,.55)',
     shadowOpacity: 1,
     shadowRadius: 24,
@@ -41,8 +41,8 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   button: {
-    height: 52,
-    borderRadius: 26,
+    height: layout.fabHeight,
+    borderRadius: layout.fabHeight / 2,
     paddingHorizontal: 22,
     flexDirection: 'row',
     alignItems: 'center',

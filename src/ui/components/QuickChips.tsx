@@ -24,6 +24,7 @@ export function QuickChips({
           key={item.key}
           accessibilityRole="button"
           onPress={() => onSelect(item.key)}
+          hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
           style={styles.pressable}
         >
           <LinearGradient

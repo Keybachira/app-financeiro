@@ -44,6 +44,7 @@ export function DayChips({
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
             onPress={option.onPress}
+            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
             style={[styles.chip, active && styles.chipActive]}
           >
             <Text style={[styles.label, active && styles.labelActive]}>{option.label}</Text>

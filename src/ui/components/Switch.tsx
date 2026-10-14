@@ -17,6 +17,7 @@ export function Switch({
       accessibilityState={{ checked: value }}
       accessibilityLabel={label}
       onPress={() => onValueChange(!value)}
+      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       style={[styles.track, value && styles.trackOn]}
     >
       <View style={[styles.knob, value && styles.knobOn]} />

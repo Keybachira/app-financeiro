@@ -72,6 +72,8 @@ export const layout = {
   primaryButton: 56,
   tabPillWidth: 56,
   tabPillHeight: 32,
+  fabHeight: 52,
+  fabBottom: 104,
 } as const;
 
 function angle(deg: number) {

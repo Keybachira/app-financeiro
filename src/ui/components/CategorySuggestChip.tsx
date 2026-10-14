@@ -24,7 +24,7 @@ export function CategorySuggestChip({
   }
 
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`Usar categoria ${category}`} onPress={onPress} style={styles.chip}>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Usar categoria ${category}`} onPress={onPress} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }} style={styles.chip}>
       {content}
     </Pressable>
   );

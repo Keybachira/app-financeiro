@@ -22,6 +22,7 @@ export function CategoryChips({
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
             onPress={() => onChange(category)}
+            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
           >
             <LinearGradient
               colors={active ? gradients.primary.colors : gradients.panel.colors}

@@ -26,6 +26,7 @@ export function SegmentedControl<T extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
             onPress={() => onChange(option.value)}
+            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
             style={[styles.item, active && styles.itemActive]}
           >
             <Text style={[styles.label, active && styles.labelActive]}>{option.label}</Text>
