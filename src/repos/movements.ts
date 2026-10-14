@@ -124,6 +124,13 @@ export function updateMovement(id: string, input: MovementInput): void {
       input.note ?? null,
       id,
     ]);
+
+    // Sincroniza pagamentos ligados para manter a integridade dos totais
+    // (valor em falta de dívidas/projetos e progresso de contas fixas).
+    db.runSync('UPDATE debt_payments SET amount = ?, date = ? WHERE movement_id = ?', [input.amount, input.date, id]);
+    db.runSync('UPDATE project_payments SET amount = ?, date = ? WHERE movement_id = ?', [input.amount, input.date, id]);
+    db.runSync('UPDATE bill_payments SET amount = ? WHERE movement_id = ?', [input.amount, id]);
+
     recordCategoryHint(input.note ?? null, input.category);
   });
 }

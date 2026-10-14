@@ -191,7 +191,7 @@ export default function ProjectDetailScreen() {
         visible={editing !== null}
         title="Editar recebimento"
         confirmLabel="Guardar"
-        maxAmount={view.remaining}
+        maxAmount={editing ? view.remaining + editing.amount : view.remaining}
         onCancel={() => setEditPaymentId(null)}
         onConfirm={(amount) => {
           if (!editing) {
