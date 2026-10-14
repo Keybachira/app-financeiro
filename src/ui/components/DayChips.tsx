@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { addDays, formatDayMonthPt } from '../../domain/dates';
 import { colors, fonts, gradients } from '../theme';
+import { PressableScale } from './PressableScale';
 
 export function DayChips({
   value,
@@ -39,16 +40,17 @@ export function DayChips({
       {options.map((option) => {
         const active = option.date === value;
         return (
-          <Pressable
+          <PressableScale
             key={option.key}
-            accessibilityRole="button"
+            accessibilityLabel={option.label}
             accessibilityState={{ selected: active }}
             onPress={option.onPress}
-            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+            hitSlop={4}
+            pressedScale={0.94}
             style={[styles.chip, active && styles.chipActive]}
           >
             <Text style={[styles.label, active && styles.labelActive]}>{option.label}</Text>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </LinearGradient>

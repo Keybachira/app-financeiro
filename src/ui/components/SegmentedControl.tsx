@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, fonts, radius } from '../theme';
+import { PressableScale } from './PressableScale';
 
 export type SegmentedOption<T extends string> = {
   value: T;
@@ -21,16 +22,17 @@ export function SegmentedControl<T extends string>({
       {options.map((option) => {
         const active = option.value === value;
         return (
-          <Pressable
+          <PressableScale
             key={option.value}
-            accessibilityRole="button"
+            accessibilityLabel={option.label}
             accessibilityState={{ selected: active }}
             onPress={() => onChange(option.value)}
-            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+            hitSlop={4}
+            pressedScale={0.96}
             style={[styles.item, active && styles.itemActive]}
           >
             <Text style={[styles.label, active && styles.labelActive]}>{option.label}</Text>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>

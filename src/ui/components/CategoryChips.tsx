@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { colors, fonts, gradients, radius } from '../theme';
+import { PressableScale } from './PressableScale';
 
 export function CategoryChips({
   categories,
@@ -17,12 +18,15 @@ export function CategoryChips({
       {categories.map((category) => {
         const active = category === value;
         return (
-          <Pressable
+          <PressableScale
             key={category}
-            accessibilityRole="button"
+            accessibilityLabel={category}
             accessibilityState={{ selected: active }}
             onPress={() => onChange(category)}
-            hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+            hitSlop={4}
+            pressedScale={0.95}
+            radius={18}
+            style={active && styles.chipActive}
           >
             <LinearGradient
               colors={active ? gradients.primary.colors : gradients.panel.colors}
@@ -32,7 +36,7 @@ export function CategoryChips({
             >
               <Text style={[styles.label, active && styles.labelActive]}>{category}</Text>
             </LinearGradient>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </ScrollView>

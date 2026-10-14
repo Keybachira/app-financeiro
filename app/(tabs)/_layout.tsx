@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeftRight, Briefcase, Home, Target } from 'lucide-react-native';
 
 import { colors, fonts, radius } from '../../src/ui/theme';
@@ -30,29 +31,67 @@ type GlassTabBarProps = {
   insets: { top: number; right: number; bottom: number; left: number };
 };
 
+function TabItem({
+  tab,
+  focused,
+  onPress,
+}: {
+  tab: { name: string; title: string; Icon: typeof Home };
+  focused: boolean;
+  onPress: () => void;
+}) {
+  // Anima a escala da pill e do ícone quando o separador fica ativo.
+  const focus = useRef(new Animated.Value(focused ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(focus, {
+      toValue: focused ? 1 : 0,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [focused, focus]);
+
+  const pillScale = focus.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] });
+  const iconTranslateY = focus.interpolate({ inputRange: [0, 1], outputRange: [0, -1] });
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={tab.title}
+      accessibilityState={{ selected: focused }}
+      onPress={onPress}
+      style={styles.item}
+    >
+      <Animated.View
+        style={[
+          styles.pill,
+          focused && styles.pillActive,
+          { transform: [{ scale: pillScale }] },
+        ]}
+      >
+        <Animated.View style={{ transform: [{ translateY: iconTranslateY }] }}>
+          <tab.Icon color={focused ? colors.text : colors.textMuted} size={22} strokeWidth={2} />
+        </Animated.View>
+      </Animated.View>
+      <Text style={[styles.label, focused && styles.labelActive]}>{tab.title}</Text>
+    </Pressable>
+  );
+}
+
 function GlassTabBar({ state, navigation, insets }: GlassTabBarProps) {
   return (
     <BlurView intensity={18} tint="dark" style={[styles.bar, { paddingBottom: insets.bottom }]}>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.tint]} />
       <View style={styles.row}>
-        {TABS.map((tab, index) => {
-          const focused = state.index === index;
-          return (
-            <Pressable
-              key={tab.name}
-              accessibilityRole="button"
-              accessibilityLabel={tab.title}
-              accessibilityState={{ selected: focused }}
-              onPress={() => navigation.navigate(tab.name)}
-              style={styles.item}
-            >
-              <View style={[styles.pill, focused && styles.pillActive]}>
-                <tab.Icon color={focused ? colors.text : colors.textMuted} size={22} strokeWidth={2} />
-              </View>
-              <Text style={[styles.label, focused && styles.labelActive]}>{tab.title}</Text>
-            </Pressable>
-          );
-        })}
+        {TABS.map((tab, index) => (
+          <TabItem
+            key={tab.name}
+            tab={tab}
+            focused={state.index === index}
+            onPress={() => navigation.navigate(tab.name)}
+          />
+        ))}
       </View>
     </BlurView>
   );
@@ -81,6 +120,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     minWidth: 56,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   pill: {
     width: 56,
@@ -107,3 +148,4 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 });
+

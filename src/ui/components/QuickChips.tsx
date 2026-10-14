@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { RotateCcw } from 'lucide-react-native';
 
 import { colors, fonts, gradients } from '../theme';
+import { PressableScale } from './PressableScale';
 
 export type QuickChipItem = {
   key: string;
@@ -20,11 +21,13 @@ export function QuickChips({
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
       {items.map((item) => (
-        <Pressable
+        <PressableScale
           key={item.key}
-          accessibilityRole="button"
+          accessibilityLabel={item.label}
           onPress={() => onSelect(item.key)}
-          hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+          hitSlop={4}
+          pressedScale={0.95}
+          radius={18}
           style={styles.pressable}
         >
           <LinearGradient
@@ -36,7 +39,7 @@ export function QuickChips({
             {item.highlighted ? <RotateCcw color={colors.text} size={14} strokeWidth={2} /> : null}
             <Text style={[styles.label, !item.highlighted && styles.labelMuted]}>{item.label}</Text>
           </LinearGradient>
-        </Pressable>
+        </PressableScale>
       ))}
     </ScrollView>
   );

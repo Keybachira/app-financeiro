@@ -67,22 +67,24 @@ export default function RootLayout() {
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: colors.bg },
+            animation: 'fade',
+            animationDuration: 180,
           }}
         >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="movement/new" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="movement/[id]" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="goal/new" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="goal/[id]" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="debt/new" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="debt/[id]" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="project/new" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="project/[id]" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="salary" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="bill" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="bill/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+          <Stack.Screen name="movement/new" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="movement/[id]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="settings" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="backup" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="goal/new" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="goal/[id]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="debt/new" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="debt/[id]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="project/new" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="project/[id]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="salary" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="bill" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="bill/new" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         </Stack>
       </SafeAreaProvider>
     </ToastProvider>

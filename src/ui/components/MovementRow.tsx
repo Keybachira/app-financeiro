@@ -1,11 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import type { MovementRow } from '../../repos/movements';
+import type { MovementRow as MovementRowData } from '../../repos/movements';
 import { addDays, formatDayMonthPt } from '../../domain/dates';
 import { categoryIcon, incomeIcon } from '../categoryIcons';
-import { colors, fonts } from '../theme';
+import { colors, fonts, radius } from '../theme';
 import { IconTile } from './IconTile';
 import { MoneyText } from './MoneyText';
+import { PressableScale } from './PressableScale';
 
 function dayLabel(date: string, today: string): string {
   if (date === today) {
@@ -24,19 +25,26 @@ export function MovementRow({
   today,
   onPress,
 }: {
-  movement: MovementRow;
+  movement: MovementRowData;
   today: string;
   onPress: () => void;
 }) {
   const isIncome = movement.type === 'income';
   const Icon = isIncome ? incomeIcon() : categoryIcon(movement.category);
+  const title = movement.note && movement.note.trim().length > 0 ? movement.note : movement.category;
 
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.pressable}>
+    <PressableScale
+      accessibilityLabel={`${isIncome ? 'Receita' : 'Despesa'} · ${title}`}
+      onPress={onPress}
+      pressedScale={0.98}
+      radius={radius.panel}
+      style={styles.pressable}
+    >
       <IconTile icon={Icon} size={40} />
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>
-          {movement.note && movement.note.trim().length > 0 ? movement.note : movement.category}
+          {title}
         </Text>
         <Text style={styles.meta}>
           {isIncome ? 'Receita' : 'Despesa'} · {dayLabel(movement.date, today)}
@@ -46,7 +54,7 @@ export function MovementRow({
         {isIncome ? <Text style={styles.sign}>+</Text> : null}
         <MoneyText value={movement.amount} size="md" tone={isIncome ? 'income' : 'default'} />
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 

@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
 import { colors, gradients } from '../theme';
+import { PressableScale } from './PressableScale';
 
 export function IconButton({
   icon: Icon,
@@ -16,7 +17,7 @@ export function IconButton({
   badge?: boolean;
 }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.wrap}>
+    <PressableScale accessibilityLabel={label} onPress={onPress} style={styles.wrap} radius={22}>
       <LinearGradient
         colors={gradients.panel.colors}
         start={gradients.panel.start}
@@ -26,7 +27,7 @@ export function IconButton({
         <Icon color={colors.text} size={22} strokeWidth={2} />
         {badge ? <View style={styles.badge} /> : null}
       </LinearGradient>
-    </Pressable>
+    </PressableScale>
   );
 }
 

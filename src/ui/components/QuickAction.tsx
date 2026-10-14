@@ -1,8 +1,9 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { LucideIcon } from 'lucide-react-native';
 
 import { colors, fonts, gradients } from '../theme';
+import { PressableScale } from './PressableScale';
 
 export function QuickAction({
   icon: Icon,
@@ -16,7 +17,7 @@ export function QuickAction({
   onPress: () => void;
 }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.wrap}>
+    <PressableScale accessibilityLabel={label} onPress={onPress} style={styles.wrap}>
       <LinearGradient
         colors={gradients.primary.colors}
         start={gradients.primary.start}
@@ -31,7 +32,7 @@ export function QuickAction({
         ) : null}
       </LinearGradient>
       <Text style={styles.label}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

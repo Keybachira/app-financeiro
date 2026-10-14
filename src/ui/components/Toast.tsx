@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fonts, radius, spacing } from '../theme';
 
@@ -18,7 +18,38 @@ const ToastContext = createContext<(options: ToastOptions) => void>(() => {});
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const slide = useRef(new Animated.Value(24)).current;
+  const enter = useRef(new Animated.Value(0)).current;
+  const exiting = useRef(false);
+
+  const animateIn = useCallback(() => {
+    enter.setValue(0);
+    Animated.spring(enter, {
+      toValue: 1,
+      friction: 9,
+      tension: 70,
+      useNativeDriver: true,
+    }).start();
+  }, [enter]);
+
+  const animateOut = useCallback(
+    (after: () => void) => {
+      if (exiting.current) {
+        after();
+        return;
+      }
+      exiting.current = true;
+      Animated.timing(enter, {
+        toValue: 0,
+        duration: 160,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }).start(() => {
+        exiting.current = false;
+        after();
+      });
+    },
+    [enter]
+  );
 
   const show = useCallback((options: ToastOptions) => {
     if (timer.current) {
@@ -32,30 +63,39 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       return undefined;
     }
 
-    slide.setValue(24);
-    Animated.timing(slide, { toValue: 0, duration: 180, useNativeDriver: true }).start();
+    exiting.current = false;
+    animateIn();
 
-    timer.current = setTimeout(() => setToast(null), toast.duration ?? 5000);
+    timer.current = setTimeout(() => {
+      animateOut(() => setToast(null));
+    }, toast.duration ?? 5000);
 
     return () => {
       if (timer.current) {
         clearTimeout(timer.current);
       }
     };
-  }, [toast, slide]);
+  }, [toast, animateIn, animateOut]);
 
   const dismiss = useCallback(() => {
     if (timer.current) {
       clearTimeout(timer.current);
     }
-    setToast(null);
-  }, []);
+    animateOut(() => setToast(null));
+  }, [animateOut]);
+
+  const translateY = enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] });
+  const opacity = enter.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const scale = enter.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] });
 
   return (
     <ToastContext.Provider value={show}>
       {children}
       {toast ? (
-        <Animated.View style={[styles.wrap, { transform: [{ translateY: slide }] }]} pointerEvents="box-none">
+        <Animated.View
+          style={[styles.wrap, { transform: [{ translateY }, { scale }], opacity }]}
+          pointerEvents="box-none"
+        >
           <View style={styles.toast}>
             <Text style={styles.message} numberOfLines={2}>
               {toast.message}
