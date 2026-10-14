@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Financas",
+    "slug": "app-financeiro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#070C24",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.financeiro.app",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.financeiro.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "@react-native-community/datetimepicker"
+    ]
+  }
+}
