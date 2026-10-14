@@ -1,9 +1,9 @@
-import * as Notifications from 'expo-notifications';
 import * as Crypto from 'expo-crypto';
 
 import { addDays, monthKey, todayISO } from '../domain/dates';
 import { nextBillDueDate } from '../domain/bills';
 import { db } from '../db/client';
+import { getNotifications } from './notifications';
 
 export type BillRow = {
   id: string;
@@ -217,6 +217,12 @@ export function billView(bill: BillRow, today: string) {
 export type BillView = ReturnType<typeof billView>;
 
 export async function ensureNotificationSetup(): Promise<void> {
+  const Notifications = getNotifications();
+
+  if (!Notifications) {
+    return;
+  }
+
   const { status } = await Notifications.getPermissionsAsync();
   let finalStatus = status;
 
@@ -237,6 +243,12 @@ export async function ensureNotificationSetup(): Promise<void> {
 }
 
 export async function scheduleBillNotification(bill: BillRow): Promise<void> {
+  const Notifications = getNotifications();
+
+  if (!Notifications) {
+    return;
+  }
+
   try {
     const today = todayISO();
     const dueDate = nextBillDueDate({ dayOfMonth: bill.day_of_month }, today, (month) => paidMonthsForBill(bill.id).has(month));
@@ -272,6 +284,12 @@ export async function scheduleBillNotification(bill: BillRow): Promise<void> {
 }
 
 export async function cancelBillNotification(billId: string): Promise<void> {
+  const Notifications = getNotifications();
+
+  if (!Notifications) {
+    return;
+  }
+
   try {
     await Notifications.cancelScheduledNotificationAsync(notificationId(billId));
   } catch {

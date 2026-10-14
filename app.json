@@ -7,6 +7,7 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#070C24",
     "primaryColor": "#2F5FE0",
+    "scheme": "financas",
     "assetBundlePatterns": [
       "**/*"
     ],

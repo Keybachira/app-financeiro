@@ -8,7 +8,7 @@ import { ScreenBackground } from '../src/ui/components/ScreenBackground';
 import { colors, fonts, spacing } from '../src/ui/theme';
 import { useLockState } from '../src/features/security/useLockState';
 
-export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
+export function LockScreen({ onUnlocked }: { onUnlocked?: () => void }) {
   const { unlock } = useLockState();
   const [digits, setDigits] = useState('');
   const [error, setError] = useState(false);
@@ -18,7 +18,7 @@ export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
       const ok = await unlock(pin);
 
       if (ok) {
-        onUnlocked();
+        onUnlocked?.();
         return;
       }
 
@@ -67,6 +67,8 @@ export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
     </View>
   );
 }
+
+export default LockScreen;
 
 const styles = StyleSheet.create({
   root: {
