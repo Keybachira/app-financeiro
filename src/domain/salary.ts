@@ -1,4 +1,39 @@
-import { addDays, dateWithClampedDay, daysBetween, isWeekend, monthWithOffset, parseISO } from './dates';
+import { addDays, dateWithClampedDay, daysBetween, isWeekend, monthKey, monthWithOffset, parseISO } from './dates';
+
+export type SalarySettings = {
+  amount: number | null;
+  day: number | null;
+  adjustBusinessDay: boolean;
+  autoIncome: boolean;
+  lastMonth: string | null;
+};
+
+export function pendingSalaryLaunch(
+  settings: SalarySettings,
+  today: string
+): { month: string; date: string } | null {
+  const { amount, day, adjustBusinessDay, autoIncome, lastMonth } = settings;
+
+  if (!autoIncome || amount === null || amount <= 0 || day === null) {
+    return null;
+  }
+
+  const date = parseISO(today);
+  const raw = salaryDateForMonth(date.getFullYear(), date.getMonth() + 1, day);
+  const adjusted = adjustBusinessDay ? adjustToBusinessDay(raw) : raw;
+
+  if (adjusted > today) {
+    return null;
+  }
+
+  const month = monthKey(adjusted);
+
+  if (lastMonth === month) {
+    return null;
+  }
+
+  return { month, date: adjusted };
+}
 
 export function salaryDateForMonth(year: number, month: number, day: number): string {
   return dateWithClampedDay(year, month, day);

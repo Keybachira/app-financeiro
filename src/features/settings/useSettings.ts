@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { getSetting, removeSetting, setSetting } from '../../repos/settings';
 
@@ -24,8 +24,12 @@ export function useMonthlyLimit(): { limit: number | null; setLimit: (value: num
   return { limit, setLimit };
 }
 
-export function useSalarySettings(): { salaryDay: number | null; adjustBusinessDay: boolean } {
-  const [settings] = useState(() => {
+export function useSalarySettings(): { salaryDay: number | null; adjustBusinessDay: boolean } & { refresh: () => void } {
+  const [tick, setTick] = useState(0);
+  const refresh = useCallback(() => setTick((v) => v + 1), []);
+
+  const settings = useMemo(() => {
+    void tick; // força reavaliação
     const rawDay = getSetting('salary_day');
     const parsedDay = rawDay === null ? Number.NaN : Number(rawDay);
     const validDay = Number.isInteger(parsedDay) && parsedDay >= 1 && parsedDay <= 31;
@@ -33,8 +37,9 @@ export function useSalarySettings(): { salaryDay: number | null; adjustBusinessD
     return {
       salaryDay: validDay ? parsedDay : null,
       adjustBusinessDay: getSetting('salary_adjust_business_day') === '1',
+      refresh,
     };
-  });
+  }, [tick, refresh]);
 
   return settings;
 }

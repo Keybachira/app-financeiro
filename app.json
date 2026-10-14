@@ -6,20 +6,46 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#070C24",
+    "primaryColor": "#2F5FE0",
     "assetBundlePatterns": [
       "**/*"
     ],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#070C24",
+      "dark": {
+        "image": "./assets/splash-icon.png",
+        "backgroundColor": "#070C24"
+      }
+    },
     "ios": {
       "bundleIdentifier": "com.financeiro.app",
       "supportsTablet": false
     },
     "android": {
-      "package": "com.financeiro.app"
+      "package": "com.financeiro.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B1538"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "@react-native-community/datetimepicker"
+      "expo-splash-screen",
+      "@react-native-community/datetimepicker",
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "color": "#5B8DFF"
+        }
+      ]
     ]
   }
 }

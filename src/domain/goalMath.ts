@@ -78,3 +78,25 @@ export function goalPace(input: {
 
   return 'onTrack';
 }
+
+export function goalExpectedByNow(input: {
+  target: number;
+  createdAt: string;
+  deadline: string | null;
+  today: string;
+}): number | null {
+  const { target, createdAt, deadline, today } = input;
+
+  if (!deadline) {
+    return null;
+  }
+
+  const totalMonths = monthsBetween(createdAt, deadline);
+
+  if (totalMonths <= 0) {
+    return target;
+  }
+
+  const elapsed = Math.min(Math.max(monthsBetween(createdAt, today), 0), totalMonths);
+  return (target * elapsed) / totalMonths;
+}

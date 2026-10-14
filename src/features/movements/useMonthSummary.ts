@@ -4,6 +4,8 @@ import { monthNet, spendablePerDay, type SpendablePerDay } from '../../domain/ba
 import { daysLeftInMonth, monthDaysOf, monthKey } from '../../domain/dates';
 import { daysUntilSalary, nextSalaryDate } from '../../domain/salary';
 import { categoryExpenseTotals, dailyExpenseTotals, expensesOnDate, monthTotals } from '../../repos/movements';
+import { monthGoalOps, reservedTotal } from '../../repos/goals';
+import { billsUnpaidTotal } from '../../repos/bills';
 import { useMonthlyLimit, useSalarySettings } from '../settings/useSettings';
 
 export type MonthSummary = {
@@ -25,9 +27,12 @@ export type MonthSummary = {
 
 export function useMonthSummary(today: string): { summary: MonthSummary; refresh: () => void } {
   const { limit } = useMonthlyLimit();
-  const { salaryDay, adjustBusinessDay } = useSalarySettings();
+  const { salaryDay, adjustBusinessDay, refresh: refreshSalary } = useSalarySettings();
   const [tick, setTick] = useState(0);
-  const refresh = useCallback(() => setTick((value) => value + 1), []);
+  const refresh = useCallback(() => {
+    refreshSalary();
+    setTick((value) => value + 1);
+  }, [refreshSalary]);
 
   const summary = useMemo<MonthSummary>(() => {
     const month = monthKey(today);
@@ -44,23 +49,25 @@ export function useMonthSummary(today: string): { summary: MonthSummary; refresh
       salaryDay === null ? null : nextSalaryDate({ salaryDay, adjustBusinessDay, today });
     const daysToSalary = nextSalary === null ? daysLeftInMonth(today) : daysUntilSalary(today, nextSalary);
     const monthDays = monthDaysOf(today);
+    const goalOps = monthGoalOps(month);
+    const unpaidBills = billsUnpaidTotal(month);
+
     return {
       month,
       income,
       expenses,
-      balance: monthNet(income, expenses, 0, 0),
-      reserved: 0,
+      balance: monthNet(income, expenses, goalOps.deposits, goalOps.withdraws),
+      reserved: reservedTotal(),
       limit,
       limitPercent: limit !== null && limit > 0 ? Math.min(1, expenses / limit) : 0,
       daily,
       dailyLimit: limit !== null && limit > 0 ? limit / monthDays : null,
       categories,
       todaySpent: expensesOnDate(today),
-      spendable: spendablePerDay(limit, expenses, 0, daysToSalary),
+      spendable: spendablePerDay(limit, expenses, unpaidBills, daysToSalary),
       daysToSalary,
       nextSalary,
     };
   }, [today, limit, salaryDay, adjustBusinessDay, tick]);
-
   return { summary, refresh };
 }

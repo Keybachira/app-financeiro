@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { Download, Plus, Receipt, Wallet } from 'lucide-react-native';
 
 import { monthDaysOf, monthNamePt, todayISO } from '../../src/domain/dates';
+import { formatShortPt } from '../../src/domain/dates';
 import { formatKz } from '../../src/domain/money';
 import { GlassCard } from '../../src/ui/components/GlassCard';
 import { Panel } from '../../src/ui/components/Panel';
@@ -14,10 +15,13 @@ import { CategoryRow } from '../../src/ui/components/CategoryRow';
 import { MovementRow } from '../../src/ui/components/MovementRow';
 import { SearchInput } from '../../src/ui/components/SearchInput';
 import { Fab } from '../../src/ui/components/Fab';
+import { IconButton } from '../../src/ui/components/IconButton';
 import { Screen } from '../../src/ui/components/Screen';
 import { colors, fonts, radius, spacing } from '../../src/ui/theme';
 import { useMonthSummary } from '../../src/features/movements/useMonthSummary';
 import { useMonthMovements } from '../../src/features/movements/useMovements';
+import { useBillsSummary } from '../../src/features/bills/useBills';
+import { QuickAction } from '../../src/ui/components/QuickAction';
 
 export default function HomeScreen() {
   const today = todayISO();
@@ -25,12 +29,14 @@ export default function HomeScreen() {
   const { summary, refresh } = useMonthSummary(today);
   const [search, setSearch] = useState('');
   const { movements, refresh: refreshList } = useMonthMovements(summary.month, search);
+  const { openCount: billsDue, refresh: refreshBills } = useBillsSummary();
 
   useFocusEffect(
     useCallback(() => {
       refresh();
       refreshList();
-    }, [refresh, refreshList])
+      refreshBills();
+    }, [refresh, refreshList, refreshBills])
   );
 
   const searching = search.trim().length > 0;
@@ -40,6 +46,11 @@ export default function HomeScreen() {
   return (
     <Screen
       title={monthNamePt(`${summary.month}-01`)}
+      right={
+        <View style={styles.headerActions}>
+          <IconButton icon={Download} label="Backup e exportar" onPress={() => router.push('/backup')} />
+        </View>
+      }
       floating={<Fab icon={Plus} label="Novo movimento" onPress={() => router.push('/movement/new')} />}
     >
       <GlassCard>
@@ -79,11 +90,28 @@ export default function HomeScreen() {
           </Text>
         </Panel>
 
-        <Panel style={styles.panelHalf}>
-          <Text style={styles.panelLabel}>Gasto hoje</Text>
-          <MoneyText value={summary.todaySpent} size="lg" />
-          <Text style={styles.panelMeta}>no mês {formatKz(summary.expenses)}</Text>
-        </Panel>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/salary')}>
+          <Panel style={styles.panelHalf}>
+            <Text style={styles.panelLabel}>Próximo salário ›</Text>
+            <Text style={styles.panelValue}>
+              {summary.nextSalary ? formatShortPt(summary.nextSalary) : '—'}
+            </Text>
+            <Text style={styles.panelMeta}>
+              {summary.nextSalary ? `faltam ${summary.daysToSalary} dias` : 'por configurar'}
+            </Text>
+          </Panel>
+        </Pressable>
+      </View>
+
+      <View style={styles.quickRow}>
+        <QuickAction
+          icon={Receipt}
+          label="Contas fixas"
+          badge={billsDue}
+          onPress={() => router.push('/bill')}
+        />
+        <QuickAction icon={Wallet} label="Salário" onPress={() => router.push('/salary')} />
+        <QuickAction icon={Download} label="Backup" onPress={() => router.push('/backup')} />
       </View>
 
       <Panel>
@@ -132,6 +160,15 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  quickRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+  },
   cardLabel: {
     fontFamily: fonts.regular,
     fontSize: 13,
@@ -200,6 +237,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
+  },
+  panelValue: {
+    fontFamily: fonts.bold,
+    fontSize: 20,
+    color: colors.text,
   },
   panelMetaWarn: {
     color: colors.warn,

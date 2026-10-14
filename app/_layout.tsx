@@ -1,16 +1,35 @@
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 
 import { colors, fontAssets, fonts, radius, spacing } from '../src/ui/theme';
 import { useDatabase } from '../src/db/useDatabase';
 import { ToastProvider } from '../src/ui/components/Toast';
+import { useAutoSalary } from '../src/features/salary/useSalary';
+import { useLockState } from '../src/features/security/useLockState';
+import { LockScreen } from './lock';
+
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, fontsError] = useFonts(fontAssets);
   const { ready: dbReady, error: dbError } = useDatabase();
+  const { hasPin, enabled } = useLockState();
+  const [unlocked, setUnlocked] = useState(() => !(hasPin && enabled));
+
+  useAutoSalary();
+
+  useEffect(() => {
+    if (fontsLoaded || fontsError) {
+      void SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontsError]);
+
+  const handleUnlocked = useCallback(() => setUnlocked(true), []);
 
   if (dbError) {
     return (
@@ -31,6 +50,15 @@ export default function RootLayout() {
     );
   }
 
+  if (!unlocked && hasPin && enabled) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <LockScreen onUnlocked={handleUnlocked} />
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <ToastProvider>
       <SafeAreaProvider>
@@ -45,6 +73,16 @@ export default function RootLayout() {
           <Stack.Screen name="movement/new" options={{ presentation: 'modal' }} />
           <Stack.Screen name="movement/[id]" options={{ presentation: 'modal' }} />
           <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="backup" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="goal/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="goal/[id]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="debt/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="debt/[id]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="project/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="project/[id]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="salary" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="bill" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="bill/new" options={{ presentation: 'modal' }} />
         </Stack>
       </SafeAreaProvider>
     </ToastProvider>
