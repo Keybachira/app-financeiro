@@ -11,3 +11,8 @@ npm-debug.*
 *.key
 *.mobileprovision
 *.orig.*
+
+# Nativos gerados por `expo prebuild` (fluxo managed/CNG).
+# A fonte de verdade e app.json + os config plugins; android/ e ios/ sao derivados.
+android/
+ios/

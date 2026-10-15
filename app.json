@@ -1,32 +1,23 @@
 {
   "expo": {
-    "name": "Financas",
-    "slug": "app-financeiro",
+    "name": "Ab-finance",
+    "slug": "ab-finance",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#070C24",
     "primaryColor": "#2F5FE0",
-    "scheme": "financas",
+    "scheme": "abfinance",
     "assetBundlePatterns": [
       "**/*"
     ],
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#070C24",
-      "dark": {
-        "image": "./assets/splash-icon.png",
-        "backgroundColor": "#070C24"
-      }
-    },
     "ios": {
-      "bundleIdentifier": "com.financeiro.app",
+      "bundleIdentifier": "com.bachira242.abfinance",
       "supportsTablet": false
     },
     "android": {
-      "package": "com.financeiro.app",
+      "package": "com.bachira242.abfinance",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0B1538"
@@ -38,7 +29,18 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#070C24",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#070C24"
+          }
+        }
+      ],
       "@react-native-community/datetimepicker",
       "expo-sharing",
       [
@@ -47,6 +49,12 @@
           "color": "#5B8DFF"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "65313746-67bc-4bf4-93b1-0bcfd7dbdc48"
+      }
+    }
   }
 }
