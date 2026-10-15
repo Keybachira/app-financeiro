@@ -17,14 +17,11 @@ const COOLDOWN_MS = 400;
 export function useGuardedAction(action: () => void): () => void {
   const lastRun = useRef(0);
 
-  return useCallback(() => {
-    const now = Date.now();
-
-    if (now - lastRun.current < COOLDOWN_MS) {
-      return;
-    }
-
-    lastRun.current = now;
-    action();
-  }, [action]);
+return useCallback(() => {
+  const now = Date.now();
+  if (now - lastRun.current < COOLDOWN_MS) return;
+  lastRun.current = now;
+  console.log('GUARD: a executar action');
+  action();
+}, [action]);
 }

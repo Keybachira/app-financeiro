@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react-native';
 
 import { colors, fonts, gradients, layout, spacing } from '../theme';
 import { PressableScale } from './PressableScale';
+import { Pressable } from 'react-native';
 
 export function Fab({
   icon: Icon,
@@ -15,7 +16,7 @@ export function Fab({
   onPress: () => void;
 }) {
   return (
-    <PressableScale accessibilityLabel={label} onPress={onPress} style={styles.wrap} radius={layout.fabHeight / 2}>
+    <Pressable accessibilityLabel={label} onPress={onPress} style={styles.wrap}>
       <LinearGradient
         colors={gradients.primary.colors}
         start={gradients.primary.start}
@@ -25,7 +26,7 @@ export function Fab({
         <Icon color={colors.text} size={22} strokeWidth={2} />
         <Text style={styles.label}>{label}</Text>
       </LinearGradient>
-    </PressableScale>
+    </Pressable>
   );
 }
 
