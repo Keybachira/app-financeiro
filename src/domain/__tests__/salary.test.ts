@@ -40,6 +40,19 @@ describe('salario', () => {
   it('nunca devolve data no passado depois do ajuste', () => {
     expect(nextSalaryDate({ salaryDay: 24, adjustBusinessDay: true, today: '2026-10-25' })).toBe('2026-11-24');
   });
+
+  it('nunca atravessa a fronteira do mes', () => {
+    // 01-11-2026 e domingo, 01-08-2026 e sabado, 01-03-2026 e domingo.
+    expect(adjustToBusinessDay('2026-11-01')).toBe('2026-11-02');
+    expect(adjustToBusinessDay('2026-08-01')).toBe('2026-08-03');
+    expect(adjustToBusinessDay('2026-03-01')).toBe('2026-03-02');
+    expect(adjustToBusinessDay('2026-11-01').slice(0, 7)).toBe('2026-11');
+  });
+
+  it('ultimo dia do mes em fim de semana mantem o mes', () => {
+    expect(adjustToBusinessDay('2026-11-30').slice(0, 7)).toBe('2026-11');
+    expect(adjustToBusinessDay('2026-08-31').slice(0, 7)).toBe('2026-08');
+  });
 });
 
 describe('lancamento automatico do salario', () => {
@@ -74,5 +87,13 @@ describe('lancamento automatico do salario', () => {
       month: '2026-10',
       date: '2026-10-23',
     });
+  });
+
+  it('com dia 1 em domingo, lanca no mes certo', () => {
+    // Regressao: 01-11-2026 e domingo, o recuo para sexta caia em outubro e
+    // gravava lastMonth = 2026-10, bloqueando o salario de novembro.
+    const settings: SalarySettings = { ...base, day: 1, adjustBusinessDay: true };
+    expect(pendingSalaryLaunch(settings, '2026-11-01')).toBeNull();
+    expect(pendingSalaryLaunch(settings, '2026-11-02')).toEqual({ month: '2026-11', date: '2026-11-02' });
   });
 });

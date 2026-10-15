@@ -169,14 +169,10 @@ function insertPayment(id: string, amount: number, date: string, createIncome: b
   const movementId = createIncome ? Crypto.randomUUID() : null;
 
   if (movementId) {
-    db.runSync('INSERT INTO movements (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)', [
-      movementId,
-      'income',
-      amount,
-      'Projetos',
-      date,
-      `Projeto · ${project.name}`,
-    ]);
+    db.runSync(
+      'INSERT INTO movements (id, type, amount, category, date, note, origin) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [movementId, 'income', amount, 'Projetos', date, `Projeto · ${project.name}`, 'project']
+    );
   }
 
   db.runSync('INSERT INTO project_payments (id, project_id, amount, date, movement_id) VALUES (?, ?, ?, ?, ?)', [

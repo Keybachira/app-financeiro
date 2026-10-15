@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeftRight, Pencil, Trash, X } from 'lucide-react-native';
 
@@ -55,7 +55,11 @@ export default function DebtDetailScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground />
-      <View style={styles.body}>
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={1}>
             {debt.party}
@@ -145,8 +149,8 @@ export default function DebtDetailScreen() {
         <Pressable accessibilityRole="button" onPress={() => setConfirmDelete(true)} style={styles.textButton}>
           <Trash color={colors.warn} size={16} strokeWidth={2} />
           <Text style={styles.deleteLabel}>Apagar dívida</Text>
-        </Pressable>
-      </View>
+          </Pressable>
+      </ScrollView>
 
       <AmountSheet
         visible={payOpen}
@@ -203,6 +207,9 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+  },
+  bodyContent: {
+    flexGrow: 1,
     padding: spacing.lg,
     paddingTop: spacing.xl,
     gap: spacing.md,

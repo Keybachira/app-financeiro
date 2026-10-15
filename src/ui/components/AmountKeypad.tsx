@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Delete } from 'lucide-react-native';
 
+import { tapLight, tapMedium } from '../haptics';
 import { colors, fonts, gradients, radius, spacing } from '../theme';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', 'back'];
@@ -23,8 +24,28 @@ export function AmountKeypad({
           key={key}
           accessibilityRole="button"
           accessibilityLabel={key === 'back' ? 'Apagar último dígito' : key}
-          onPress={() => (key === 'back' ? onBackspace() : onDigit(key))}
-          style={[styles.key, { width: keyWidth }]}
+          onPress={() => {
+            if (key === 'back') {
+              tapLight();
+              onBackspace();
+              return;
+            }
+
+            // "000" muda três dígitos de uma vez: mimeo mais forte para o
+            // utilizador perceber que o toque não foi um "0" só.
+            if (key === '000') {
+              tapMedium();
+            } else {
+              tapLight();
+            }
+
+            onDigit(key);
+          }}
+          // Sem isto o `Pressable` não produzia nenhum estado de premido:
+          // `style` como array não tem `pressed`, logo não havia feedback
+          // visual em nenhuma das 12 teclas.
+          android_ripple={{ color: 'rgba(255,255,255,.14)', borderless: false }}
+          style={({ pressed }) => [styles.key, { width: keyWidth }, pressed && styles.keyPressed]}
         >
           <LinearGradient
             colors={gradients.panel.colors}
@@ -52,6 +73,11 @@ const styles = StyleSheet.create({
   },
   key: {
     height: 56,
+    borderRadius: radius.control,
+    overflow: 'hidden',
+  },
+  keyPressed: {
+    opacity: 0.6,
   },
   keyBackground: {
     flex: 1,

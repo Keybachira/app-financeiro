@@ -46,10 +46,6 @@ export function ProgressBar({
   );
 }
 
-export function PercentLabel({ value }: { value: number }) {
-  return <Text style={styles.percent}>{`${Math.round(value)}%`}</Text>;
-}
-
 const styles = StyleSheet.create({
   track: {
     backgroundColor: colors.trackSoft,
@@ -57,8 +53,5 @@ const styles = StyleSheet.create({
   },
   fillWrapper: {
     overflow: 'hidden',
-  },
-  percent: {
-    color: colors.text,
   },
 });

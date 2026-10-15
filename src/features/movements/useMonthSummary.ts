@@ -26,13 +26,14 @@ export type MonthSummary = {
 };
 
 export function useMonthSummary(today: string): { summary: MonthSummary; refresh: () => void } {
-  const { limit } = useMonthlyLimit();
+  const { limit, refresh: refreshLimit } = useMonthlyLimit();
   const { salaryDay, adjustBusinessDay, refresh: refreshSalary } = useSalarySettings();
   const [tick, setTick] = useState(0);
   const refresh = useCallback(() => {
     refreshSalary();
+    refreshLimit();
     setTick((value) => value + 1);
-  }, [refreshSalary]);
+  }, [refreshSalary, refreshLimit]);
 
   const summary = useMemo<MonthSummary>(() => {
     const month = monthKey(today);
@@ -59,7 +60,10 @@ export function useMonthSummary(today: string): { summary: MonthSummary; refresh
       balance: monthNet(income, expenses, goalOps.deposits, goalOps.withdraws),
       reserved: reservedTotal(),
       limit,
-      limitPercent: limit !== null && limit > 0 ? Math.min(1, expenses / limit) : 0,
+      // Sem clamp: gastar 130% do limite tem de mostrar 130%, não 100%. O clamp
+      // fica só na passagem para a `ProgressBar`, que não consegue representar
+      // mais do que a barra cheia.
+      limitPercent: limit !== null && limit > 0 ? expenses / limit : 0,
       daily,
       dailyLimit: limit !== null && limit > 0 ? limit / monthDays : null,
       categories,

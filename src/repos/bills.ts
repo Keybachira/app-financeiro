@@ -79,7 +79,10 @@ export const billsUnpaidTotal = (month: string): number => {
 export const billsMonthProgress = (month: string): { paid: number; total: number } => {
   const row = db.getFirstSync<{ paid: number | null; total: number | null }>(
     `SELECT
-       COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM bill_payments p WHERE p.bill_id = b.id AND p.month = ?) THEN b.amount ELSE 0 END), 0) AS paid,
+       COALESCE(SUM(CASE WHEN b.active = 1 THEN (
+         SELECT COALESCE(SUM(p.amount), 0) FROM bill_payments p
+         WHERE p.bill_id = b.id AND p.month = ?
+       ) ELSE 0 END), 0) AS paid,
        COALESCE(SUM(CASE WHEN b.active = 1 THEN b.amount ELSE 0 END), 0) AS total
      FROM bills b`,
     [month]
@@ -157,14 +160,10 @@ export function payBill(id: string, date = todayISO()): void {
   db.withTransactionSync(() => {
     const movementId = Crypto.randomUUID();
 
-    db.runSync('INSERT INTO movements (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)', [
-      movementId,
-      'expense',
-      bill.amount,
-      bill.category,
-      date,
-      bill.name,
-    ]);
+    db.runSync(
+      'INSERT INTO movements (id, type, amount, category, date, note, origin) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [movementId, 'expense', bill.amount, bill.category, date, bill.name, 'bill']
+    );
 
     db.runSync(
       'INSERT INTO bill_payments (id, bill_id, month, paid_on, amount, movement_id) VALUES (?, ?, ?, ?, ?, ?)',

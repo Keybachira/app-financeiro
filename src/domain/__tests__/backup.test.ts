@@ -18,6 +18,7 @@ const validMovement: MovementBackupRow = {
   note: 'táxi',
   bill_id: null,
   project_payment_id: null,
+  origin: 'manual',
 };
 
 const validPayload: BackupPayload = {
@@ -42,6 +43,43 @@ describe('backup JSON', () => {
     expect(parsed.ok).toBe(true);
     if (parsed.ok) {
       expect(parsed.payload).toEqual(validPayload);
+    }
+  });
+
+  it('aceita backup antigo sem `origin` e assume manual', () => {
+    const { origin, ...semOrigin } = validMovement;
+    expect(origin).toBe('manual');
+
+    // Serializado sem a chave, como um backup criado antes da coluna existir.
+    const antigo = JSON.stringify(validPayload).replace(',"origin":"manual"', '');
+    expect(antigo).not.toContain('origin');
+
+    const parsed = parseBackup(antigo);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.payload.movements[0].origin).toBe('manual');
+    }
+  });
+
+  it('preserva `origin` ao exportar e reimportar', () => {
+    const parsed = parseBackup(
+      backupToJson({ ...validPayload, movements: [{ ...validMovement, origin: 'salary' }] })
+    );
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.payload.movements[0].origin).toBe('salary');
+    }
+  });
+
+  it('aceita `origin` desconhecido e deixa a sanitização para o import', () => {
+    // Um backup de uma versão futura não pode ser recusado por uma coluna nova:
+    // o repositório valida o valor com isMovementOrigin ao gravar.
+    const parsed = parseBackup(
+      JSON.stringify({ ...validPayload, movements: [{ ...validMovement, origin: 'inventado' }] })
+    );
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.payload.movements[0].origin).toBe('inventado');
     }
   });
 
@@ -92,11 +130,30 @@ describe('backup JSON', () => {
 describe('CSV de movimentos', () => {
   it('usa as colunas do plano', () => {
     const csv = movementsToCsv([validMovement]);
-    expect(csv).toBe('data,tipo,valor,categoria,nota\n2026-10-14,expense,1800,Transporte,táxi');
+    expect(csv).toBe('data,tipo,valor,categoria,nota\n2026-10-14,despesa,1800,Transporte,táxi');
   });
 
   it('escapa vírgulas, aspas e quebras de linha', () => {
     const csv = movementsToCsv([{ ...validMovement, note: 'net, "5mb"\ntarde' }]);
     expect(csv).toContain('"net, ""5mb""\ntarde"');
+  });
+
+  it('escreve receita como "receita"', () => {
+    const csv = movementsToCsv([{ ...validMovement, type: 'income' }]);
+    expect(csv).toContain('2026-10-14,receita,1800');
+  });
+
+  it('neutraliza fórmulas do Excel nas notas', () => {
+    // Uma nota iniciada por =, +, - ou @ era executada como fórmula ao abrir o
+    // ficheiro. O prefixo `'` mantém o texto.
+    for (const note of ['=1+1', '+SUM(A1)', '-2+3', '@cmd']) {
+      const csv = movementsToCsv([{ ...validMovement, note }]);
+      expect(csv).toContain(`'${note}`);
+    }
+  });
+
+  it('não neutraliza texto normal nem datas', () => {
+    const csv = movementsToCsv([{ ...validMovement, note: 'café - 3ksh' }]);
+    expect(csv).toContain('café - 3ksh');
   });
 });

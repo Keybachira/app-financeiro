@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { useRef } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { tapLight, tapMedium } from '../haptics';
 import { colors, fonts, radius, spacing } from '../theme';
 
 export function ConfirmSheet({
@@ -22,21 +23,53 @@ export function ConfirmSheet({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  // Sem guarda de reentrada, um duplo-toque chamava `onConfirm` duas vezes —
+  // nos ecrãs de detalhe isso era `remove()` + `router.back()` duplicados, com
+  // duas telas a saltar de uma vez.
+  const confirming = useRef(false);
+
+  const handleConfirm = () => {
+    if (confirming.current) {
+      return;
+    }
+
+    confirming.current = true;
+    tapMedium();
+    onConfirm();
+    // Liberta quando o voltar a abrir, para não ficar travado para sempre.
+    setTimeout(() => {
+      confirming.current = false;
+    }, 600);
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.container}>
-        <Pressable accessibilityLabel="Cancelar" style={styles.backdrop} onPress={onCancel} />
+        {/* `accessible={false}`: o fundo cobre o ecrã inteiro e o leitor de
+            ecrã anunciava "Cancelar" antes do título real do sheet. */}
+        <Pressable accessible={false} style={styles.backdrop} onPress={onCancel} />
         <View style={styles.sheet}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
           <View style={styles.actions}>
-            <Pressable accessibilityRole="button" onPress={onCancel} style={[styles.button, styles.cancel]}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                tapLight();
+                onCancel();
+              }}
+              style={({ pressed }) => [styles.button, styles.cancel, pressed && styles.buttonPressed]}
+            >
               <Text style={styles.cancelLabel}>{cancelLabel}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              onPress={onConfirm}
-              style={[styles.button, destructive ? styles.destructive : styles.confirm]}
+              onPress={handleConfirm}
+              style={({ pressed }) => [
+                styles.button,
+                destructive ? styles.destructive : styles.confirm,
+                pressed && styles.buttonPressed,
+              ]}
             >
               <Text style={[styles.buttonLabel, destructive && styles.destructiveLabel]}>{confirmLabel}</Text>
             </Pressable>
@@ -92,6 +125,9 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  buttonPressed: {
+    opacity: 0.7,
   },
   cancel: {
     borderWidth: 1,

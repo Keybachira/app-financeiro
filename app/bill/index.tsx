@@ -13,6 +13,7 @@ import { Panel } from '../../src/ui/components/Panel';
 import { ProgressBar } from '../../src/ui/components/ProgressBar';
 import { Screen } from '../../src/ui/components/Screen';
 import { StatusChip } from '../../src/ui/components/StatusChip';
+import { useToast } from '../../src/ui/components/Toast';
 import { gradients, radius } from '../../src/ui/theme';
 import { colors, fonts, spacing } from '../../src/ui/theme';
 import { categoryIcon } from '../../src/ui/categoryIcons';
@@ -21,6 +22,7 @@ import type { BillView } from '../../src/repos/bills';
 
 export default function BillsScreen() {
   const router = useRouter();
+  const toast = useToast();
   const { open, payable, unpaidTotal, progress, pay, refresh, today } = useBills();
 
   useFocusEffect(
@@ -32,7 +34,12 @@ export default function BillsScreen() {
   const percent = progress.total > 0 ? Math.round((progress.paid / progress.total) * 100) : 0;
 
   return (
-    <Screen title="Contas fixas" floating={<Fab icon={Plus} label="Nova conta" onPress={() => router.push('/bill/new')} />}>
+    <Screen
+      title="Contas fixas"
+      back
+      subtitle={`${open.length} ${open.length === 1 ? 'conta ativa' : 'contas ativas'}`}
+      floating={<Fab icon={Plus} label="Nova conta" onPress={() => router.push('/bill/new')} />}
+    >
       <GlassCard>
         <Text style={styles.cardLabel}>Por pagar este mês</Text>
         <MoneyText value={unpaidTotal} size="balance" />
@@ -59,8 +66,14 @@ export default function BillsScreen() {
           onPay={() => {
             try {
               pay(view.bill.id);
-            } catch {
-              // Já paga neste mês: o resumo atualiza-se na próxima leitura.
+              toast({ message: `${view.bill.name} paga`, tone: 'success' });
+            } catch (caught) {
+              // Sem isto, um "Pagar" falhado não dava nenhum sinal: tocava-se e
+              // nada acontecia, sem toast nem erro.
+              toast({
+                message: caught instanceof Error ? caught.message : 'Não foi possível pagar a conta.',
+                tone: 'error',
+              });
             }
           }}
           onEdit={() => router.push({ pathname: '/bill/new', params: { id: view.bill.id } })}
@@ -68,6 +81,16 @@ export default function BillsScreen() {
       ))}
     </Screen>
   );
+}
+
+function billAccessibilityLabel(view: BillView, today: string): string {
+  const base = `${view.bill.name}, ${formatKz(view.bill.amount)}, dia ${view.bill.day_of_month}`;
+
+  if (view.paidThisMonth) {
+    return `${base}, paga em ${monthShort(today)}. Toca para editar.`;
+  }
+
+  return `${base}, por pagar. Toca para editar.`;
 }
 
 function BillRowCard({
@@ -93,8 +116,10 @@ function BillRowCard({
             ? { tone: 'neutral' as const, label: `${view.daysToDue} dias` }
             : { tone: 'neutral' as const, label: `${view.daysToDue} dias` };
 
+  // Wrapper é botão (editar) e contém outro botão (pagar) aninhado. O label vai
+  // para o interno para o leitor não anunciar os dois em cima um do outro.
   return (
-    <Pressable accessibilityRole="button" onPress={onEdit}>
+    <Pressable accessibilityRole="button" accessibilityLabel={billAccessibilityLabel(view, today)} onPress={onEdit}>
       <Panel>
         <View style={styles.row}>
           <View style={styles.iconTile}>
@@ -120,7 +145,12 @@ function BillRowCard({
         {view.paidThisMonth ? (
           <Text style={styles.paidLabel}>Paga em {monthShort(today)}</Text>
         ) : (
-          <Pressable accessibilityRole="button" onPress={onPay} style={styles.payWrap}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Pagar ${view.bill.name}, ${formatKz(view.bill.amount)}`}
+            onPress={onPay}
+            style={({ pressed }) => [styles.payWrap, pressed && styles.payWrapPressed]}
+          >
             <LinearGradient
               colors={gradients.primary.colors}
               start={gradients.primary.start}
@@ -185,6 +215,9 @@ const styles = StyleSheet.create({
   payWrap: {
     marginTop: spacing.md,
     borderRadius: radius.pill,
+  },
+  payWrapPressed: {
+    opacity: 0.7,
   },
   payButton: {
     height: 44,

@@ -2,6 +2,11 @@ import { isValidDate } from './dates';
 
 export const BACKUP_SCHEMA_VERSION = 3;
 
+/**
+ * `origin` é opcional: backups criados antes da coluna continuam a ser
+ * importados sem alteração de versão, porque um movimento sem origem é
+ * tratado como `manual`.
+ */
 export type MovementBackupRow = {
   id: string;
   type: 'income' | 'expense';
@@ -11,6 +16,7 @@ export type MovementBackupRow = {
   note: string | null;
   bill_id: string | null;
   project_payment_id: string | null;
+  origin?: string;
 };
 
 export type SettingRow = { key: string; value: string };
@@ -89,7 +95,14 @@ export function backupToJson(payload: BackupPayload): string {
 export function movementsToCsv(movements: MovementBackupRow[]): string {
   const header = 'data,tipo,valor,categoria,nota';
   const lines = movements.map((movement) =>
-    [movement.date, movement.type, String(movement.amount), movement.category, movement.note ?? '']
+    [
+      movement.date,
+      // Um ficheiro de uso português não deve escrever "expense"/"income".
+      movement.type === 'income' ? 'receita' : 'despesa',
+      String(movement.amount),
+      movement.category,
+      movement.note ?? '',
+    ]
       .map(csvCell)
       .join(',')
   );
@@ -97,10 +110,16 @@ export function movementsToCsv(movements: MovementBackupRow[]): string {
 }
 
 function csvCell(value: string): string {
-  if (/["\n,]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  // Excel e Google Sheets tratam uma célula iniciada por = + - @ como fórmula.
+  // Uma nota como "=1+1" era executada ao abrir o CSV, não mostrada. O prefixo
+  // `'` força o texto.
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+
+  if (/["\n,]/.test(safe)) {
+    return `"${safe.replace(/"/g, '""')}"`;
   }
-  return value;
+
+  return safe;
 }
 
 export type ParsedBackup =
@@ -318,9 +337,13 @@ function validateMovement(row: unknown): { ok: true; row: MovementBackupRow } | 
     return invalid('movimento');
   }
 
+  // Ausente num backup antigo => 'manual'. Valor desconhecido também não pode
+  // fazer o import falhar, por isso é normalizado em vez de rejeitado.
+  const origin = row.origin === undefined ? 'manual' : text(row.origin) ?? 'manual';
+
   return {
     ok: true,
-    row: { id, type, amount, category, date, note, bill_id: billId, project_payment_id: projectPaymentId },
+    row: { id, type, amount, category, date, note, bill_id: billId, project_payment_id: projectPaymentId, origin },
   };
 }
 

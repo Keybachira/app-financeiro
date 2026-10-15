@@ -20,12 +20,21 @@ export function DayChips({
   const isCustom = value !== today && value !== yesterday;
 
   const options = [
-    { key: 'today', label: 'Hoje', date: today, onPress: () => onChange(today) },
-    { key: 'yesterday', label: 'Ontem', date: yesterday, onPress: () => onChange(yesterday) },
+    { key: 'today', label: 'Hoje', date: today, active: value === today, onPress: () => onChange(today) },
     {
+      key: 'yesterday',
+      label: 'Ontem',
+      date: yesterday,
+      active: value === yesterday,
+      onPress: () => onChange(yesterday),
+    },
+    {
+      // `active` não pode ser derivado de `date`: o chip "Outro dia" recebe a
+      // data atual em `value`, o que o faria acender em conjunto com "Hoje".
       key: 'custom',
       label: isCustom ? formatDayMonthPt(value) : 'Outro dia',
       date: value,
+      active: isCustom,
       onPress: onCustomPress,
     },
   ];
@@ -38,7 +47,7 @@ export function DayChips({
       style={styles.row}
     >
       {options.map((option) => {
-        const active = option.date === value;
+        const active = option.active;
         return (
           <PressableScale
             key={option.key}

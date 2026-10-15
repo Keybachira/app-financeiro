@@ -12,8 +12,19 @@ type DebtViewType = ReturnType<typeof useDebts>['views'][number];
 export function DebtCard({ view, onPress }: { view: DebtViewType; onPress: () => void }) {
   const tone = view.status === 'paid' ? 'accent' : view.status === 'overdue' ? 'warn' : 'neutral';
 
+  // Sem label, o TalkBack agrupava os textos filhos e lia "botão, J, 1 500 Kz,
+  // Pago 0 de 5 000 Kz" — sem dizer o que o botão faz.
+  const accessibilityLabel = [
+    view.debt.party,
+    view.debt.kind === 'owe' ? 'Devo' : 'Devem-me',
+    debtStatusLabel(view),
+    view.status === 'paid'
+      ? `Liquidada, pago ${formatKz(view.paid)} de ${formatKz(view.debt.total)}`
+      : `Falta ${formatKz(view.remaining)}, pago ${formatKz(view.paid)} de ${formatKz(view.debt.total)}`,
+  ].join('. ');
+
   return (
-    <Pressable accessibilityRole="button" onPress={onPress}>
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress}>
       <Panel>
         <View style={styles.row}>
           <View style={styles.avatar}>
@@ -33,11 +44,7 @@ export function DebtCard({ view, onPress }: { view: DebtViewType; onPress: () =>
 
         <View style={styles.progressBlock}>
           <ProgressBar value={view.progress} tone="gradient" />
-          <Text style={styles.meta}>
-            {view.status === 'paid'
-              ? `Pago ${formatKz(view.paid)} de ${formatKz(view.debt.total)}`
-              : `Pago ${formatKz(view.paid)} de ${formatKz(view.debt.total)}`}
-          </Text>
+          <Text style={styles.meta}>Pago {formatKz(view.paid)} de {formatKz(view.debt.total)}</Text>
         </View>
       </Panel>
     </Pressable>
@@ -102,7 +109,11 @@ const styles = StyleSheet.create({
 
 export function DebtEmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onCreate}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Sem dívidas registadas. Toca para criar a primeira."
+      onPress={onCreate}
+    >
       <Panel>
         <Text style={styles.meta}>Sem dívidas registadas. Toca para criar a primeira.</Text>
       </Panel>

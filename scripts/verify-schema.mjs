@@ -62,21 +62,74 @@ function name(row) {
   return row.name;
 }
 
+function scalar(database, sql, ...params) {
+  const row = database.prepare(sql).get(...params);
+  return row === undefined ? undefined : Object.values(row)[0];
+}
+
+// Derivado de MIGRATIONS: as verificacoes de `user_version` acompanham a
+// ultima migracao em vez de fixarem um numero.
+const LATEST_VERSION = Math.max(...MIGRATIONS.map((migration) => migration.version));
+
 console.log('migracoes: aplicacao inicial');
 const db = createDatabase();
 const exec = createExecutor(db);
 applyMigrations(exec);
 
-check('user_version fica 1', getSchemaVersion(exec) === 1);
+check(`user_version fica ${LATEST_VERSION}`, getSchemaVersion(exec) === LATEST_VERSION);
 const tables = tableNames(db);
 for (const table of EXPECTED_TABLES) {
   check(`tabela ${table} existe`, tables.includes(table));
 }
 check('foreign_keys esta ON', db.prepare('PRAGMA foreign_keys').get().foreign_keys === 1);
 
+console.log('movements.origin: coluna, backfill e valor por omissao');
+const movementColumns = db.prepare('PRAGMA table_info(movements)').all().map((row) => name(row));
+check('coluna origin existe', movementColumns.includes('origin'));
+{
+  const dbOrigin = createDatabase();
+  const execOrigin = createExecutor(dbOrigin);
+
+  // O backfill da v2 só toca em linhas ja existentes: aplica-se primeiro a v1,
+  // semeia-se uma base "antiga", e só depois se corre a v2.
+  const held = MIGRATIONS.splice(1, MIGRATIONS.length - 1);
+  applyMigrations(execOrigin);
+  MIGRATIONS.push(...held);
+
+  dbOrigin.exec(
+    `INSERT INTO bills (id, name, amount, day_of_month, category) VALUES ('ob1', 'Luz', 3000, 10, 'Casa')`
+  );
+  dbOrigin.exec(
+    `INSERT INTO movements (id, type, amount, category, date, note, bill_id) VALUES ('om1', 'expense', 3000, 'Casa', '2026-10-10', 'Luz', 'ob1')`
+  );
+  dbOrigin.exec(
+    `INSERT INTO bill_payments (id, bill_id, month, paid_on, amount, movement_id) VALUES ('obp1', 'ob1', '2026-10', '2026-10-10', 3000, 'om1')`
+  );
+  dbOrigin.exec(
+    `INSERT INTO movements (id, type, amount, category, date, note) VALUES ('om2', 'income', 150000, 'Salário', '2026-10-25', 'Salário')`
+  );
+  dbOrigin.exec(
+    `INSERT INTO movements (id, type, amount, category, date, note) VALUES ('om3', 'expense', 500, 'Alimentação', '2026-10-26', 'cafe')`
+  );
+
+  applyMigrations(execOrigin);
+  check('v2 aplicada sobre base existente', getSchemaVersion(execOrigin) === LATEST_VERSION);
+
+  const originOf = (id) => scalar(dbOrigin, 'SELECT origin FROM movements WHERE id = ?', id);
+  check('pagamento de conta reconhecido pelo backfill', originOf('om1') === 'bill');
+  check('salario reconhecido pelo backfill', originOf('om2') === 'salary');
+  check('movimento do utilizador fica manual', originOf('om3') === 'manual');
+  check(
+    'indice de origin existe',
+    dbOrigin
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_mov_origin'")
+      .get() !== undefined
+  );
+}
+
 console.log('migracoes: idempotencia');
 applyMigrations(exec);
-check('user_version continua 1', getSchemaVersion(exec) === 1);
+check(`user_version continua ${LATEST_VERSION}`, getSchemaVersion(exec) === LATEST_VERSION);
 
 console.log('registo de movimento e integridade referencial');
 db.exec(
@@ -143,11 +196,14 @@ console.log('migracoes: atomicidade em falha a meio');
 const db2 = createDatabase();
 const exec2 = createExecutor(db2);
 applyMigrations(exec2);
-const broken = { version: 2, statements: ['CREATE TABLE probe (id TEXT PRIMARY KEY)', 'ISTO NAO E SQL'] };
+const broken = {
+  version: LATEST_VERSION + 1,
+  statements: ['CREATE TABLE probe (id TEXT PRIMARY KEY)', 'ISTO NAO E SQL'],
+};
 MIGRATIONS.push(broken);
 expectThrow('migracao invalida lanca erro', () => applyMigrations(exec2));
 MIGRATIONS.pop();
-check('user_version nao avanca com falha', getSchemaVersion(exec2) === 1);
+check('user_version nao avanca com falha', getSchemaVersion(exec2) === LATEST_VERSION);
 check('tabela parcial nao fica criada', !tableNames(db2).includes('probe'));
 
 console.log(`\n${passed} verificacoes passaram, ${failed} falharam`);

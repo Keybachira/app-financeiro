@@ -2,13 +2,20 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { ReactNode } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fonts, radius, spacing } from '../theme';
+import { notifyError, notifySuccess } from '../haptics';
+import { colors, fonts, layout, radius, spacing } from '../theme';
 
 type ToastOptions = {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
   duration?: number;
+  /**
+   * Só vibra se for explicitamente indicado: não é possível inferir do texto se
+   * um toast é sucesso ou erro, e vibrar "conta não encontrada" a verde seria
+   * pior do que não vibrar.
+   */
+  tone?: 'success' | 'error';
 };
 
 type ToastState = ToastOptions & { id: number };
@@ -43,9 +50,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         duration: 160,
         easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
-      }).start(() => {
+      }).start(({ finished }) => {
         exiting.current = false;
-        after();
+        // `setValue` num novo toast cancela esta animação mas o callback é
+        // chamado na mesma; sem esta guarda o toast acabado de aparecer era
+        // eliminado de imediato.
+        if (finished) {
+          after();
+        }
       });
     },
     [enter]
@@ -55,6 +67,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     if (timer.current) {
       clearTimeout(timer.current);
     }
+
+    if (options.tone === 'success') {
+      notifySuccess();
+    } else if (options.tone === 'error') {
+      notifyError();
+    }
+
     setToast({ id: Date.now(), ...options });
   }, []);
 
@@ -129,7 +148,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.lg,
     right: spacing.lg,
-    bottom: 104,
+    // Acima do FAB (`layout.fabBottom` + `layout.fabHeight`). O Toast é irmão
+    // de toda a Stack e desenha-se por cima do botão; a 104 tapava-o por
+    // completo durante os 5 s em que fica visível.
+    bottom: layout.fabBottom + layout.fabHeight + spacing.sm,
     alignItems: 'stretch',
   },
   toast: {

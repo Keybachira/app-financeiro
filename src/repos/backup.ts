@@ -17,6 +17,8 @@ import type {
 import { BACKUP_SCHEMA_VERSION } from '../domain/backup';
 import { todayISO } from '../domain/dates';
 import { db } from '../db/client';
+import { bumpDataVersion } from './dataVersion';
+import { isMovementOrigin } from './movements';
 
 export type { BackupPayload };
 
@@ -26,7 +28,7 @@ export function buildBackup(): BackupPayload {
     exportedAt: todayISO(),
     settings: db.getAllSync<SettingRow>('SELECT key, value FROM settings ORDER BY key'),
     movements: db.getAllSync<MovementBackupRow>(
-      `SELECT id, type, amount, category, date, note, bill_id, project_payment_id FROM movements ORDER BY date, rowid`
+      `SELECT id, type, amount, category, date, note, bill_id, project_payment_id, origin FROM movements ORDER BY date, rowid`
     ),
     goals: db.getAllSync<GoalRow>(
       'SELECT id, name, target, deadline, created_at, completed_at, archived_at FROM goals ORDER BY created_at'
@@ -165,17 +167,30 @@ export function importBackup(payload: BackupPayload, mode: ImportMode): void {
     }
 
     for (const row of payload.settings) {
+      // `key` é a PK. Com INSERT OR IGNORE as definições existentes eram
+      // descartadas em silêncio, e restaurar um backup num aparelho novo perdia
+      // PIN, salário e limite. No modo merge o backup passa a ser a fonte.
       db.runSync(
-        'INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)',
+        'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
         [row.key, row.value]
       );
     }
 
     for (const row of payload.movements) {
       db.runSync(
-        `INSERT OR IGNORE INTO movements (id, type, amount, category, date, note, bill_id, project_payment_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [row.id, row.type, row.amount, row.category, row.date, row.note, row.bill_id, row.project_payment_id]
+        `INSERT OR IGNORE INTO movements (id, type, amount, category, date, note, bill_id, project_payment_id, origin)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          row.id,
+          row.type,
+          row.amount,
+          row.category,
+          row.date,
+          row.note,
+          row.bill_id,
+          row.project_payment_id,
+          isMovementOrigin(row.origin) ? row.origin : 'manual',
+        ]
       );
     }
 
@@ -247,6 +262,10 @@ export function importBackup(payload: BackupPayload, mode: ImportMode): void {
       );
     }
   });
+
+  // O backup pode trazer settings, category_hints e PIN diferentes dos atuais.
+  // Sem este aviso, os hooks continuariam com os valores antigos em memória.
+  bumpDataVersion();
 }
 
 export async function shareExportFile(filename: string, content: string, mimeType: string): Promise<void> {

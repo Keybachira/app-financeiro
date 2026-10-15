@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Download, FileJson, FileSpreadsheet, RotateCcw, Warehouse, X } from 'lucide-react-native';
 
@@ -59,7 +59,11 @@ export default function BackupScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground />
-      <View style={styles.body}>
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Backup</Text>
           <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
@@ -157,7 +161,7 @@ export default function BackupScreen() {
             <Text style={styles.busyText}>A processar ficheiro…</Text>
           </View>
         ) : null}
-      </View>
+      </ScrollView>
 
       <ConfirmSheet
         visible={confirmReplace}
@@ -196,7 +200,14 @@ function ActionTile({
 }) {
   return (
     <Panel style={styles.actionTile} padded={false}>
-      <Pressable accessibilityRole="button" onPress={onPress} disabled={disabled} style={styles.pressable}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ disabled }}
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => [styles.pressable, pressed && !disabled && styles.pressablePressed]}
+      >
         <Icon color={disabled ? colors.textMuted : colors.text} size={22} strokeWidth={2} />
         <Text style={[styles.pressableLabel, disabled && styles.pressableLabelDisabled]}>{label}</Text>
       </Pressable>
@@ -210,6 +221,9 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+  },
+  bodyContent: {
+    flexGrow: 1,
     padding: spacing.lg,
     paddingTop: spacing.xl,
     gap: spacing.md,
@@ -303,6 +317,9 @@ const styles = StyleSheet.create({
     minHeight: 64,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+  },
+  pressablePressed: {
+    opacity: 0.6,
   },
   pressableLabel: {
     flex: 1,

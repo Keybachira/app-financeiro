@@ -46,8 +46,19 @@ function footerText(view: GoalView): string {
 export function GoalCard({ view, onPress }: { view: GoalView; onPress: () => void }) {
   const chip = paceChip(view);
 
+  // Sem label, o TalkBack lia o anel de progresso e os textos soltos sem dizer
+  // que o cartão é navegável.
+  const accessibilityLabel = [
+    view.goal.name,
+    `Guardado ${formatKz(view.saved)} de ${formatKz(view.goal.target)}, ${Math.round(view.progress * 100)}%`,
+    chip.label,
+    footerText(view),
+  ]
+    .filter(Boolean)
+    .join('. ');
+
   return (
-    <Pressable accessibilityRole="button" onPress={onPress}>
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress}>
       <Panel>
         <View style={styles.row}>
           <ProgressRing value={view.progress} />
@@ -125,7 +136,11 @@ const styles = StyleSheet.create({
 
 export function GoalsEmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onCreate}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Sem metas. Toca para criar a primeira."
+      onPress={onCreate}
+    >
       <Text style={styles.empty}>
         Ainda não tens metas. Toca para criar a primeira e começar a poupar.
       </Text>

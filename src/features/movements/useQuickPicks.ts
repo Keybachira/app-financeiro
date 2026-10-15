@@ -44,11 +44,11 @@ export function useQuickChips(today: string, limit = 2): QuickChipData[] {
 
     for (const pair of pairs) {
       chips.push({
-        key: `pair-${pair.note}-${pair.amount}`,
+        key: `pair-${pair.type}-${pair.note}-${pair.amount}`,
         label: `${pair.note} ${formatKzNumber(pair.amount)}`,
         note: pair.note,
         amount: pair.amount,
-        type: 'expense',
+        type: pair.type,
         category: suggestCategory(pair.note, hints),
         highlighted: false,
       });

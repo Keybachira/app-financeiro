@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -194,6 +194,15 @@ function PinSheet({
     setStep('first');
     setError(false);
   };
+
+  // O Modal só devolve `null` quando `visible` é false, mas o PinSheet mantém-se
+  // montado. Sem isto, abrir "Alterar PIN" uma segunda vez recomeçaria com os
+  // 4 dígitos anteriores e qualquer tecla voltaria a gravar o PIN antigo.
+  useEffect(() => {
+    if (visible) {
+      reset();
+    }
+  }, [visible]);
 
   return (
     <Modal

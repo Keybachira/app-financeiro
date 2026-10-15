@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { formatKz } from '../../domain/money';
 import { MoneyText } from './MoneyText';
 import { IconTile } from './IconTile';
 import { ProgressBar } from './ProgressBar';

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import * as Crypto from 'expo-crypto';
 import * as ScreenCapture from 'expo-screen-capture';
 
+import { subscribeDataVersion } from '../../repos/dataVersion';
 import { getSetting, removeSetting, setSetting } from '../../repos/settings';
 
 const LOCK_KEY = 'app_lock_enabled';
@@ -22,9 +23,20 @@ export type LockState = {
 };
 
 export function useLockState(): LockState {
+  // Recalculado a cada bump: importar um backup pode trocar o PIN, desligar o
+  // lock ou remover o PIN sem que nenhum destes ecrãs se remonte.
   const [hasPin, setHasPin] = useState(() => getSetting(HASH_KEY) !== null);
   const [enabled, setEnabledState] = useState(
     () => getSetting(LOCK_KEY) === '1' && getSetting(HASH_KEY) !== null
+  );
+
+  useEffect(
+    () =>
+      subscribeDataVersion(() => {
+        setHasPin(getSetting(HASH_KEY) !== null);
+        setEnabledState(getSetting(LOCK_KEY) === '1' && getSetting(HASH_KEY) !== null);
+      }),
+    []
   );
 
   useEffect(() => {

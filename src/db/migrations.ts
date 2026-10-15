@@ -101,6 +101,30 @@ export const MIGRATIONS: Migration[] = [
       )`,
     ],
   },
+  {
+    version: 2,
+    statements: [
+      // `origin` distingue movimento escrito pelo utilizador de movimento gerado
+      // pelo sistema (conta fixa, dívida, projeto, salário). Sem isto, as notas
+      // automáticas ("Salário", "Pagamento · Carlos") entravam em category_hints
+      // e passavam a sugerir categorias ao utilizador.
+      // SQLite não permite adicionar CHECK via ALTER TABLE, por isso o domínio
+      // dos valores é garantido em `src/repos/movements.ts`.
+      `ALTER TABLE movements ADD COLUMN origin TEXT NOT NULL DEFAULT 'manual'`,
+      // Backfill do que é possível reconstruir a partir das ligações existentes.
+      `UPDATE movements SET origin = 'bill'
+        WHERE id IN (SELECT movement_id FROM bill_payments WHERE movement_id IS NOT NULL)`,
+      `UPDATE movements SET origin = 'debt'
+        WHERE id IN (SELECT movement_id FROM debt_payments WHERE movement_id IS NOT NULL)`,
+      `UPDATE movements SET origin = 'project'
+        WHERE id IN (SELECT movement_id FROM project_payments WHERE movement_id IS NOT NULL)`,
+      // O salário automático é o único movimento sem ligação: é reconhecido
+      // pela categoria e pelo tipo (receita).
+      `UPDATE movements SET origin = 'salary'
+        WHERE category = 'Salário' AND type = 'income'`,
+      `CREATE INDEX IF NOT EXISTS idx_mov_origin ON movements(origin)`,
+    ],
+  },
 ];
 
 export interface MigrationExecutor {

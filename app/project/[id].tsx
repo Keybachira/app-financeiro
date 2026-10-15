@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeftRight, Pencil, Trash, X } from 'lucide-react-native';
 
@@ -56,7 +56,11 @@ export default function ProjectDetailScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground />
-      <View style={styles.body}>
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={1}>
             {project.name}
@@ -171,7 +175,7 @@ export default function ProjectDetailScreen() {
             <Text style={styles.deleteLabel}>Apagar projeto</Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
 
       <AmountSheet
         visible={payOpen}
@@ -228,6 +232,9 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+  },
+  bodyContent: {
+    flexGrow: 1,
     padding: spacing.lg,
     paddingTop: spacing.xl,
     gap: spacing.md,

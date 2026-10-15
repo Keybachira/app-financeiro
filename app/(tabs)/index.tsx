@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Download, Plus, Receipt, Wallet } from 'lucide-react-native';
+import { ChevronRight, Download, Plus, Receipt, Wallet } from 'lucide-react-native';
 
 import { monthDaysOf, monthNamePt, todayISO } from '../../src/domain/dates';
 import { formatShortPt } from '../../src/domain/dates';
@@ -22,14 +22,35 @@ import { useMonthSummary } from '../../src/features/movements/useMonthSummary';
 import { useMonthMovements } from '../../src/features/movements/useMovements';
 import { useBillsSummary } from '../../src/features/bills/useBills';
 import { QuickAction } from '../../src/ui/components/QuickAction';
+import { useGuardedAction } from '../../src/ui/useGuardedAction';
+
+const LIMIT_PREVIEW = 6;
 
 export default function HomeScreen() {
   const today = todayISO();
   const router = useRouter();
   const { summary, refresh } = useMonthSummary(today);
   const [search, setSearch] = useState('');
+  // Sem "ver todos", a lista parava em 6 com o texto "Movimentos" por cima, e
+  // nada indicava que havia mais. O corte não era reversível de forma óbvia.
+  const [showAll, setShowAll] = useState(false);
   const { movements, refresh: refreshList } = useMonthMovements(summary.month, search);
   const { openCount: billsDue, refresh: refreshBills } = useBillsSummary();
+
+  // Sem guarda, dois toques no FAB ou num QuickAction empilhavam dois ecrãs
+  // modais e o utilizador tinha de fechar duas vezes.
+  const openBackup = useGuardedAction(() => router.push('/backup'));
+  const openNewMovement = useGuardedAction(() => router.push('/movement/new'));
+  const openBills = useGuardedAction(() => router.push('/bill'));
+  const openSalary = useGuardedAction(() => router.push('/salary'));
+  const openSettings = useGuardedAction(() => router.push('/settings'));
+  // `router.push` devolve void na tipagem mas o retorno é usado como callback.
+  const openMovement = useCallback(
+    (id: string) => {
+      router.push(`/movement/${id}`);
+    },
+    [router]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -40,7 +61,8 @@ export default function HomeScreen() {
   );
 
   const searching = search.trim().length > 0;
-  const visible = searching ? movements : movements.slice(0, 6);
+  const truncated = !searching && !showAll && movements.length > LIMIT_PREVIEW;
+  const visible = searching ? movements : movements.slice(0, LIMIT_PREVIEW);
   const monthDays = monthDaysOf(today);
 
   return (
@@ -48,10 +70,10 @@ export default function HomeScreen() {
       title={monthNamePt(`${summary.month}-01`)}
       right={
         <View style={styles.headerActions}>
-          <IconButton icon={Download} label="Backup e exportar" onPress={() => router.push('/backup')} />
+          <IconButton icon={Download} label="Backup e exportar" onPress={openBackup} />
         </View>
       }
-      floating={<Fab icon={Plus} label="Novo movimento" onPress={() => router.push('/movement/new')} />}
+      floating={<Fab icon={Plus} label="Novo movimento" onPress={openNewMovement} />}
     >
       <GlassCard>
         <Text style={styles.cardLabel}>Saldo do mês</Text>
@@ -63,15 +85,22 @@ export default function HomeScreen() {
         {summary.limit !== null ? (
           <View style={styles.limitBlock}>
             <View style={styles.limitRow}>
-              <Text style={styles.limitLabel}>Limite · {Math.round(summary.limitPercent * 100)}%</Text>
+              <Text style={[styles.limitLabel, summary.limitPercent > 1 && styles.limitLabelWarn]}>
+              Limite · {Math.round(summary.limitPercent * 100)}%
+            </Text>
               <Text style={styles.limitValue}>
                 {formatKz(summary.expenses)} / {formatKz(summary.limit)}
               </Text>
             </View>
-            <ProgressBar value={summary.limitPercent} tone="white" />
+            <ProgressBar value={Math.min(1, summary.limitPercent)} tone={summary.limitPercent > 1 ? 'warn' : 'white'} />
           </View>
         ) : (
-          <Pressable accessibilityRole="button" onPress={() => router.push('/settings')} style={styles.setLimit}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Definir limite mensal"
+            onPress={openSettings}
+            style={({ pressed }) => [styles.setLimit, pressed && styles.setLimitPressed]}
+          >
             <Plus color={colors.glassText} size={16} strokeWidth={2} />
             <Text style={styles.setLimitText}>Definir limite mensal</Text>
           </Pressable>
@@ -90,7 +119,11 @@ export default function HomeScreen() {
           </Text>
         </Panel>
 
-        <Pressable accessibilityRole="button" onPress={() => router.push('/salary')}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Próximo salário, ${summary.nextSalary ? formatShortPt(summary.nextSalary) : 'por definir'}`}
+          onPress={openSalary}
+        >
           <Panel style={styles.panelHalf}>
             <Text style={styles.panelLabel}>Próximo salário ›</Text>
             <Text style={styles.panelValue}>
@@ -108,10 +141,10 @@ export default function HomeScreen() {
           icon={Receipt}
           label="Contas fixas"
           badge={billsDue}
-          onPress={() => router.push('/bill')}
+          onPress={openBills}
         />
-        <QuickAction icon={Wallet} label="Salário" onPress={() => router.push('/salary')} />
-        <QuickAction icon={Download} label="Backup" onPress={() => router.push('/backup')} />
+        <QuickAction icon={Wallet} label="Salário" onPress={openSalary} />
+        <QuickAction icon={Download} label="Backup" onPress={openBackup} />
       </View>
 
       <Panel>
@@ -135,23 +168,50 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Movimentos</Text>
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Procurar por nota ou categoria"
-        />
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Movimentos</Text>
+          {truncated ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Ver todos os ${movements.length} movimentos do mês`}
+              onPress={() => setShowAll(true)}
+              hitSlop={8}
+              style={({ pressed }) => [styles.seeAll, pressed && styles.seeAllPressed]}
+            >
+              <Text style={styles.seeAllText}>Ver todos ({movements.length})</Text>
+              <ChevronRight color={colors.accentSoft} size={14} strokeWidth={2.5} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        <SearchInput value={search} onChange={setSearch} placeholder="Procurar por nota ou categoria" />
+
         <View style={styles.list}>
           {visible.map((movement) => (
             <MovementRow
               key={movement.id}
               movement={movement}
               today={today}
-              onPress={() => router.push(`/movement/${movement.id}`)}
+              onPress={() => openMovement(movement.id)}
             />
           ))}
+
           {visible.length === 0 ? (
-            <Text style={styles.empty}>{searching ? 'Sem resultados para a pesquisa.' : 'Sem movimentos este mês.'}</Text>
+            <Text style={styles.empty}>
+              {searching ? 'Sem resultados para a pesquisa.' : 'Sem movimentos este mês.'}
+            </Text>
+          ) : null}
+
+          {truncated ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Ver mais movimentos"
+              onPress={() => setShowAll(true)}
+              style={({ pressed }) => [styles.loadMore, pressed && styles.loadMorePressed]}
+            >
+              <Text style={styles.loadMoreText}>Ver mais</Text>
+              <ChevronRight color={colors.accentSoft} size={16} strokeWidth={2.5} />
+            </Pressable>
           ) : null}
         </View>
       </View>
@@ -201,6 +261,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.glassText,
   },
+  limitLabelWarn: {
+    fontFamily: fonts.bold,
+    color: colors.warn,
+  },
   limitValue: {
     fontFamily: fonts.regular,
     fontSize: 13,
@@ -213,6 +277,9 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: spacing.lg,
     minHeight: 44,
+  },
+  setLimitPressed: {
+    opacity: 0.6,
   },
   setLimitText: {
     fontFamily: fonts.medium,
@@ -253,6 +320,44 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 16,
     color: colors.text,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  seeAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    minHeight: 28,
+  },
+  seeAllPressed: {
+    opacity: 0.6,
+  },
+  seeAllText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.accentSoft,
+  },
+  loadMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    minHeight: 44,
+    marginTop: spacing.sm,
+    borderRadius: radius.control,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+  },
+  loadMorePressed: {
+    opacity: 0.6,
+  },
+  loadMoreText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.accentSoft,
   },
   list: {
     marginTop: spacing.xs,

@@ -130,7 +130,14 @@ export default function DebtFormScreen() {
             />
           </Panel>
 
-          <Pressable onPress={handleSave} style={[styles.saveWrap, !valid && styles.saveDisabled]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Guardar dívida"
+            accessibilityState={{ disabled: !valid }}
+            disabled={!valid}
+            onPress={handleSave}
+            style={[styles.saveWrap, !valid && styles.saveDisabled]}
+          >
             <LinearGradient
               colors={gradients.primary.colors}
               start={gradients.primary.start}

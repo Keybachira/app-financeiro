@@ -164,7 +164,9 @@ export function debtView(debt: DebtRow, today: string) {
     debt,
     paid,
     remaining,
-    progress: debt.total > 0 ? paid / debt.total : 0,
+    // Clamp: editar o total para baixo do já pago produzia "Pago 50 000 de
+    // 30 000" e um progresso acima de 100%.
+    progress: debt.total > 0 ? Math.min(1, paid / debt.total) : 0,
     status: debtStatus(debt.total, paid, debt.due_date, today) as 'paid' | 'overdue' | 'open',
   };
 }
@@ -180,14 +182,10 @@ function insertPayment(id: string, amount: number, date: string): void {
 
   const movementId = Crypto.randomUUID();
 
-  db.runSync('INSERT INTO movements (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)', [
-    movementId,
-    debt.kind === 'owe' ? 'expense' : 'income',
-    amount,
-    'Dívidas',
-    date,
-    `Pagamento · ${debt.party}`,
-  ]);
+  db.runSync(
+    'INSERT INTO movements (id, type, amount, category, date, note, origin) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [movementId, debt.kind === 'owe' ? 'expense' : 'income', amount, 'Dívidas', date, `Pagamento · ${debt.party}`, 'debt']
+  );
 
   db.runSync('INSERT INTO debt_payments (id, debt_id, amount, date, movement_id) VALUES (?, ?, ?, ?, ?)', [
     Crypto.randomUUID(),

@@ -7,7 +7,9 @@ export function ScreenHeader({ title, right }: { title: string; right?: ReactNod
   return (
     <View style={styles.header}>
       <Text style={styles.title}>{title}</Text>
-      {right}
+      {/* O slot era renderizado cru: `styles.right` estava definido mas nunca
+          aplicado, por isso vários ícones no `right` ficavam colados sem gap. */}
+      {right ? <View style={styles.right}>{right}</View> : null}
     </View>
   );
 }
@@ -33,7 +35,3 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 });
-
-export function ScreenHeaderActions({ children }: { children: ReactNode }) {
-  return <View style={styles.right}>{children}</View>;
-}

@@ -216,7 +216,12 @@ export function MovementEditor({ movement }: { movement: MovementRow | null }) {
             onBackspace={() => setDigits((current) => current.slice(0, -1))}
           />
 
-          <Pressable accessibilityRole="button" onPress={handleSave} style={styles.saveWrap}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Guardar movimento"
+            onPress={handleSave}
+            style={styles.saveWrap}
+          >
             <LinearGradient
               colors={gradients.primary.colors}
               start={gradients.primary.start}

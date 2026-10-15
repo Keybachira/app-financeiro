@@ -55,7 +55,9 @@ export function LockScreen({ onUnlocked }: { onUnlocked?: () => void }) {
         <View style={styles.keypad}>
           <AmountKeypad
             onDigit={(key) =>
-              setDigits((current) => (current.length >= 4 ? current : current + key))
+              // `slice` é obrigatório: a tecla "000" somaria 3 dígitos de uma vez e
+// "12" + "000" = "12000" ficaria com 5 caracteres, nunca iguais a 4.
+setDigits((current) => (current + key).slice(0, 4))
             }
             onBackspace={() => {
               setError(false);

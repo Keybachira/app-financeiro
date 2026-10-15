@@ -1,7 +1,13 @@
 import { useId } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { Defs, Line, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
 import { colors } from '../theme';
+
+// viewBox em unidades de layout; a largura real do ecrã é medida em runtime.
+const VIEW_WIDTH = 310;
+const HEIGHT = 56;
+const CHART_PADDING = 16;
 
 export function DailyBarChart({
   month,
@@ -17,8 +23,14 @@ export function DailyBarChart({
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const gradientId = `daily${uid}`;
 
-  const width = 310;
-  const height = 56;
+  // O viewBox é medido na largura real disponível. Com `preserveAspectRatio="none"`
+  // e width="100%", o SVG era esticado ~1.3× em ecrãs largos: os cantos
+  // arredondados viravam elipses, o traço da linha do limite ficava com
+  // espessura desigual e a altura das barras deixava de ser proporcional ao
+  // valor. Aqui o mapa é 1:1 com os píxeis do ecrã.
+  const { width: screenWidth } = useWindowDimensions();
+  const width = Math.max(1, Math.round(screenWidth - CHART_PADDING * 2));
+  const height = HEIGHT;
   const gap = daysInMonth > 20 ? 2 : 6;
   const barWidth = Math.max(2, Math.floor((width - gap * (daysInMonth - 1)) / daysInMonth));
 
@@ -33,7 +45,6 @@ export function DailyBarChart({
       width="100%"
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
       accessibilityRole="image"
       accessibilityLabel="Gastos por dia do mês, com a linha do limite diário"
     >
@@ -43,10 +54,6 @@ export function DailyBarChart({
           <Stop offset="1" stopColor="#3C74F5" />
         </LinearGradient>
       </Defs>
-
-      {limitY !== null ? (
-        <Line x1="0" y1={limitY} x2={width} y2={limitY} stroke={colors.textMuted} strokeWidth="1" strokeDasharray="3 4" />
-      ) : null}
 
       {Array.from({ length: daysInMonth }, (_, index) => {
         const day = index + 1;
@@ -73,6 +80,12 @@ export function DailyBarChart({
           />
         );
       })}
+
+      {/* A linha do limite é desenhada DEPOIS das barras: ao contrário, as barras
+          mais altas tapavam-na por completo. */}
+      {limitY !== null ? (
+        <Line x1="0" y1={limitY} x2={width} y2={limitY} stroke={colors.textMuted} strokeWidth="1" strokeDasharray="3 4" />
+      ) : null}
     </Svg>
   );
 }

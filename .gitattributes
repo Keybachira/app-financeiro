@@ -1,0 +1,23 @@
+# Normalização de fim de linha. Sem isto, editar um ficheiro no Windows
+# converte LF em CRLF e o `git diff` mostra o ficheiro inteiro como alterado
+# (188 linhas em PressableScale.tsx, por exemplo), escondendo a alteração real.
+* text=auto eol=lf
+
+# Ficheiros que devem mesmo ter CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binários: nunca tocar.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.zip binary

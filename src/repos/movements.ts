@@ -1,10 +1,23 @@
 import * as Crypto from 'expo-crypto';
 
-import { addDays, todayISO } from '../domain/dates';
+import { addDays, monthKey, todayISO } from '../domain/dates';
+import { isCategory } from '../domain/categories';
 import { normalizeNote } from '../domain/categoryHints';
 import { db } from '../db/client';
 
 export type MovementType = 'income' | 'expense';
+
+/**
+ * `manual` = escrito pelo utilizador; os restantes são gerados pelo sistema.
+ * Só movimentos `manual` alimentam `category_hints`.
+ */
+export type MovementOrigin = 'manual' | 'bill' | 'debt' | 'project' | 'salary';
+
+export const MOVEMENT_ORIGINS: readonly MovementOrigin[] = ['manual', 'bill', 'debt', 'project', 'salary'];
+
+export function isMovementOrigin(value: unknown): value is MovementOrigin {
+  return typeof value === 'string' && (MOVEMENT_ORIGINS as readonly string[]).includes(value);
+}
 
 export type MovementRow = {
   id: string;
@@ -15,6 +28,7 @@ export type MovementRow = {
   note: string | null;
   bill_id: string | null;
   project_payment_id: string | null;
+  origin: MovementOrigin;
 };
 
 export type MovementInput = {
@@ -23,6 +37,8 @@ export type MovementInput = {
   category: string;
   date: string;
   note?: string | null;
+  /** Omisso = `manual`. Só os chamadores internos o definem. */
+  origin?: MovementOrigin;
 };
 
 type MovementDbRow = {
@@ -34,6 +50,7 @@ type MovementDbRow = {
   note: string | null;
   bill_id: string | null;
   project_payment_id: string | null;
+  origin: string;
 };
 
 function mapRow(row: MovementDbRow): MovementRow {
@@ -46,6 +63,7 @@ function mapRow(row: MovementDbRow): MovementRow {
     note: row.note,
     bill_id: row.bill_id,
     project_payment_id: row.project_payment_id,
+    origin: isMovementOrigin(row.origin) ? row.origin : 'manual',
   };
 }
 
@@ -88,6 +106,7 @@ export function getMovement(id: string): MovementRow | null {
 }
 
 export function createMovement(input: MovementInput): MovementRow {
+  const origin = input.origin ?? 'manual';
   const row: MovementRow = {
     id: Crypto.randomUUID(),
     type: input.type,
@@ -97,18 +116,18 @@ export function createMovement(input: MovementInput): MovementRow {
     note: input.note ?? null,
     bill_id: null,
     project_payment_id: null,
+    origin,
   };
 
   db.withTransactionSync(() => {
-    db.runSync('INSERT INTO movements (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)', [
-      row.id,
-      row.type,
-      row.amount,
-      row.category,
-      row.date,
-      row.note,
-    ]);
-    recordCategoryHint(row.note, row.category);
+    db.runSync(
+      'INSERT INTO movements (id, type, amount, category, date, note, origin) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [row.id, row.type, row.amount, row.category, row.date, row.note, row.origin]
+    );
+
+    if (origin === 'manual') {
+      recordCategoryHint(row.note, row.category);
+    }
   });
 
   return row;
@@ -129,9 +148,21 @@ export function updateMovement(id: string, input: MovementInput): void {
     // (valor em falta de dívidas/projetos e progresso de contas fixas).
     db.runSync('UPDATE debt_payments SET amount = ?, date = ? WHERE movement_id = ?', [input.amount, input.date, id]);
     db.runSync('UPDATE project_payments SET amount = ?, date = ? WHERE movement_id = ?', [input.amount, input.date, id]);
-    db.runSync('UPDATE bill_payments SET amount = ? WHERE movement_id = ?', [input.amount, id]);
+    db.runSync('UPDATE bill_payments SET amount = ?, month = ?, paid_on = ? WHERE movement_id = ?', [
+      input.amount,
+      monthKey(input.date),
+      input.date,
+      id,
+    ]);
 
-    recordCategoryHint(input.note ?? null, input.category);
+    // Um movimento gerado pelo sistema mantém a nota automática que o originou
+    // ("Pagamento · Carlos", "Projeto · Site X"): editar a data ou o valor não
+    // pode transformá-lo numa sugestão de categoria para o utilizador.
+    const stored = db.getFirstSync<{ origin: string }>('SELECT origin FROM movements WHERE id = ?', [id]);
+
+    if (stored === null || stored.origin === 'manual') {
+      recordCategoryHint(input.note ?? null, input.category);
+    }
   });
 }
 
@@ -142,19 +173,25 @@ export function deleteMovement(id: string): void {
 export function restoreMovement(row: MovementRow): void {
   try {
     db.runSync(
-      `INSERT INTO movements (id, type, amount, category, date, note, bill_id, project_payment_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [row.id, row.type, row.amount, row.category, row.date, row.note, row.bill_id, row.project_payment_id]
+      `INSERT INTO movements (id, type, amount, category, date, note, bill_id, project_payment_id, origin)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        row.id,
+        row.type,
+        row.amount,
+        row.category,
+        row.date,
+        row.note,
+        row.bill_id,
+        row.project_payment_id,
+        row.origin,
+      ]
     );
   } catch {
-    db.runSync('INSERT INTO movements (id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?)', [
-      row.id,
-      row.type,
-      row.amount,
-      row.category,
-      row.date,
-      row.note,
-    ]);
+    db.runSync(
+      'INSERT INTO movements (id, type, amount, category, date, note, origin) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [row.id, row.type, row.amount, row.category, row.date, row.note, row.origin]
+    );
   }
 }
 
@@ -226,11 +263,50 @@ export function recordCategoryHint(note: string | null, category: string): void 
     return;
   }
 
+  // Segunda barreira: só categorias reais podem virar sugestão, mesmo que um
+  // chamador automático se escape ao filtro por `origin`.
+  if (!isCategory(category)) {
+    return;
+  }
+
   db.runSync(
     `INSERT INTO category_hints (keyword, category, uses, last_used) VALUES (?, ?, 1, ?)
      ON CONFLICT (keyword) DO UPDATE SET category = excluded.category, uses = uses + 1, last_used = excluded.last_used`,
     [keyword, category, todayISO()]
   );
+}
+
+/**
+ * Remove das sugestões as palavras-chave que vieram exclusivamente de notas
+ * geradas pelo sistema ("Salário", "Pagamento · Carlos", "Projeto · Site X").
+ *
+ * Idempotente e seguro: uma palavra-chave que também apareça num movimento
+ * manual é preservada. Corre no arranque para apanhar tanto a base poluída
+ * antes desta migração como movimentos automáticos criados entretanto.
+ */
+export function purgeAutomaticCategoryHints(): void {
+  const manualKeywords = new Set(
+    db
+      .getAllSync<{ note: string | null }>(
+        `SELECT DISTINCT note FROM movements WHERE origin = 'manual' AND note IS NOT NULL`
+      )
+      .map((row) => normalizeNote(row.note ?? ''))
+      .filter((keyword) => keyword.length > 0)
+  );
+
+  const automatic = db.getAllSync<{ note: string | null }>(
+    `SELECT DISTINCT note FROM movements WHERE origin <> 'manual' AND note IS NOT NULL`
+  );
+
+  for (const row of automatic) {
+    const keyword = normalizeNote(row.note ?? '');
+
+    if (keyword.length === 0 || manualKeywords.has(keyword)) {
+      continue;
+    }
+
+    db.runSync('DELETE FROM category_hints WHERE keyword = ?', [keyword]);
+  }
 }
 
 export function listCategoryHints(): { keyword: string; category: string }[] {

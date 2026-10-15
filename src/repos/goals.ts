@@ -77,11 +77,16 @@ export function reservedTotal(): number {
 }
 
 export function monthGoalOps(month: string): { deposits: number; withdraws: number } {
+  // O JOIN é obrigatório: `reservedTotal` filtra `archived_at IS NULL` e o saldo
+  // do mês tem de partir da mesma base, senão arquivar uma meta punha
+  // "Reservado 0 Kz" com o saldo do mês ainda a debitar o valor.
   const row = db.getFirstSync<{ deposits: number | null; withdraws: number | null }>(
     `SELECT
-       SUM(CASE WHEN kind = 'deposit' THEN amount ELSE 0 END) AS deposits,
-       SUM(CASE WHEN kind = 'withdraw' THEN amount ELSE 0 END) AS withdraws
-     FROM goal_ops WHERE substr(date, 1, 7) = ?`,
+       SUM(CASE WHEN o.kind = 'deposit' THEN o.amount ELSE 0 END) AS deposits,
+       SUM(CASE WHEN o.kind = 'withdraw' THEN o.amount ELSE 0 END) AS withdraws
+     FROM goal_ops o
+     JOIN goals g ON g.id = o.goal_id
+     WHERE substr(o.date, 1, 7) = ? AND g.archived_at IS NULL`,
     [month]
   );
 

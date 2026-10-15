@@ -15,8 +15,25 @@ type ProjectViewType = ReturnType<typeof useProjects>['active'][number];
 export function ProjectCard({ view, onPress }: { view: ProjectViewType; onPress: () => void }) {
   const due = view.project.due_date;
 
+  // Sem label, o TalkBack lia os textos filhos soltos, sem dizer que é um item
+  // navegável nem o estado do projeto.
+  const accessibilityLabel = [
+    view.project.name,
+    view.project.client,
+    projectChipLabel(view),
+    view.settled
+      ? `Recebido ${formatKz(view.received)} de ${formatKz(view.project.total)}${
+          view.project.delivered_at ? `, entregue a ${formatDayMonthPt(view.project.delivered_at)}` : ''
+        }`
+      : `Recebido ${formatKz(view.received)} de ${formatKz(view.project.total)}, falta ${formatKz(
+          view.remaining
+        )}${due ? `, entrega a ${formatDayMonthPt(due)}` : ''}`,
+  ]
+    .filter(Boolean)
+    .join('. ');
+
   return (
-    <Pressable accessibilityRole="button" onPress={onPress}>
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress}>
       <Panel>
         <View style={styles.row}>
           <IconTile icon={Briefcase} size={44} />
@@ -26,7 +43,9 @@ export function ProjectCard({ view, onPress }: { view: ProjectViewType; onPress:
             </Text>
             {view.project.client ? <Text style={styles.client}>{view.project.client}</Text> : null}
           </View>
-          <StatusChip label={projectChipLabel(view)} tone={view.settled ? 'accent' : 'accent'} />
+          {/* Os dois ramos eram 'accent': o chip nunca distinguia liquidado de
+              em curso, apesar de haver dois estados. */}
+          <StatusChip label={projectChipLabel(view)} tone={view.settled ? 'accent' : 'neutral'} />
         </View>
 
         <View style={styles.numbers}>
@@ -101,7 +120,11 @@ const styles = StyleSheet.create({
 
 export function ProjectsEmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onCreate}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Sem projetos. Toca para criar o primeiro."
+      onPress={onCreate}
+    >
       <Panel>
         <Text style={styles.target}>Sem projetos. Toca para criar o primeiro.</Text>
       </Panel>

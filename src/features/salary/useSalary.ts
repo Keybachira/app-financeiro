@@ -85,6 +85,7 @@ export function useAutoSalary(): void {
           category: 'Salário',
           date: pending.date,
           note: 'Salário',
+          origin: 'salary',
         });
         setSetting(KEYS.lastMonth, pending.month);
       } catch {
