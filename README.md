@@ -70,7 +70,7 @@ As ações principais ficam ao alcance do polegar.
 
 | Início | Metas | Dívidas | Projetos |
 | :-: | :-: | :-: | :-: |
-| ![Início](assets/screenshots/inicio.png) | ![Metas](assets/screenshots/metas.png) | ![Dívidas](assets/screenshots/dividas.png) | ![Projetos](assets/screenshots/projetos.png) |
+| ![Início](assets/screenshots/inicio.jpeg) | ![Metas](assets/screenshots/metas.jpeg) | ![Dívidas](assets/screenshots/dividas.jpeg) | ![Projetos](assets/screenshots/projetos.jpeg) |
 
 ## Como instalar
 
