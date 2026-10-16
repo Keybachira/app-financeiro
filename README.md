@@ -89,8 +89,8 @@ O App Financeiro é **totalmente grátis**. Queres pedir o link de instalação,
  
 | | Canal | Contacto |
 | :-: | --- | --- |
-| <img src="https://api.iconify.design/logos/whatsapp-icon.svg" width="20"> | **WhatsApp** | [NÚMERO_AQUI](https://wa.me/NÚMERO_AQUI) |
-| <img src="https://api.iconify.design/lucide/mail.svg?color=%235B8DFF" width="20"> | **Email** | [EMAIL_AQUI](mailto:EMAIL_AQUI) |
+| <img src="https://api.iconify.design/logos/whatsapp-icon.svg" width="20"> | **WhatsApp** | [956519417](https://wa.me/244956519417) |
+| <img src="https://api.iconify.design/lucide/mail.svg?color=%235B8DFF" width="20"> | **Email** | [keybachira242@gmail.com](mailto:keybachira242@gmail.com) |
 | <img src="https://api.iconify.design/logos/github-icon.svg" width="20"> | **GitHub** | [Keybachira](https://github.com/Keybachira) |
 | <img src="https://api.iconify.design/lucide/globe.svg?color=%235B8DFF" width="20"> | **Portfólio** | [aquiles-bachira.vercel.app](https://aquiles-bachira.vercel.app/) |
 
