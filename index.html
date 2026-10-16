@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-AO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>App Financeiro | Controlo de finanças pessoais em Kwanzas</title>
+<meta name="description" content="App de finanças pessoais em Kwanzas para Android e iOS. Registo rápido de despesas, metas, dívidas, projetos e contas fixas. 100% grátis. Funciona offline, sem conta e sem nuvem.">
+<meta name="theme-color" content="#070C24">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233B6EF0'/%3E%3Cpath d='M9 21l5-6 4 3 5-8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070C24; --navy:#0B1538; --panel:#101839; --blue:#3B6EF0; --sky:#8DB4FF; --royal:#1B3A9C;
+  --warn:#FFB547; --text:#fff; --muted:#9AA6C9; --line:rgba(255,255,255,.12);
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  color-scheme:dark; box-sizing:border-box;
+  padding-top:var(--safe-t); padding-bottom:var(--safe-b);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+:focus-visible{outline:3px solid var(--sky);outline-offset:3px;border-radius:6px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* Header */
+header{position:sticky;top:0;z-index:20;background:rgba(7,12,36,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{font-weight:800;letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;gap:10px}
+.brand i{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#6B9BFF,#2F5FE0);display:grid;place-items:center}
+.brand svg{width:16px;height:16px;stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nav ul{display:flex;gap:28px;list-style:none;margin:0;padding:0;color:var(--muted);font-size:15px}
+.nav ul a{text-decoration:none}.nav ul a:hover{color:#fff}
+.btn{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 24px;border-radius:999px;font:700 16px/1 inherit;font-family:inherit;text-decoration:none;border:0;cursor:pointer;background:linear-gradient(180deg,#6B9BFF,#2F5FE0);color:#fff;box-shadow:0 10px 30px -8px rgba(59,110,240,.7);transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 34px -8px rgba(59,110,240,.9)}
+.btn.ghost{background:transparent;box-shadow:none;border:1px solid var(--line)}
+.btn.ghost:hover{background:rgba(255,255,255,.06)}
+.btn.sm{min-height:40px;padding:0 18px;font-size:15px}
+
+/* Hero */
+.hero{position:relative;padding:72px 0 96px;background:
+  radial-gradient(900px 600px at 85% -10%,rgba(63,120,242,.55),transparent 60%),
+  radial-gradient(700px 500px at 0% 40%,rgba(27,58,156,.45),transparent 65%)}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+h1{font-size:clamp(44px,6.4vw,84px);line-height:.98;letter-spacing:-.045em;font-weight:800;margin:0 0 24px}
+.lead{font-size:20px;color:#C9D3F2;max-width:30em;margin:0 0 36px}
+.cta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:28px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
+.chips li{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 14px 6px 10px}
+.chips svg.i{width:16px;height:16px;color:var(--sky)}
+
+/* Phone */
+.stage{position:relative;display:grid;place-items:center;min-height:600px}
+.phone{width:296px;border-radius:44px;padding:10px;background:linear-gradient(160deg,#2a3a78,#0a1030);box-shadow:0 50px 90px -20px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.1) inset,0 0 120px -10px rgba(63,120,242,.55);transform:rotate(3deg)}
+.screen{border-radius:36px;overflow:hidden;background:linear-gradient(180deg,#3F78F2 0%,#1B3A9C 28%,#0B1538 60%,#070C24 100%);padding:22px 18px 18px;min-height:560px}
+.sb{display:flex;justify-content:space-between;font-size:11px;font-weight:700;opacity:.9;margin-bottom:22px}
+.sb span:last-child{width:24px;height:10px;border-radius:3px;border:1.5px solid #fff}
+.lbl{font-size:12px;color:#CFE0FF}
+.bal{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums}
+.bal small,.big small{font-size:.45em;opacity:.7;font-weight:500;margin-left:4px}
+.glass{margin:16px 0;border-radius:22px;padding:16px;background:linear-gradient(160deg,rgba(255,255,255,.22),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(10px)}
+.big{font-size:30px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.sub{font-size:11px;color:#CFE0FF}
+.bars{display:flex;align-items:flex-end;gap:5px;height:64px;margin-top:12px}
+.bars b{flex:1;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,#8DB4FF,#3B6EF0);height:var(--h);transform-origin:bottom;animation:grow .9s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--n)*45ms + .3s)}
+.bars b.w{background:linear-gradient(180deg,#FFD08A,var(--warn))}
+@keyframes grow{from{transform:scaleY(0)}}
+.mv{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid rgba(255,255,255,.1);font-size:13px}
+.mv i{width:30px;height:30px;border-radius:10px;background:rgba(255,255,255,.1);display:grid;place-items:center;flex:none}
+.mv i svg{width:15px;height:15px;stroke:#CFE0FF;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mv span{flex:1}.mv em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
+.mv em.in{color:#8DB4FF}
+.float{position:absolute;border-radius:18px;padding:12px 16px;background:rgba(16,24,57,.85);border:1px solid var(--line);backdrop-filter:blur(10px);font-size:13px;box-shadow:0 20px 40px -10px rgba(0,0,0,.6)}
+.float b{display:block;font-size:18px;letter-spacing:-.02em}
+.f1{left:-4%;top:18%}.f2{right:-2%;bottom:14%}
+
+/* Trio */
+.trio{border-block:1px solid var(--line);background:var(--navy)}
+.trio .wrap{display:grid;grid-template-columns:repeat(3,1fr)}
+.trio div{padding:44px 28px;border-left:1px solid var(--line)}
+.trio div:first-child{border-left:0;padding-left:0}
+.trio strong{display:block;font-size:clamp(30px,4vw,48px);letter-spacing:-.04em;line-height:1.05;font-weight:800}
+.trio span{color:var(--muted);font-size:16px}
+
+/* Sections */
+section{padding:112px 0}
+h2{font-size:clamp(34px,4.6vw,58px);line-height:1.04;letter-spacing:-.035em;font-weight:800;margin:0 0 20px}
+.intro{color:var(--muted);font-size:19px;max-width:28em;margin:0}
+.feat{display:grid;grid-template-columns:.8fr 1.2fr;gap:64px}
+.feat .intro{position:sticky;top:110px;align-self:start}
+.list{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+.row{padding:28px 28px 28px 0;border-bottom:1px solid var(--line)}
+.row:nth-child(even){padding-left:28px;padding-right:0;border-left:1px solid var(--line)}
+.row svg.i{width:28px;height:28px;color:var(--sky);margin-bottom:14px}
+.row h3{margin:0 0 6px;font-size:20px;letter-spacing:-.01em}
+.row p{margin:0;color:var(--muted);font-size:15.5px}
+
+/* Privacy */
+.priv{background:linear-gradient(160deg,#1B3A9C 0%,#0B1538 70%);border-block:1px solid var(--line)}
+.priv .wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:56px;align-items:center}
+.priv h2{font-size:clamp(36px,5.4vw,70px)}
+.priv p{color:#C9D3F2;max-width:30em}
+.vault{border-radius:28px;padding:28px;background:rgba(7,12,36,.55);border:1px solid var(--line)}
+.vault ul{list-style:none;margin:0;padding:0}
+.vault li{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--line);font-size:15.5px;color:#DCE4FF}
+.vault li:first-child{border-top:0}
+.vault svg.i{color:var(--sky);margin-top:2px}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:56px;counter-reset:s}
+.step{padding:0 32px 0 0;position:relative}
+.step+.step{padding-left:32px;border-left:1px solid var(--line)}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:linear-gradient(180deg,#6B9BFF,#2F5FE0);font-weight:800;margin-bottom:20px}
+.step h3{margin:0 0 8px;font-size:22px;letter-spacing:-.01em}
+.step p{margin:0;color:var(--muted)}
+
+/* FAQ */
+.faq{max-width:820px}
+details{border-top:1px solid var(--line)}details:last-of-type{border-bottom:1px solid var(--line)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:24px 0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";width:12px;height:12px;border-right:2.5px solid var(--sky);border-bottom:2.5px solid var(--sky);transform:rotate(45deg);transition:transform .2s;flex:none;margin-right:6px}
+details[open] summary::after{transform:rotate(-135deg)}
+details p{margin:0 0 26px;color:var(--muted);max-width:40em}
+
+/* Contact */
+.contact{position:relative;text-align:center;background:radial-gradient(800px 420px at 50% 100%,rgba(63,120,242,.55),transparent 70%)}
+.contact h2{font-size:clamp(38px,6vw,76px);max-width:14em;margin:0 auto 20px}
+.contact .intro{margin:0 auto 36px}
+.contact .cta{justify-content:center}
+.wa{background:linear-gradient(180deg,#34D673,#16A34A);box-shadow:0 10px 30px -8px rgba(22,163,74,.7)}
+.wa:hover{box-shadow:0 14px 34px -8px rgba(22,163,74,.9)}
+
+footer{border-top:1px solid var(--line);padding:32px 0 40px;color:var(--muted);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+
+@media (max-width:900px){
+  .nav ul{display:none}
+  .hero{padding:40px 0 64px}
+  .hero .wrap,.feat,.priv .wrap{grid-template-columns:1fr}
+  .feat{gap:36px}.feat .intro{position:static}
+  .stage{min-height:0;padding-top:24px}.f1{left:0}.f2{right:0}
+  .trio .wrap{grid-template-columns:1fr}
+  .trio div{border-left:0;border-top:1px solid var(--line);padding:28px 0}.trio div:first-child{border-top:0}
+  .list{grid-template-columns:1fr}
+  .row,.row:nth-child(even){padding:24px 0;border-left:0}
+  .steps{grid-template-columns:1fr;gap:36px}
+  .step,.step+.step{padding:0;border-left:0}
+  section{padding:80px 0}
+}
+@media (max-width:420px){.phone{width:268px}.float{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="wifioff" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/><path d="M19 12.86a10 10 0 0 0-2.01-1.52"/><path d="M2 8.82a15 15 0 0 1 4.18-2.4"/><path d="M22 8.82a15 15 0 0 0-11.29-2.8"/><path d="m2 2 20 20"/></symbol>
+  <symbol id="zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+  <symbol id="swap" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+  <symbol id="target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></symbol>
+  <symbol id="brief" viewBox="0 0 24 24"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></symbol>
+  <symbol id="cash" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
+  <symbol id="cal" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+  <symbol id="wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9M13 17V5M8 17v-3"/></symbol>
+  <symbol id="save" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+  <symbol id="mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  <symbol id="hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-5.9-2.4L3.4 16a2 2 0 0 1 3.2-2.4L8 15"/></symbol>
+</svg>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#topo"><i><svg viewBox="0 0 24 24"><path d="M4 17l6-7 4 3 6-8"/></svg></i>App Financeiro</a>
+    <ul>
+      <li><a href="#funcionalidades">Funcionalidades</a></li>
+      <li><a href="#privacidade">Privacidade</a></li>
+      <li><a href="#como-obter">Como obter</a></li>
+      <li><a href="#perguntas">Perguntas</a></li>
+    </ul>
+    <a class="btn sm" href="#contacto">Falar comigo</a>
+  </div>
+</header>
+
+<main id="topo">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Sabe quanto podes gastar hoje.</h1>
+        <p class="lead">O App Financeiro mostra, todos os dias, o valor livre até ao próximo salário. Em Kwanzas, sem criar conta e sem precisar de internet.</p>
+        <div class="cta">
+          <a class="btn wa" data-wa href="#contacto"><svg class="i"><use href="#chat"/></svg>Descarregar grátis</a>
+          <a class="btn ghost" href="#funcionalidades">Ver o que faz</a>
+        </div>
+        <ul class="chips">
+          <li><svg class="i"><use href="#zap"/></svg>100% grátis</li>
+          <li><svg class="i"><use href="#shield"/></svg>Dados só no telemóvel</li>
+          <li><svg class="i"><use href="#wifioff"/></svg>Funciona offline</li>
+          <li><svg class="i"><use href="#wallet"/></svg>Kwanzas (Kz)</li>
+        </ul>
+      </div>
+
+      <div class="stage" aria-label="Exemplo do ecrã inicial da app">
+        <div class="float f1"><span class="sub">Próximo salário</span><b>em 9 dias</b></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="sb"><span>9:41</span><span></span></div>
+            <div class="lbl">Saldo do mês</div>
+            <div class="bal">186 400<small>Kz</small></div>
+            <div class="glass">
+              <div class="sub">Podes gastar por dia</div>
+              <div class="big"><span id="count" data-to="12500">12 500</span><small>Kz</small></div>
+              <div class="bars" aria-hidden="true">
+                <b style="--h:46%;--n:0"></b><b style="--h:62%;--n:1"></b><b style="--h:38%;--n:2"></b><b style="--h:74%;--n:3"></b><b style="--h:52%;--n:4"></b><b style="--h:90%;--n:5" class="w"></b><b style="--h:44%;--n:6"></b><b style="--h:58%;--n:7"></b><b style="--h:34%;--n:8"></b><b style="--h:66%;--n:9"></b>
+              </div>
+            </div>
+            <div class="mv"><i><svg viewBox="0 0 24 24"><use href="#cash"/></svg></i><span>Salário</span><em class="in">+ 400 000</em></div>
+            <div class="mv"><i><svg viewBox="0 0 24 24"><use href="#swap"/></svg></i><span>Táxi</span><em>- 3 500</em></div>
+            <div class="mv"><i><svg viewBox="0 0 24 24"><use href="#receipt"/></svg></i><span>Mercado</span><em>- 18 200</em></div>
+          </div>
+        </div>
+        <div class="float f2"><span class="sub">Meta: Viagem</span><b>64% poupado</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="trio">
+    <div class="wrap">
+      <div><strong>Sem conta</strong><span>Abres a app e começas a registar.</span></div>
+      <div><strong>Sem internet</strong><span>Funciona em qualquer lugar, a qualquer hora.</span></div>
+      <div><strong>Sem nuvem</strong><span>Os teus números não saem do telemóvel.</span></div>
+    </div>
+  </div>
+
+  <section id="funcionalidades">
+    <div class="wrap feat">
+      <div class="intro">
+        <h2>Tudo o que o teu dinheiro precisa.</h2>
+        <p>Do café de hoje à meta do próximo ano. Uma só app, pensada para o dia a dia em Angola.</p>
+      </div>
+      <div class="list">
+        <div class="row"><svg class="i"><use href="#zap"/></svg><h3>Registo em segundos</h3><p>Teclado de valores próprio, categoria sugerida e atalhos para o que mais usas. Enganaste-te? Toca em Desfazer.</p></div>
+        <div class="row"><svg class="i"><use href="#wallet"/></svg><h3>Limite por dia</h3><p>Define o limite do mês e vê quanto podes gastar hoje até ao próximo salário.</p></div>
+        <div class="row"><svg class="i"><use href="#target"/></svg><h3>Metas de poupança</h3><p>Define o objetivo e o prazo. A app diz quanto poupar por mês e se estás no ritmo.</p></div>
+        <div class="row"><svg class="i"><use href="#receipt"/></svg><h3>Dívidas</h3><p>Separa o que deves do que te devem. Pagamentos parciais e aviso de atrasos.</p></div>
+        <div class="row"><svg class="i"><use href="#brief"/></svg><h3>Projetos e clientes</h3><p>Vê o que já recebeste de cada trabalho e o que ainda falta receber.</p></div>
+        <div class="row"><svg class="i"><use href="#cash"/></svg><h3>Salário automático</h3><p>Diz o dia do salário e a app lança a receita. Se cair ao fim de semana, ajusta para sexta.</p></div>
+        <div class="row"><svg class="i"><use href="#cal"/></svg><h3>Contas fixas</h3><p>Renda, água, luz, internet. Vê o que falta pagar no mês e recebe lembretes.</p></div>
+        <div class="row"><svg class="i"><use href="#chart"/></svg><h3>Resumos e gráficos</h3><p>Percebe para onde vai o dinheiro, mês a mês, sem folhas de cálculo.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="priv" id="privacidade">
+    <div class="wrap">
+      <div>
+        <h2>O teu dinheiro é assunto teu.</h2>
+        <p>Não existe conta, servidor nem anúncios a analisar o que gastas. Tudo fica guardado no teu telemóvel. Quando quiseres mudar de aparelho, exportas uma cópia e importas no novo.</p>
+      </div>
+      <div class="vault">
+        <ul>
+          <li><svg class="i"><use href="#shield"/></svg>Sem registo e sem palavra-passe para esquecer</li>
+          <li><svg class="i"><use href="#wifioff"/></svg>Nada é enviado para a internet</li>
+          <li><svg class="i"><use href="#save"/></svg>Cópia de segurança em ficheiro, quando quiseres</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="como-obter">
+    <div class="wrap">
+      <h2>Começar é simples.</h2>
+      <p class="intro">Três passos e já estás a controlar o teu dinheiro.</p>
+      <div class="steps">
+        <div class="step"><h3>Fala comigo</h3><p>Manda mensagem pelo WhatsApp e diz se o teu telemóvel é Android ou iPhone. Não pagas nada.</p></div>
+        <div class="step"><h3>Recebe o link</h3><p>Envio-te o link de instalação certo e explico como instalar.</p></div>
+        <div class="step"><h3>Regista o primeiro gasto</h3><p>Define o teu limite e o dia do salário. Em dois minutos está pronto.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="perguntas" style="padding-top:0">
+    <div class="wrap">
+      <h2>Perguntas frequentes</h2>
+      <div class="faq" style="margin-top:36px">
+        <details><summary>Os meus dados estão seguros?</summary><p>Ficam apenas no teu telemóvel. Como não há servidor nem conta, ninguém mais tem acesso. Faz cópias de segurança com regularidade: se perderes o aparelho sem backup, os dados perdem-se também.</p></details>
+        <details><summary>Preciso de internet?</summary><p>Não. A app funciona totalmente offline. Só precisas de internet para a instalar.</p></details>
+        <details><summary>Posso mudar de telemóvel e levar os meus dados?</summary><p>Sim. Na secção de backup exportas um ficheiro e importas no novo telemóvel.</p></details>
+        <details><summary>Funciona em Android e iPhone?</summary><p>Sim, existem versões para os dois sistemas.</p></details>
+        <details><summary>Tem sincronização na nuvem?</summary><p>Não, e é de propósito. É uma decisão de privacidade: os teus dados só existem onde tu os guardares.</p></details>
+        <details><summary>Quanto custa?</summary><p>Nada. A app é totalmente grátis, sem subscrições, sem compras dentro da app e sem anúncios. Pede o link de instalação pelo WhatsApp ou email.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact" id="contacto">
+    <div class="wrap">
+      <h2>Pede a app e começa hoje.</h2>
+      <p class="intro">A app é totalmente grátis. Pede o link de instalação, tira uma dúvida ou deixa uma sugestão. Respondo o mais rápido possível.</p>
+      <div class="cta">
+        <a class="btn wa" data-wa href="https://wa.me/244000000000"><svg class="i"><use href="#chat"/></svg>Falar no WhatsApp</a>
+        <a class="btn ghost" data-mail href="mailto:email@exemplo.com"><svg class="i"><use href="#mail"/></svg>Enviar email</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>App Financeiro. Feito em Angola por <a href="https://github.com/Keybachira">Keybachira</a>.</span>
+    <span>Os valores no ecrã de exemplo são ilustrativos.</span>
+  </div>
+</footer>
+
+<script>
+/* Edita aqui os teus contactos (número com indicativo, sem + nem espaços) */
+const WHATSAPP = "244000000000";
+const EMAIL = "email@exemplo.com";
+const msg = encodeURIComponent("Olá! Quero saber mais sobre o App Financeiro.");
+document.querySelectorAll("[data-wa]").forEach(a => { if (a.getAttribute("href") !== "#contacto" || true) a.href = "https://wa.me/" + WHATSAPP + "?text=" + msg; });
+document.querySelectorAll("[data-mail]").forEach(a => a.href = "mailto:" + EMAIL);
+
+/* Contagem do valor diário, uma única vez ao abrir */
+(function () {
+  const el = document.getElementById("count");
+  if (!el || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const to = +el.dataset.to, t0 = performance.now(), dur = 1400;
+  const fmt = n => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+  (function tick(t) {
+    const p = Math.min((t - t0) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(to * e);
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+})();
+</script>
+</body>
+</html>
