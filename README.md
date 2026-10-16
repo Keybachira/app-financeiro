@@ -9,7 +9,7 @@
 ![Offline](https://img.shields.io/badge/Funciona-offline-2F5FE0)
 ![Privacidade](https://img.shields.io/badge/Dados-só%20no%20teu%20telemóvel-0B1538)
 
-[**Descarregar para Android**](LINK_ANDROID_AQUI) &nbsp;|&nbsp; [**Descarregar para iOS**](LINK_IOS_AQUI)
+[**Descarregar para Android**]([LINK_ANDROID_AQUI](https://github.com/Keybachira/app-financeiro/releases/tag/version-stable)) &nbsp;|&nbsp; [**Descarregar para iOS**]([LINK_IOS_AQUI](https://github.com/Keybachira/app-financeiro/releases/tag/version-stable))
 
 </div>
 
