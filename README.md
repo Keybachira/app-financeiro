@@ -117,10 +117,13 @@ Abre um pedido na secção [Issues](https://github.com/Keybachira/app-financeiro
 
 O projeto aceita contribuições. Lê o guia em [CONTRIBUTING.md](CONTRIBUTING.md).
 
+Landing Page [Link_Aqui](https://keybachira.github.io/app-financeiro/)
+
 ---
 
 <div align="center">
 
 Feito em Angola por [Keybachira](https://github.com/Keybachira)
+La
 
 </div>
