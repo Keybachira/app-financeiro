@@ -2,14 +2,22 @@ import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
+  ChevronLeft,
   ChevronRight,
   Download,
   Plus,
   Receipt,
+  Settings,
   Wallet,
 } from "lucide-react-native";
 
-import { monthDaysOf, monthNamePt, todayISO } from "../../src/domain/dates";
+import {
+  addMonths,
+  monthDaysOf,
+  monthKey,
+  monthNamePt,
+  todayISO,
+} from "../../src/domain/dates";
 import { formatShortPt } from "../../src/domain/dates";
 import { formatKz } from "../../src/domain/money";
 import { GlassCard } from "../../src/ui/components/GlassCard";
@@ -34,8 +42,16 @@ const LIMIT_PREVIEW = 6;
 
 export default function HomeScreen() {
   const today = todayISO();
+  const currentMonth = monthKey(today);
   const router = useRouter();
-  const { summary, refresh } = useMonthSummary(today);
+  // Mês em consulta: o atual ou qualquer um anterior. O resumo recebe uma data
+  // dentro desse mês — hoje no mês corrente, o dia 1 nos restantes. Com `today`
+  // fixo, "faltam X dias" e "podes gastar por dia" continuavam a falar do mês
+  // atual enquanto a lista mostrava outro mês.
+  const [selectedMonth, setSelectedMonth] = useState(() => monthKey(today));
+  const isCurrentMonth = selectedMonth === currentMonth;
+  const anchorDate = isCurrentMonth ? today : `${selectedMonth}-01`;
+  const { summary, refresh } = useMonthSummary(anchorDate);
   const [search, setSearch] = useState("");
   // Sem "ver todos", a lista parava em 6 com o texto "Movimentos" por cima, e
   // nada indicava que havia mais. O corte não era reversível de forma óbvia.
@@ -55,6 +71,16 @@ export default function HomeScreen() {
   const openBills = useGuardedAction(() => router.push("/bill"));
   const openSalary = useGuardedAction(() => router.push("/salary"));
   const openSettings = useGuardedAction(() => router.push("/settings"));
+  const showPreviousMonth = useCallback(() => {
+    setSelectedMonth((month) => monthKey(addMonths(`${month}-01`, -1)));
+  }, []);
+  const showNextMonth = useCallback(() => {
+    setSelectedMonth((month) => {
+      const next = monthKey(addMonths(`${month}-01`, 1));
+      // Não existe resumo para meses futuros.
+      return next > currentMonth ? month : next;
+    });
+  }, [currentMonth]);
   // `router.push` devolve void na tipagem mas o retorno é usado como callback.
   const openMovement = useCallback(
     (id: string) => {
@@ -74,11 +100,15 @@ export default function HomeScreen() {
   const searching = search.trim().length > 0;
   const truncated = !searching && !showAll && movements.length > LIMIT_PREVIEW;
   const visible = searching ? movements : movements.slice(0, LIMIT_PREVIEW);
-  const monthDays = monthDaysOf(today);
+  const monthDays = monthDaysOf(anchorDate);
+  const monthTitle =
+    selectedMonth.slice(0, 4) === currentMonth.slice(0, 4)
+      ? monthNamePt(anchorDate)
+      : `${monthNamePt(anchorDate)} ${selectedMonth.slice(0, 4)}`;
 
   return (
     <Screen
-      title={monthNamePt(`${summary.month}-01`)}
+      title="Início"
       right={
         <View style={styles.headerActions}>
           <IconButton
@@ -86,22 +116,85 @@ export default function HomeScreen() {
             label="Backup e exportar"
             onPress={openBackup}
           />
+          {/* As definições só eram alcançáveis pelo atalho "Definir limite
+              mensal", que desaparece assim que existe um limite. O acesso
+              passa a estar sempre disponível no cabeçalho. */}
+          <IconButton
+            icon={Settings}
+            label="Definições"
+            onPress={openSettings}
+          />
         </View>
       }
       floating={
         <Fab icon={Plus} label="Novo movimento" onPress={openNewMovement} />
       }
     >
+      <View style={styles.monthRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Mês anterior"
+          onPress={showPreviousMonth}
+          hitSlop={10}
+          style={styles.monthArrow}
+        >
+          <ChevronLeft color={colors.text} size={22} strokeWidth={2.5} />
+        </Pressable>
+        <Text accessibilityRole="header" style={styles.monthTitle}>
+          {monthTitle}
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Mês seguinte"
+          accessibilityState={{ disabled: isCurrentMonth }}
+          disabled={isCurrentMonth}
+          onPress={showNextMonth}
+          hitSlop={10}
+          style={styles.monthArrow}
+        >
+          <ChevronRight
+            color={isCurrentMonth ? colors.textMuted : colors.text}
+            size={22}
+            strokeWidth={2.5}
+          />
+        </Pressable>
+        {!isCurrentMonth ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Voltar ao mês atual"
+            onPress={() => setSelectedMonth(currentMonth)}
+            hitSlop={6}
+            style={({ pressed }) => [
+              styles.todayChip,
+              pressed && styles.todayChipPressed,
+            ]}
+          >
+            <Text style={styles.todayChipText}>Hoje</Text>
+          </Pressable>
+        ) : null}
+      </View>
+
       <GlassCard>
-        <Text style={styles.cardLabel}>Saldo do mês</Text>
+        <Text style={styles.cardLabel}>Saldo em carteira</Text>
         <MoneyText value={summary.balance} size="balance" />
-        <View style={styles.cardChip}>
-          <Text style={styles.cardChipText}>
-            Reservado em metas · {formatKz(summary.reserved)}
-          </Text>
+        <View style={styles.cardChips}>
+          <View style={styles.cardChip}>
+            <Text style={styles.cardChipText}>
+              {
+                // Sinal explícito: sem o `+`, um mês positivo parecia não ter
+                // alterado o saldo que passou a ser acumulado.
+                `${isCurrentMonth ? "Este mês" : "No mês"} · ${summary.monthBalance > 0 ? "+" : ""}${formatKz(summary.monthBalance)}`
+              }
+            </Text>
+          </View>
+          <View style={styles.cardChip}>
+            <Text style={styles.cardChipText}>
+              Reservado em metas · {formatKz(summary.reserved)}
+            </Text>
+          </View>
         </View>
 
-        {summary.limit !== null ? (
+        {isCurrentMonth && summary.limit !== null ? (
           <View style={styles.limitBlock}>
             <View style={styles.limitRow}>
               <Text
@@ -121,7 +214,7 @@ export default function HomeScreen() {
               tone={summary.limitPercent > 1 ? "warn" : "white"}
             />
           </View>
-        ) : (
+        ) : isCurrentMonth ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Definir limite mensal"
@@ -134,56 +227,73 @@ export default function HomeScreen() {
             <Plus color={colors.glassText} size={16} strokeWidth={2} />
             <Text style={styles.setLimitText}>Definir limite mensal</Text>
           </Pressable>
-        )}
+        ) : null}
       </GlassCard>
 
-      <View style={styles.panels}>
-        <Panel style={styles.panelHalf}>
-          <Text style={styles.panelLabel}>Podes gastar</Text>
-          <MoneyText
-            value={
-              Number.isFinite(summary.spendable.amount)
-                ? summary.spendable.amount
-                : 0
-            }
-            size="lg"
-          />
-          <Text
-            style={[
-              styles.panelMeta,
-              summary.spendable.overLimit && styles.panelMetaWarn,
-            ]}
-          >
-            {summary.spendable.overLimit
-              ? "Já passaste o limite"
-              : `por dia · ${summary.daysToSalary} dias`}
-          </Text>
-        </Panel>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Próximo salário, ${summary.nextSalary ? formatShortPt(summary.nextSalary) : "por definir"}`}
-          onPress={openSalary}
-        >
+      {isCurrentMonth ? (
+        <View style={styles.panels}>
           <Panel style={styles.panelHalf}>
-            <Text style={styles.panelLabel}>Próximo salário ›</Text>
-            <Text style={styles.panelValue}>
-              {summary.nextSalary ? formatShortPt(summary.nextSalary) : "—"}
-            </Text>
-            <Text style={styles.panelMeta}>
-              {summary.nextSalary
-                ? `faltam ${summary.daysToSalary} dias`
-                : "por configurar"}
+            <Text style={styles.panelLabel}>Podes gastar</Text>
+            <MoneyText
+              value={
+                Number.isFinite(summary.spendable.amount)
+                  ? summary.spendable.amount
+                  : 0
+              }
+              size="lg"
+            />
+            <Text
+              style={[
+                styles.panelMeta,
+                summary.spendable.overLimit && styles.panelMetaWarn,
+              ]}
+            >
+              {summary.spendable.overLimit
+                ? "Já passaste o limite"
+                : `por dia · ${summary.daysToSalary} dias`}
             </Text>
           </Panel>
-        </Pressable>
-      </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Próximo salário, ${summary.nextSalary ? formatShortPt(summary.nextSalary) : "por definir"}`}
+            onPress={openSalary}
+          >
+            <Panel style={styles.panelHalf}>
+              <Text style={styles.panelLabel}>Próximo salário ›</Text>
+              <Text style={styles.panelValue}>
+                {summary.nextSalary ? formatShortPt(summary.nextSalary) : "—"}
+              </Text>
+              <Text style={styles.panelMeta}>
+                {summary.nextSalary
+                  ? `faltam ${summary.daysToSalary} dias`
+                  : "por configurar"}
+              </Text>
+            </Panel>
+          </Pressable>
+        </View>
+      ) : (
+        // Num mês fechado, "podes gastar por dia" e "próximo salário" não têm
+        // significado: mostramos o que entrou e saiu nesse mês.
+        <View style={styles.panels}>
+          <Panel style={styles.panelHalf}>
+            <Text style={styles.panelLabel}>Gastaste</Text>
+            <MoneyText value={summary.expenses} size="lg" />
+            <Text style={styles.panelMeta}>no mês</Text>
+          </Panel>
+          <Panel style={styles.panelHalf}>
+            <Text style={styles.panelLabel}>Recebeste</Text>
+            <MoneyText value={summary.income} size="lg" />
+            <Text style={styles.panelMeta}>no mês</Text>
+          </Panel>
+        </View>
+      )}
 
       <View style={styles.quickRow}>
         <QuickAction
           icon={Receipt}
           label="Contas fixas"
-          badge={billsDue}
+          badge={isCurrentMonth ? billsDue : 0}
           onPress={openBills}
         />
         <QuickAction icon={Wallet} label="Salário" onPress={openSalary} />
@@ -195,7 +305,7 @@ export default function HomeScreen() {
           month={summary.month}
           data={summary.daily}
           daysInMonth={monthDays}
-          dailyLimit={summary.dailyLimit}
+          dailyLimit={isCurrentMonth ? summary.dailyLimit : null}
         />
       </Panel>
 
@@ -211,7 +321,11 @@ export default function HomeScreen() {
             />
           ))
         ) : (
-          <Text style={styles.empty}>Sem despesas registadas este mês.</Text>
+          <Text style={styles.empty}>
+            {isCurrentMonth
+              ? "Sem despesas registadas este mês."
+              : "Sem despesas registadas nesse mês."}
+          </Text>
         )}
       </View>
 
@@ -261,7 +375,9 @@ export default function HomeScreen() {
             <Text style={styles.empty}>
               {searching
                 ? "Sem resultados para a pesquisa."
-                : "Sem movimentos este mês."}
+                : isCurrentMonth
+                  ? "Sem movimentos este mês."
+                  : "Sem movimentos nesse mês."}
             </Text>
           ) : null}
 
@@ -290,6 +406,40 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  monthRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  monthArrow: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  monthTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 20,
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  todayChip: {
+    marginLeft: "auto",
+    minHeight: 28,
+    justifyContent: "center",
+    borderRadius: radius.chip,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    paddingHorizontal: 10,
+  },
+  todayChipPressed: {
+    opacity: 0.6,
+  },
+  todayChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.accentSoft,
+  },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
@@ -304,9 +454,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.glassText,
   },
-  cardChip: {
-    alignSelf: "flex-start",
+  cardChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
     marginTop: spacing.sm,
+  },
+  cardChip: {
     backgroundColor: colors.chipOnGlass,
     borderRadius: radius.control,
     paddingHorizontal: 12,
