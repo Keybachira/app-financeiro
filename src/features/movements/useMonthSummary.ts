@@ -3,8 +3,14 @@ import { useCallback, useMemo, useState } from 'react';
 import { monthNet, spendablePerDay, type SpendablePerDay } from '../../domain/balance';
 import { daysLeftInMonth, monthDaysOf, monthKey } from '../../domain/dates';
 import { daysUntilSalary, nextSalaryDate } from '../../domain/salary';
-import { categoryExpenseTotals, dailyExpenseTotals, expensesOnDate, monthTotals } from '../../repos/movements';
-import { monthGoalOps, reservedTotal } from '../../repos/goals';
+import {
+  categoryExpenseTotals,
+  dailyExpenseTotals,
+  expensesOnDate,
+  monthTotals,
+  movementNetBefore,
+} from '../../repos/movements';
+import { goalNetBefore, monthGoalOps, reservedTotal } from '../../repos/goals';
 import { billsUnpaidTotal } from '../../repos/bills';
 import { useMonthlyLimit, useSalarySettings } from '../settings/useSettings';
 
@@ -12,7 +18,12 @@ export type MonthSummary = {
   month: string;
   income: number;
   expenses: number;
+  /** Saldo em carteira: o que transitou dos meses anteriores + o mês atual. */
   balance: number;
+  /** Saldo trazido dos meses anteriores. */
+  openingBalance: number;
+  /** Líquido só do mês atual (receitas - despesas - metas). */
+  monthBalance: number;
   reserved: number;
   limit: number | null;
   limitPercent: number;
@@ -52,12 +63,19 @@ export function useMonthSummary(today: string): { summary: MonthSummary; refresh
     const monthDays = monthDaysOf(today);
     const goalOps = monthGoalOps(month);
     const unpaidBills = billsUnpaidTotal(month);
+    const monthBalance = monthNet(income, expenses, goalOps.deposits, goalOps.withdraws);
+    // O dinheiro que sobrou nos meses anteriores continua a ser do utilizador:
+    // o saldo do mês passado não pode desaparecer no dia 1. O valor reservado em
+    // metas já sai do líquido de cada mês, por isso não é descontado outra vez.
+    const openingBalance = movementNetBefore(month) - goalNetBefore(month);
 
     return {
       month,
       income,
       expenses,
-      balance: monthNet(income, expenses, goalOps.deposits, goalOps.withdraws),
+      balance: openingBalance + monthBalance,
+      openingBalance,
+      monthBalance,
       reserved: reservedTotal(),
       limit,
       // Sem clamp: gastar 130% do limite tem de mostrar 130%, não 100%. O clamp
