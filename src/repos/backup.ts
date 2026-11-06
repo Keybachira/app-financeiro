@@ -1,5 +1,4 @@
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+import { File } from 'expo-file-system';
 
 import type {
   BackupPayload,
@@ -268,21 +267,16 @@ export function importBackup(payload: BackupPayload, mode: ImportMode): void {
   bumpDataVersion();
 }
 
-export async function shareExportFile(filename: string, content: string, mimeType: string): Promise<void> {
-  const file = new File(Paths.cache, filename);
-  file.delete();
-  file.create({ overwrite: true });
-  file.write(content);
-
-  if (!(await Sharing.isAvailableAsync())) {
-    throw new Error('A partilha de ficheiros não está disponível neste dispositivo.');
-  }
-
-  await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: 'Guardar backup' });
-}
+// A escrita/partilha vive em `exportFile` para poder ser testada sem SQLite.
+export { shareExportFile } from './exportFile';
 
 export async function pickBackupFile(): Promise<File | null> {
-  const result = await File.pickFileAsync({ mimeTypes: ['application/json'] });
+  // Alguns gestores de ficheiros Android rotulam `.json` como texto simples ou
+  // binário. Filtrar só por `application/json` deixava o próprio backup cinzento
+  // e impossível de escolher. `parseBackup` continua a validar o conteúdo.
+  const result = await File.pickFileAsync({
+    mimeTypes: ['application/json', 'text/json', 'text/plain', 'application/octet-stream'],
+  });
 
   if (result.canceled) {
     return null;

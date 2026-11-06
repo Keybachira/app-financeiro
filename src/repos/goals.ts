@@ -93,6 +93,24 @@ export function monthGoalOps(month: string): { deposits: number; withdraws: numb
   return { deposits: row?.deposits ?? 0, withdraws: row?.withdraws ?? 0 };
 }
 
+/**
+ * Líquido depositado em metas (depósitos - levantamentos) antes de `month`.
+ *
+ * Mesma base de `monthGoalOps`/`reservedTotal`: metas arquivadas ficam de fora,
+ * senão o dinheiro reservado num mês antigo nunca voltava ao saldo.
+ */
+export function goalNetBefore(month: string): number {
+  const row = db.getFirstSync<{ net: number | null }>(
+    `SELECT COALESCE(SUM(CASE WHEN o.kind = 'deposit' THEN o.amount ELSE -o.amount END), 0) AS net
+     FROM goal_ops o
+     JOIN goals g ON g.id = o.goal_id
+     WHERE substr(o.date, 1, 7) < ? AND g.archived_at IS NULL`,
+    [month]
+  );
+
+  return row?.net ?? 0;
+}
+
 export type GoalInput = {
   name: string;
   target: number;

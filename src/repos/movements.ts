@@ -208,6 +208,24 @@ export function monthTotals(month: string): { income: number; expenses: number }
   return { income: row?.income ?? 0, expenses: row?.expenses ?? 0 };
 }
 
+/**
+ * Líquido (receitas - despesas) de todos os meses anteriores a `month`.
+ *
+ * Sem isto, o saldo recomeçava em zero no dia 1 e o dinheiro que sobrou no mês
+ * anterior desaparecia do ecrã. As datas são ISO, por isso a comparação de
+ * texto com `< ?` ordena corretamente por mês.
+ */
+export function movementNetBefore(month: string): number {
+  const row = db.getFirstSync<{ net: number | null }>(
+    `SELECT COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END), 0) AS net
+     FROM movements
+     WHERE substr(date, 1, 7) < ?`,
+    [month]
+  );
+
+  return row?.net ?? 0;
+}
+
 export function dailyExpenseTotals(month: string): Record<string, number> {
   const rows = db.getAllSync<{ date: string; amount: number }>(
     `SELECT date, SUM(amount) AS amount
