@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import { purgeAutomaticCategoryHints } from '../repos/movements';
-import { ensureDatabase } from './client';
+import { purgeAutomaticCategoryHints } from "../repos/movements";
+import { ensureDatabase } from "./client";
 
 export function useDatabase(): { ready: boolean; error: Error | null } {
   const [state] = useState(() => {

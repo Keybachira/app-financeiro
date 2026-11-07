@@ -133,7 +133,7 @@ export interface MigrationExecutor {
 }
 
 export function getSchemaVersion(db: MigrationExecutor): number {
-  const row = db.getFirstSync<{ user_version: number }>('PRAGMA user_version');
+  const row = db.getFirstSync<{ user_version: number }>("PRAGMA user_version");
   return row?.user_version ?? 0;
 }
 
@@ -150,15 +150,15 @@ export function applyMigrations(db: MigrationExecutor): void {
 }
 
 function applyMigration(db: MigrationExecutor, migration: Migration): void {
-  db.execSync('BEGIN');
+  db.execSync("BEGIN");
   try {
     for (const statement of migration.statements) {
       db.execSync(statement);
     }
     db.execSync(`PRAGMA user_version = ${migration.version}`);
-    db.execSync('COMMIT');
+    db.execSync("COMMIT");
   } catch (error) {
-    db.execSync('ROLLBACK');
+    db.execSync("ROLLBACK");
     throw error;
   }
 }
