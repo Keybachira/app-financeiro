@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -13,7 +13,7 @@ import { Panel } from '../../src/ui/components/Panel';
 import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
 import { Switch } from '../../src/ui/components/Switch';
 import { useToast } from '../../src/ui/components/Toast';
-import { colors, fonts, gradients, spacing } from '../../src/ui/theme';
+import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../../src/ui/theme';
 import { getBill } from '../../src/repos/bills';
 import { useBills } from '../../src/features/bills/useBills';
 
@@ -21,6 +21,8 @@ const DAY_CHIPS = [1, 5, 10, 15, 20, 25, 28, 30];
 const REMIND_CHIPS = [0, 1, 2, 3, 7];
 
 export default function BillFormScreen() {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const toast = useToast();
   const { create, update, toggleActive } = useBills();
@@ -38,31 +40,38 @@ export default function BillFormScreen() {
   const amount = digits.length > 0 ? Number(digits) : 0;
   const valid = name.trim().length > 0 && amount > 0 && day !== null;
 
+  const savingRef = useRef(false);
+
   const handleSave = () => {
+    if (savingRef.current) return;
     if (!valid || day === null) {
       toast({ message: 'Indica nome, valor e dia da conta' });
       return;
     }
 
-    const input = {
-      name: name.trim(),
-      amount,
-      dayOfMonth: day,
-      remindDaysBefore: remind,
-      category,
-      icon: null,
-    };
-
-    if (existing) {
-      update(existing.id, input);
-      toggleActive(existing.id, active);
-      toast({ message: 'Conta atualizada' });
-    } else {
-      create(input);
-      toast({ message: 'Conta criada' });
+    savingRef.current = true;
+    try {
+      const input = {
+        name: name.trim(),
+        amount,
+        dayOfMonth: day,
+        remindDaysBefore: remind,
+        category,
+        icon: null,
+      };
+      if (existing) {
+        update(existing.id, input);
+        toggleActive(existing.id, active);
+        toast({ message: 'Conta atualizada' });
+      } else {
+        create(input);
+        toast({ message: 'Conta criada' });
+      }
+      router.back();
+    } catch {
+      savingRef.current = false;
+      toast({ message: 'N�o foi poss�vel guardar a conta.' });
     }
-
-    router.back();
   };
 
   return (
@@ -184,7 +193,8 @@ export default function BillFormScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,

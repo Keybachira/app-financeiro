@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeftRight, Pencil, Trash, X } from 'lucide-react-native';
@@ -15,11 +15,14 @@ import { ProgressBar } from '../../src/ui/components/ProgressBar';
 import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
 import { StatusChip } from '../../src/ui/components/StatusChip';
 import { useToast } from '../../src/ui/components/Toast';
-import { colors, fonts, spacing } from '../../src/ui/theme';
+import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../../src/ui/theme';
 import { debtView, getDebt } from '../../src/repos/debts';
 import { debtStatusLabel, useDebts } from '../../src/features/debts/useDebts';
+import { guardedCallback, runGuardedAction } from '../../src/ui/actionGuard';
 
 export default function DebtDetailScreen() {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +33,7 @@ export default function DebtDetailScreen() {
   const [editPaymentId, setEditPaymentId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const actionLock = useRef(false);
   const debt = debtId ? getDebt(debtId) : null;
   const view = debt ? debtView(debt, today) : null;
 
@@ -68,7 +72,7 @@ export default function DebtDetailScreen() {
             <IconButton
               icon={Pencil}
               label="Editar dívida"
-              onPress={() => router.push({ pathname: '/debt/new', params: { id: debtId } })}
+              onPress={guardedCallback(() => router.push({ pathname: '/debt/new', params: { id: debtId } }))}
             />
             <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
           </View>
@@ -98,7 +102,7 @@ export default function DebtDetailScreen() {
 
         {view.status !== 'paid' ? (
           <Panel style={styles.payCard} padded={false}>
-            <Pressable accessibilityRole="button" onPress={() => setPayOpen(true)} style={styles.payButton}>
+            <Pressable accessibilityRole="button" onPress={guardedCallback(() => setPayOpen(true))} style={styles.payButton}>
               <Text style={styles.payLabel}>Registar pagamento</Text>
               <Text style={styles.payHint}>
                 {debt.kind === 'owe' ? 'Cria uma despesa em Dívidas' : 'Cria uma receita em Dívidas'}
@@ -125,17 +129,16 @@ export default function DebtDetailScreen() {
                 <Pressable
                   accessibilityLabel="Editar pagamento"
                   hitSlop={8}
-                  onPress={() => setEditPaymentId(payment.id)}
+                  onPress={guardedCallback(() => setEditPaymentId(payment.id))}
                 >
                   <Pencil color={colors.textMuted} size={16} strokeWidth={2} />
                 </Pressable>
                 <Pressable
                   accessibilityLabel="Apagar pagamento"
                   hitSlop={8}
-                  onPress={() => {
-                    removePayment(payment.id);
-                    toast({ message: 'Pagamento apagado' });
-                  }}
+                  onPress={() => runGuardedAction(() => {
+                    try { removePayment(payment.id); toast({ message: 'Pagamento apagado' }); } catch (e) { toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); }
+                  })}
                 >
                   <Trash color={colors.warn} size={16} strokeWidth={2} />
                 </Pressable>
@@ -160,9 +163,14 @@ export default function DebtDetailScreen() {
         helper={`Em falta ${formatKz(view.remaining)}`}
         onCancel={() => setPayOpen(false)}
         onConfirm={(amount) => {
-          setPayOpen(false);
-          pay(debtId, amount);
-          toast({ message: `Pagamento de ${formatKz(amount)} registado` });
+          if (actionLock.current) return;
+          actionLock.current = true;
+          try {
+            setPayOpen(false);
+            pay(debtId, amount);
+            toast({ message: `Pagamento de ${formatKz(amount)} registado` });
+          } catch (e) { toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); }
+          finally { actionLock.current = false; }
         }}
       />
 
@@ -173,12 +181,14 @@ export default function DebtDetailScreen() {
         maxAmount={editing ? view.remaining + editing.amount : view.remaining}
         onCancel={() => setEditPaymentId(null)}
         onConfirm={(amount) => {
-          if (!editing) {
-            return;
-          }
-          updatePayment(editing.id, amount, editing.date);
-          setEditPaymentId(null);
-          toast({ message: 'Pagamento atualizado' });
+          if (!editing || actionLock.current) return;
+          actionLock.current = true;
+          try {
+            updatePayment(editing.id, amount, editing.date);
+            setEditPaymentId(null);
+            toast({ message: 'Pagamento atualizado' });
+          } catch (e) { toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); }
+          finally { actionLock.current = false; }
         }}
       />
 
@@ -189,10 +199,14 @@ export default function DebtDetailScreen() {
         confirmLabel="Apagar"
         destructive
         onConfirm={() => {
-          setConfirmDelete(false);
-          remove(debtId);
-          toast({ message: 'Dívida apagada' });
-          router.back();
+          if (actionLock.current) return;
+          actionLock.current = true;
+          try {
+            setConfirmDelete(false);
+            remove(debtId);
+            toast({ message: 'D�vida apagada' });
+            router.back();
+          } catch (e) { actionLock.current = false; toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); }
         }}
         onCancel={() => setConfirmDelete(false)}
       />
@@ -200,7 +214,8 @@ export default function DebtDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,

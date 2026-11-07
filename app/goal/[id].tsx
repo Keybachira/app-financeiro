@@ -1,31 +1,35 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeftRight, Pencil, Trash, X } from 'lucide-react-native';
+import { useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeftRight, Pencil, Trash, X } from "lucide-react-native";
 
-import { formatKz } from '../../src/domain/money';
-import { formatDayMonthPt, monthShort } from '../../src/domain/dates';
-import { AmountSheet } from '../../src/ui/components/AmountSheet';
-import { ConfirmSheet } from '../../src/ui/components/ConfirmSheet';
-import { IconButton } from '../../src/ui/components/IconButton';
-import { GlassCard } from '../../src/ui/components/GlassCard';
-import { MoneyText } from '../../src/ui/components/MoneyText';
-import { Panel } from '../../src/ui/components/Panel';
-import { ProgressRing } from '../../src/ui/components/ProgressRing';
-import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
-import { StatusChip } from '../../src/ui/components/StatusChip';
-import { useToast } from '../../src/ui/components/Toast';
-import { colors, fonts, radius, spacing } from '../../src/ui/theme';
-import { useGoals } from '../../src/features/goals/useGoals';
+import { formatKz } from "../../src/domain/money";
+import { formatDayMonthPt, monthShort } from "../../src/domain/dates";
+import { AmountSheet } from "../../src/ui/components/AmountSheet";
+import { ConfirmSheet } from "../../src/ui/components/ConfirmSheet";
+import { IconButton } from "../../src/ui/components/IconButton";
+import { GlassCard } from "../../src/ui/components/GlassCard";
+import { MoneyText } from "../../src/ui/components/MoneyText";
+import { Panel } from "../../src/ui/components/Panel";
+import { ProgressRing } from "../../src/ui/components/ProgressRing";
+import { ScreenBackground } from "../../src/ui/components/ScreenBackground";
+import { StatusChip } from "../../src/ui/components/StatusChip";
+import { useToast } from "../../src/ui/components/Toast";
+import { fonts, radius, spacing, useTheme, useThemedStyles, type Colors } from "../../src/ui/theme";
+import { useGoals } from "../../src/features/goals/useGoals";
+import { guardedCallback, runGuardedAction } from "../../src/ui/actionGuard";
 
-type SheetMode = 'deposit' | 'withdraw' | null;
+type SheetMode = "deposit" | "withdraw" | null;
 
 export default function GoalDetailScreen() {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const goalId = typeof id === 'string' ? id : null;
-  const { detail, ops, deposit, withdraw, remove, archive, removeOp } = useGoals();
+  const goalId = typeof id === "string" ? id : null;
+  const { detail, ops, deposit, withdraw, remove, archive, removeOp } =
+    useGoals();
 
   const [sheet, setSheet] = useState<SheetMode>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -49,25 +53,41 @@ export default function GoalDetailScreen() {
 
   const operations = ops(goalId);
   const chipLabel = view.completed
-    ? 'Concluída'
+    ? "Concluída"
     : view.goal.deadline === null
-      ? 'Sem prazo'
-      : view.pace === 'ahead'
-        ? 'Adiantada'
-        : view.pace === 'behind'
-          ? 'Atrasada'
-          : 'No ritmo';
-  const chipTone = view.completed || view.pace === 'ahead' ? 'accent' : view.pace === 'behind' ? 'warn' : 'neutral';
+      ? "Sem prazo"
+      : view.pace === "ahead"
+        ? "Adiantada"
+        : view.pace === "behind"
+          ? "Atrasada"
+          : "No ritmo";
+  const chipTone =
+    view.completed || view.pace === "ahead"
+      ? "accent"
+      : view.pace === "behind"
+        ? "warn"
+        : "neutral";
 
+  const opLockRef = useRef(false);
   const handleConfirmAmount = (amount: number) => {
+    if (opLockRef.current) return;
     setSheet(null);
-
-    if (sheet === 'deposit') {
-      deposit(goalId, amount);
-      toast({ message: `Depositado ${formatKz(amount)}` });
-    } else if (sheet === 'withdraw') {
-      withdraw(goalId, amount);
-      toast({ message: `Levantado ${formatKz(amount)}` });
+    opLockRef.current = true;
+    try {
+      if (sheet === "deposit") {
+        deposit(goalId, amount);
+        toast({ message: `Depositado ${formatKz(amount)}` });
+      } else if (sheet === "withdraw") {
+        withdraw(goalId, amount);
+        toast({ message: `Levantado ${formatKz(amount)}` });
+      }
+    } catch (caught) {
+      toast({
+        message: caught instanceof Error ? caught.message : "Operação falhou.",
+        tone: "error",
+      });
+    } finally {
+      opLockRef.current = false;
     }
   };
 
@@ -87,7 +107,9 @@ export default function GoalDetailScreen() {
             <IconButton
               icon={Pencil}
               label="Editar meta"
-              onPress={() => router.push({ pathname: '/goal/new', params: { id: goalId } })}
+              onPress={guardedCallback(() =>
+                router.push({ pathname: "/goal/new", params: { id: goalId } }),
+              )}
             />
             <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
           </View>
@@ -98,7 +120,9 @@ export default function GoalDetailScreen() {
             <ProgressRing value={view.progress} size={72} stroke={8} />
             <View style={styles.summaryInfo}>
               <MoneyText value={view.saved} size="lg" />
-              <Text style={styles.summaryTarget}>de {formatKz(view.goal.target)}</Text>
+              <Text style={styles.summaryTarget}>
+                de {formatKz(view.goal.target)}
+              </Text>
               <View style={styles.chip}>
                 <StatusChip label={chipLabel} tone={chipTone} />
               </View>
@@ -106,16 +130,20 @@ export default function GoalDetailScreen() {
           </View>
           <Text style={styles.summaryFooter}>
             {view.completed
-              ? 'Podes levantar ou arquivar quando quiseres'
+              ? "Podes levantar ou arquivar quando quiseres"
               : view.goal.deadline === null
-                ? 'Sem prazo definido'
+                ? "Sem prazo definido"
                 : `Poupar ${formatKz(view.monthlyNeeded)}/mês · até ${monthShort(view.goal.deadline)}`}
           </Text>
         </GlassCard>
 
         <View style={styles.actionsRow}>
           <Panel style={styles.actionCard} padded={false}>
-            <Pressable accessibilityRole="button" onPress={() => setSheet('deposit')} style={styles.actionButton}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={guardedCallback(() => setSheet("deposit"))}
+              style={styles.actionButton}
+            >
               <Text style={styles.actionLabel}>Depositar</Text>
             </Pressable>
           </Panel>
@@ -123,8 +151,11 @@ export default function GoalDetailScreen() {
             <Pressable
               accessibilityRole="button"
               disabled={view.saved <= 0}
-              onPress={() => setSheet('withdraw')}
-              style={[styles.actionButton, view.saved <= 0 && styles.actionDisabled]}
+              onPress={guardedCallback(() => setSheet("withdraw"))}
+              style={[
+                styles.actionButton,
+                view.saved <= 0 && styles.actionDisabled,
+              ]}
             >
               <Text style={styles.actionLabel}>Levantar</Text>
             </Pressable>
@@ -137,20 +168,39 @@ export default function GoalDetailScreen() {
             operations.map((op) => (
               <View key={op.id} style={styles.opRow}>
                 <View style={styles.opIcon}>
-                  <ArrowLeftRight color={op.kind === 'deposit' ? colors.accent : colors.warn} size={18} strokeWidth={2} />
+                  <ArrowLeftRight
+                    color={op.kind === "deposit" ? colors.accent : colors.warn}
+                    size={18}
+                    strokeWidth={2}
+                  />
                 </View>
                 <View style={styles.opInfo}>
-                  <Text style={styles.opTitle}>{op.kind === 'deposit' ? 'Depósito' : 'Levantamento'}</Text>
+                  <Text style={styles.opTitle}>
+                    {op.kind === "deposit" ? "Depósito" : "Levantamento"}
+                  </Text>
                   <Text style={styles.opMeta}>{formatDayMonthPt(op.date)}</Text>
                 </View>
-                <MoneyText value={op.amount} size="sm" tone={op.kind === 'deposit' ? 'default' : 'muted'} />
+                <MoneyText
+                  value={op.amount}
+                  size="sm"
+                  tone={op.kind === "deposit" ? "default" : "muted"}
+                />
                 <Pressable
                   accessibilityLabel="Apagar operação"
                   hitSlop={8}
-                  onPress={() => {
-                    removeOp(op.id);
-                    toast({ message: 'Operação apagada' });
-                  }}
+                  onPress={() =>
+                    runGuardedAction(() => {
+                      try {
+                        removeOp(op.id);
+                        toast({ message: "Operação apagada" });
+                      } catch (e) {
+                        toast({
+                          message: e instanceof Error ? e.message : "Falhou.",
+                          tone: "error",
+                        });
+                      }
+                    })
+                  }
                 >
                   <X color={colors.textMuted} size={16} strokeWidth={2} />
                 </Pressable>
@@ -166,16 +216,27 @@ export default function GoalDetailScreen() {
             accessibilityRole="button"
             onPress={() => {
               archive(goalId, view.goal.archived_at === null);
-              toast({ message: view.goal.archived_at === null ? 'Meta arquivada' : 'Meta reativada' });
+              toast({
+                message:
+                  view.goal.archived_at === null
+                    ? "Meta arquivada"
+                    : "Meta reativada",
+              });
             }}
             style={styles.textButton}
           >
             <Text style={styles.textButtonLabel}>
-              {view.goal.archived_at === null ? 'Arquivar meta' : 'Reativar meta'}
+              {view.goal.archived_at === null
+                ? "Arquivar meta"
+                : "Reativar meta"}
             </Text>
           </Pressable>
 
-          <Pressable accessibilityRole="button" onPress={() => setConfirmDelete(true)} style={styles.textButton}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setConfirmDelete(true)}
+            style={styles.textButton}
+          >
             <Trash color={colors.warn} size={16} strokeWidth={2} />
             <Text style={styles.deleteLabel}>Apagar meta</Text>
           </Pressable>
@@ -184,10 +245,14 @@ export default function GoalDetailScreen() {
 
       <AmountSheet
         visible={sheet !== null}
-        title={sheet === 'deposit' ? 'Depositar na meta' : 'Levantar da meta'}
-        confirmLabel={sheet === 'deposit' ? 'Depositar' : 'Levantar'}
-        helper={sheet === 'withdraw' ? `Disponível: ${formatKz(view.saved)}` : undefined}
-        maxAmount={sheet === 'withdraw' ? view.saved : undefined}
+        title={sheet === "deposit" ? "Depositar na meta" : "Levantar da meta"}
+        confirmLabel={sheet === "deposit" ? "Depositar" : "Levantar"}
+        helper={
+          sheet === "withdraw"
+            ? `Disponível: ${formatKz(view.saved)}`
+            : undefined
+        }
+        maxAmount={sheet === "withdraw" ? view.saved : undefined}
         onCancel={() => setSheet(null)}
         onConfirm={handleConfirmAmount}
       />
@@ -201,7 +266,7 @@ export default function GoalDetailScreen() {
         onConfirm={() => {
           setConfirmDelete(false);
           remove(goalId);
-          toast({ message: 'Meta apagada' });
+          toast({ message: "Meta apagada" });
           router.back();
         }}
         onCancel={() => setConfirmDelete(false)}
@@ -210,7 +275,8 @@ export default function GoalDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -225,14 +291,14 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.sm,
   },
   headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
   title: {
@@ -242,8 +308,8 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.lg,
   },
   summaryInfo: {
@@ -262,13 +328,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,.12)',
+    borderTopColor: "rgba(255,255,255,.12)",
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.glassText,
   },
   actionsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
   },
   actionCard: {
@@ -276,8 +342,8 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     minHeight: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   actionDisabled: {
     opacity: 0.5,
@@ -296,8 +362,8 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   opRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
     paddingVertical: spacing.sm,
     minHeight: 48,
@@ -307,8 +373,8 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: colors.iconTileBg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   opInfo: {
     flex: 1,
@@ -324,8 +390,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   textButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     minHeight: 44,
     paddingVertical: spacing.sm,

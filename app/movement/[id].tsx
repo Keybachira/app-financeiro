@@ -7,9 +7,10 @@ import { getMovement, type MovementRow } from '../../src/repos/movements';
 import { MovementEditor } from '../../src/features/movements/MovementEditor';
 import { IconButton } from '../../src/ui/components/IconButton';
 import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
-import { colors, fonts, spacing } from '../../src/ui/theme';
+import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../../src/ui/theme';
 
 export default function EditMovementScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const movementId = typeof id === 'string' ? id : null;
@@ -35,7 +36,8 @@ export default function EditMovementScreen() {
   return <MovementEditor movement={movement} />;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,

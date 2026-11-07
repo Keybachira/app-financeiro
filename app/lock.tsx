@@ -5,10 +5,16 @@ import { Lock } from 'lucide-react-native';
 import { AmountKeypad } from '../src/ui/components/AmountKeypad';
 import { IconTile } from '../src/ui/components/IconTile';
 import { ScreenBackground } from '../src/ui/components/ScreenBackground';
-import { colors, fonts, spacing } from '../src/ui/theme';
+import {
+  fonts,
+  spacing,
+  useThemedStyles,
+  type Colors,
+} from '../src/ui/theme';
 import { useLockState } from '../src/features/security/useLockState';
 
 export function LockScreen({ onUnlocked }: { onUnlocked?: () => void }) {
+  const styles = useThemedStyles(makeStyles);
   const { unlock } = useLockState();
   const [digits, setDigits] = useState('');
   const [error, setError] = useState(false);
@@ -72,56 +78,57 @@ setDigits((current) => (current + key).slice(0, 4))
 
 export default LockScreen;
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  body: {
-    flex: 1,
-    padding: spacing.lg,
-    paddingTop: spacing.xl,
-    gap: spacing.lg,
-    alignItems: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: 24,
-    color: colors.text,
-  },
-  subtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  pinWrap: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  pinDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: colors.hairline,
-  },
-  pinDotFilled: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  error: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.warn,
-  },
-  keypad: {
-    alignSelf: 'stretch',
-    marginTop: spacing.lg,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    body: {
+      flex: 1,
+      padding: spacing.lg,
+      paddingTop: spacing.xl,
+      gap: spacing.lg,
+      alignItems: 'center',
+    },
+    header: {
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    title: {
+      fontFamily: fonts.bold,
+      fontSize: 24,
+      color: colors.text,
+    },
+    subtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    pinWrap: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginTop: spacing.lg,
+    },
+    pinDot: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      borderWidth: 1,
+      borderColor: colors.hairline,
+    },
+    pinDotFilled: {
+      backgroundColor: colors.accent,
+      borderColor: colors.accent,
+    },
+    error: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: colors.warn,
+    },
+    keypad: {
+      alignSelf: 'stretch',
+      marginTop: spacing.lg,
+    },
+  });

@@ -14,16 +14,28 @@ import { ProgressBar } from '../../src/ui/components/ProgressBar';
 import { Screen } from '../../src/ui/components/Screen';
 import { StatusChip } from '../../src/ui/components/StatusChip';
 import { useToast } from '../../src/ui/components/Toast';
-import { gradients, radius } from '../../src/ui/theme';
-import { colors, fonts, spacing } from '../../src/ui/theme';
+import {
+  fonts,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+  type Colors,
+} from '../../src/ui/theme';
 import { categoryIcon } from '../../src/ui/categoryIcons';
 import { useBills } from '../../src/features/bills/useBills';
 import type { BillView } from '../../src/repos/bills';
 
+import { guardedCallback } from '../../src/ui/actionGuard';
+import { useGuardedAction } from '../../src/ui/useGuardedAction';
+
 export default function BillsScreen() {
+  const { gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const toast = useToast();
-  const { open, payable, unpaidTotal, progress, pay, refresh, today } = useBills();
+  const { open, payable, unpaidTotal, progress, pay, refresh, today, notificationStatus } = useBills();
+  const openNewBill = useGuardedAction(() => router.push('/bill/new'));
 
   useFocusEffect(
     useCallback(() => {
@@ -38,7 +50,7 @@ export default function BillsScreen() {
       title="Contas fixas"
       back
       subtitle={`${open.length} ${open.length === 1 ? 'conta ativa' : 'contas ativas'}`}
-      floating={<Fab icon={Plus} label="Nova conta" onPress={() => router.push('/bill/new')} />}
+      floating={<Fab icon={Plus} label="Nova conta" onPress={openNewBill} />}
     >
       <GlassCard>
         <Text style={styles.cardLabel}>Por pagar este mês</Text>
@@ -51,6 +63,20 @@ export default function BillsScreen() {
         </View>
         <ProgressBar value={progress.total > 0 ? progress.paid / progress.total : 0} tone="white" />
       </GlassCard>
+
+      {notificationStatus && notificationStatus.state !== 'scheduled' ? (
+        <Panel>
+          <Text style={styles.empty}>
+            {notificationStatus.state === 'permission_denied'
+              ? 'Notificações: permissão recusada. Os lembretes não serão agendados até permitir nas definições do sistema.'
+              : notificationStatus.state === 'unavailable'
+                ? 'Notificações indisponíveis neste dispositivo/build.'
+                : notificationStatus.state === 'error'
+                  ? `Notificações: ${notificationStatus.message ?? 'falha ao agendar'}.`
+                  : notificationStatus.message ?? 'Notificações não agendadas.'}
+          </Text>
+        </Panel>
+      ) : null}
 
       {payable.length === 0 ? (
         <Panel>
@@ -76,7 +102,7 @@ export default function BillsScreen() {
               });
             }
           }}
-          onEdit={() => router.push({ pathname: '/bill/new', params: { id: view.bill.id } })}
+          onEdit={guardedCallback(() => router.push({ pathname: '/bill/new', params: { id: view.bill.id } }))}
         />
       ))}
     </Screen>
@@ -104,6 +130,8 @@ function BillRowCard({
   onPay: () => void;
   onEdit: () => void;
 }) {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const Icon = categoryIcon(view.bill.category);
   const chip =
     view.status === 'paid'
@@ -166,7 +194,8 @@ function BillRowCard({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   cardLabel: {
     fontFamily: fonts.regular,
     fontSize: 13,

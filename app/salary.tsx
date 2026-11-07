@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -13,12 +13,14 @@ import { Panel } from '../src/ui/components/Panel';
 import { ScreenBackground } from '../src/ui/components/ScreenBackground';
 import { Switch } from '../src/ui/components/Switch';
 import { useToast } from '../src/ui/components/Toast';
-import { colors, fonts, gradients, spacing } from '../src/ui/theme';
+import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../src/ui/theme';
 import { useSalary } from '../src/features/salary/useSalary';
 
 const DAY_CHIPS = [1, 5, 10, 15, 20, 25, 28, 30];
 
 export default function SalaryScreen() {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const toast = useToast();
   const { settings, save } = useSalary();
@@ -35,15 +37,23 @@ export default function SalaryScreen() {
   const preview =
     day === null ? null : nextSalaryDate({ salaryDay: day, adjustBusinessDay: adjust, today });
 
+  const savingRef = useRef(false);
   const handleSave = () => {
+    if (savingRef.current) return;
     if (!valid) {
       toast({ message: 'Indica o valor e o dia do salário' });
       return;
     }
 
-    save({ amount, day, adjustBusinessDay: adjust, autoIncome: auto });
-    toast({ message: 'Salário atualizado' });
-    router.back();
+    savingRef.current = true;
+    try {
+      save({ amount, day, adjustBusinessDay: adjust, autoIncome: auto });
+      toast({ message: 'Salário atualizado' });
+      router.back();
+    } catch (caught) {
+      savingRef.current = false;
+      toast({ message: caught instanceof Error ? caught.message : 'Não foi possível guardar.', tone: 'error' });
+    }
   };
 
   return (
@@ -148,6 +158,8 @@ function ToggleRow({
   value: boolean;
   onChange: (value: boolean) => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.toggleRow}>
       <View style={styles.toggleText}>
@@ -159,7 +171,8 @@ function ToggleRow({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -235,7 +248,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,.08)',
+    backgroundColor: colors.hairline,
   },
   previewCard: {
     gap: 4,

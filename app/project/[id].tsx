@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeftRight, Pencil, Trash, X } from 'lucide-react-native';
@@ -17,11 +17,14 @@ import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
 import { StatusChip } from '../../src/ui/components/StatusChip';
 import { Switch } from '../../src/ui/components/Switch';
 import { useToast } from '../../src/ui/components/Toast';
-import { colors, fonts, spacing } from '../../src/ui/theme';
+import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../../src/ui/theme';
 import { getProject, projectView } from '../../src/repos/projects';
 import { projectChipLabel, useProjects } from '../../src/features/projects/useProjects';
+import { guardedCallback, runGuardedAction } from '../../src/ui/actionGuard';
 
 export default function ProjectDetailScreen() {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,6 +35,7 @@ export default function ProjectDetailScreen() {
   const [editPaymentId, setEditPaymentId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const actionLock = useRef(false);
   const project = projectId ? getProject(projectId) : null;
   const view = project ? projectView(project) : null;
 
@@ -69,7 +73,7 @@ export default function ProjectDetailScreen() {
             <IconButton
               icon={Pencil}
               label="Editar projeto"
-              onPress={() => router.push({ pathname: '/project/new', params: { id: projectId } })}
+              onPress={guardedCallback(() => router.push({ pathname: '/project/new', params: { id: projectId } }))}
             />
             <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
           </View>
@@ -93,7 +97,7 @@ export default function ProjectDetailScreen() {
 
         {!view.settled ? (
           <Panel style={styles.payCard} padded={false}>
-            <Pressable accessibilityRole="button" onPress={() => setPayOpen(true)} style={styles.payButton}>
+            <Pressable accessibilityRole="button" onPress={guardedCallback(() => setPayOpen(true))} style={styles.payButton}>
               <Text style={styles.payLabel}>Registar recebimento</Text>
               <Text style={styles.payHint}>
                 {createIncomeDefault ? 'Cria uma receita em Projetos' : 'Sem receita automática'}
@@ -135,17 +139,14 @@ export default function ProjectDetailScreen() {
                 <Pressable
                   accessibilityLabel="Editar recebimento"
                   hitSlop={8}
-                  onPress={() => setEditPaymentId(payment.id)}
+                  onPress={guardedCallback(() => setEditPaymentId(payment.id))}
                 >
                   <Pencil color={colors.textMuted} size={16} strokeWidth={2} />
                 </Pressable>
                 <Pressable
                   accessibilityLabel="Apagar recebimento"
                   hitSlop={8}
-                  onPress={() => {
-                    removePayment(payment.id);
-                    toast({ message: 'Recebimento apagado' });
-                  }}
+                  onPress={() => runGuardedAction(() => { try { removePayment(payment.id); toast({ message: 'Recebimento apagado' }); } catch (e) { toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); } })}
                 >
                   <Trash color={colors.warn} size={16} strokeWidth={2} />
                 </Pressable>
@@ -159,10 +160,7 @@ export default function ProjectDetailScreen() {
         <View style={styles.footerRow}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => {
-              deliver(projectId, project.delivered_at === null);
-              toast({ message: project.delivered_at === null ? 'Marcado como entregue' : 'Entrega removida' });
-            }}
+            onPress={() => runGuardedAction(() => { try { deliver(projectId, project.delivered_at === null); toast({ message: project.delivered_at === null ? 'Marcado como entregue' : 'Entrega removida' }); } catch (e) { toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); } })}
             style={styles.textButton}
           >
             <Text style={styles.textButtonLabel}>
@@ -184,11 +182,7 @@ export default function ProjectDetailScreen() {
         maxAmount={view.remaining}
         helper={`Em falta ${formatKz(view.remaining)}`}
         onCancel={() => setPayOpen(false)}
-        onConfirm={(amount) => {
-          setPayOpen(false);
-          pay(projectId, amount, undefined, createIncomeDefault);
-          toast({ message: `Recebimento de ${formatKz(amount)} registado` });
-        }}
+        onConfirm={(amount) => { if (actionLock.current) return; actionLock.current = true; try { setPayOpen(false); pay(projectId, amount, undefined, createIncomeDefault); toast({ message: `Recebimento de ${formatKz(amount)} registado` }); } catch (e) { toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); } finally { actionLock.current = false; } }}
       />
 
       <AmountSheet
@@ -197,14 +191,7 @@ export default function ProjectDetailScreen() {
         confirmLabel="Guardar"
         maxAmount={editing ? view.remaining + editing.amount : view.remaining}
         onCancel={() => setEditPaymentId(null)}
-        onConfirm={(amount) => {
-          if (!editing) {
-            return;
-          }
-          updatePayment(editing.id, amount, editing.date);
-          setEditPaymentId(null);
-          toast({ message: 'Recebimento atualizado' });
-        }}
+        onConfirm={(amount) => { if (!editing || actionLock.current) return; actionLock.current = true; try { updatePayment(editing.id, amount, editing.date); setEditPaymentId(null); toast({ message: 'Recebimento atualizado' }); } catch (e) { toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); } finally { actionLock.current = false; } }}
       />
 
       <ConfirmSheet
@@ -213,19 +200,15 @@ export default function ProjectDetailScreen() {
         message="Os recebimentos registados vão ser apagados. Os movimentos ligados deixam de estar associados a eles."
         confirmLabel="Apagar"
         destructive
-        onConfirm={() => {
-          setConfirmDelete(false);
-          remove(projectId);
-          toast({ message: 'Projeto apagado' });
-          router.back();
-        }}
+        onConfirm={() => { if (actionLock.current) return; actionLock.current = true; try { setConfirmDelete(false); remove(projectId); toast({ message: 'Projeto apagado' }); router.back(); } catch (e) { actionLock.current = false; toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); } }}
         onCancel={() => setConfirmDelete(false)}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,

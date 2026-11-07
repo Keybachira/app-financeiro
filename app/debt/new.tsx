@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -13,13 +13,15 @@ import { Panel } from '../../src/ui/components/Panel';
 import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
 import { SegmentedControl } from '../../src/ui/components/SegmentedControl';
 import { useToast } from '../../src/ui/components/Toast';
-import { colors, fonts, gradients, spacing } from '../../src/ui/theme';
+import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../../src/ui/theme';
 import { getDebt } from '../../src/repos/debts';
 import { useDebts } from '../../src/features/debts/useDebts';
 
 type Kind = 'owe' | 'owed';
 
 export default function DebtFormScreen() {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const toast = useToast();
   const { create, update } = useDebts();
@@ -171,6 +173,9 @@ export default function DebtFormScreen() {
 }
 
 function DateChip({ label, onPress }: { label: string; onPress: () => void }) {
+  const { gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <Pressable accessibilityRole="button" onPress={onPress}>
       <LinearGradient
@@ -185,7 +190,8 @@ function DateChip({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,

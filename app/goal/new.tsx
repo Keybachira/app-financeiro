@@ -1,33 +1,52 @@
-import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { CalendarDays, X } from 'lucide-react-native';
+import { useEffect, useRef, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { CalendarDays, X } from "lucide-react-native";
 
-import { formatDayMonthPt, isValidDate, parseISO, toISO, todayISO } from '../../src/domain/dates';
-import { AmountKeypad } from '../../src/ui/components/AmountKeypad';
-import { IconButton } from '../../src/ui/components/IconButton';
-import { MoneyText } from '../../src/ui/components/MoneyText';
-import { Panel } from '../../src/ui/components/Panel';
-import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
-import { useToast } from '../../src/ui/components/Toast';
-import { colors, fonts, gradients, radius, spacing } from '../../src/ui/theme';
-import { getGoal } from '../../src/repos/goals';
-import { useGoals } from '../../src/features/goals/useGoals';
+import {
+  formatDayMonthPt,
+  isValidDate,
+  parseISO,
+  toISO,
+  todayISO,
+} from "../../src/domain/dates";
+import { AmountKeypad } from "../../src/ui/components/AmountKeypad";
+import { IconButton } from "../../src/ui/components/IconButton";
+import { MoneyText } from "../../src/ui/components/MoneyText";
+import { Panel } from "../../src/ui/components/Panel";
+import { ScreenBackground } from "../../src/ui/components/ScreenBackground";
+import { useToast } from "../../src/ui/components/Toast";
+import { fonts, radius, spacing, useTheme, useThemedStyles, type Colors } from "../../src/ui/theme";
+import { getGoal } from "../../src/repos/goals";
+import { useGoals } from "../../src/features/goals/useGoals";
 
 export default function GoalFormScreen() {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const toast = useToast();
   const { create, update } = useGoals();
   const { id } = useLocalSearchParams<{ id?: string }>();
 
-  const existing = typeof id === 'string' ? getGoal(id) : null;
+  const existing = typeof id === "string" ? getGoal(id) : null;
   const today = todayISO();
 
-  const [name, setName] = useState(existing?.name ?? '');
-  const [digits, setDigits] = useState(existing ? String(existing.target) : '');
-  const [deadline, setDeadline] = useState<string | null>(existing?.deadline ?? null);
+  const [name, setName] = useState(existing?.name ?? "");
+  const [digits, setDigits] = useState(existing ? String(existing.target) : "");
+  const [deadline, setDeadline] = useState<string | null>(
+    existing?.deadline ?? null,
+  );
   const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
@@ -40,11 +59,12 @@ export default function GoalFormScreen() {
 
   const target = digits.length > 0 ? Number(digits) : 0;
   const nameValid = name.trim().length > 0;
-  const valid = nameValid && target > 0 && (deadline === null || isValidDate(deadline));
+  const valid =
+    nameValid && target > 0 && (deadline === null || isValidDate(deadline));
 
   const handleSave = () => {
     if (!valid) {
-      toast({ message: 'Dá um nome e um valor à meta' });
+      toast({ message: "Dá um nome e um valor à meta" });
       return;
     }
 
@@ -52,10 +72,10 @@ export default function GoalFormScreen() {
 
     if (existing) {
       update(existing.id, input);
-      toast({ message: 'Meta atualizada' });
+      toast({ message: "Meta atualizada" });
     } else {
       const created = create(input);
-      toast({ message: 'Meta criada' });
+      toast({ message: "Meta criada" });
       router.replace(`/goal/${created.id}`);
       return;
     }
@@ -66,10 +86,18 @@ export default function GoalFormScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.flex}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.header}>
-            <Text style={styles.title}>{existing ? 'Editar meta' : 'Nova meta'}</Text>
+            <Text style={styles.title}>
+              {existing ? "Editar meta" : "Nova meta"}
+            </Text>
             <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
           </View>
 
@@ -91,16 +119,24 @@ export default function GoalFormScreen() {
           </View>
 
           <AmountKeypad
-            onDigit={(key) => setDigits((current) => (current === '0' ? key : (current + key).slice(0, 12)))}
+            onDigit={(key) =>
+              setDigits((current) =>
+                current === "0" ? key : (current + key).slice(0, 12),
+              )
+            }
             onBackspace={() => setDigits((current) => current.slice(0, -1))}
           />
 
           <View style={styles.section}>
             <Text style={styles.label}>Prazo</Text>
             <View style={styles.chipRow}>
-              <DayChip label="Sem prazo" active={deadline === null} onPress={() => setDeadline(null)} />
               <DayChip
-                label={deadline ? formatDayMonthPt(deadline) : 'Escolher data'}
+                label="Sem prazo"
+                active={deadline === null}
+                onPress={() => setDeadline(null)}
+              />
+              <DayChip
+                label={deadline ? formatDayMonthPt(deadline) : "Escolher data"}
                 active={deadline !== null}
                 onPress={() => setShowPicker(true)}
               />
@@ -145,23 +181,43 @@ export default function GoalFormScreen() {
   );
 }
 
-function DayChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function DayChip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: active }} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+    >
       <LinearGradient
         colors={active ? gradients.primary.colors : gradients.panel.colors}
         start={active ? gradients.primary.start : gradients.panel.start}
         end={active ? gradients.primary.end : gradients.panel.end}
         style={[styles.chip, !active && styles.chipMuted]}
       >
-        {active ? <CalendarDays color={colors.text} size={14} strokeWidth={2} /> : null}
-        <Text style={[styles.chipText, !active && styles.chipTextMuted]}>{label}</Text>
+        {active ? (
+          <CalendarDays color={colors.text} size={14} strokeWidth={2} />
+        ) : null}
+        <Text style={[styles.chipText, !active && styles.chipTextMuted]}>
+          {label}
+        </Text>
       </LinearGradient>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -176,9 +232,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   title: {
     fontFamily: fonts.bold,
@@ -194,7 +250,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: "center",
   },
   input: {
     fontFamily: fonts.regular,
@@ -204,7 +260,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   amountBlock: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing.sm,
     paddingVertical: spacing.sm,
   },
@@ -212,16 +268,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chipRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   chip: {
     height: 36,
     borderRadius: 18,
     paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   chipMuted: {
@@ -246,8 +302,8 @@ const styles = StyleSheet.create({
   saveButton: {
     height: 56,
     borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   saveLabel: {
     fontFamily: fonts.medium,

@@ -1,17 +1,31 @@
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Download, FileJson, FileSpreadsheet, RotateCcw, Warehouse, X } from 'lucide-react-native';
+import { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useRouter } from "expo-router";
+import {
+  Download,
+  FileJson,
+  FileSpreadsheet,
+  RotateCcw,
+  Warehouse,
+  X,
+} from "lucide-react-native";
 
-import { IconButton } from '../src/ui/components/IconButton';
-import { Panel } from '../src/ui/components/Panel';
-import { ScreenBackground } from '../src/ui/components/ScreenBackground';
-import { ConfirmSheet } from '../src/ui/components/ConfirmSheet';
-import { IconTile } from '../src/ui/components/IconTile';
-import { useBackup } from '../src/features/backup/useBackup';
-import { buildBackup } from '../src/repos/backup';
-import type { LucideIcon } from 'lucide-react-native';
-import { colors, fonts, radius, spacing } from '../src/ui/theme';
+import { IconButton } from "../src/ui/components/IconButton";
+import { Panel } from "../src/ui/components/Panel";
+import { ScreenBackground } from "../src/ui/components/ScreenBackground";
+import { ConfirmSheet } from "../src/ui/components/ConfirmSheet";
+import { IconTile } from "../src/ui/components/IconTile";
+import { useBackup } from "../src/features/backup/useBackup";
+import { buildBackup } from "../src/repos/backup";
+import type { LucideIcon } from "lucide-react-native";
+import { fonts, radius, spacing, useTheme, useThemedStyles, type Colors } from "../src/ui/theme";
 
 type Counts = {
   movements: number;
@@ -22,8 +36,11 @@ type Counts = {
 };
 
 export default function BackupScreen() {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
-  const { busy, error, exportJson, exportCsv, importJson, clearError } = useBackup();
+  const { busy, error, exportJson, exportCsv, importJson, clearError } =
+    useBackup();
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [countsKey, setCountsKey] = useState(0);
 
@@ -39,7 +56,7 @@ export default function BackupScreen() {
   }, [countsKey]);
 
   const handleMergeImport = useCallback(async () => {
-    const result = await importJson('merge');
+    const result = await importJson("merge");
     if (result.imported) {
       setCountsKey((value) => value + 1);
     }
@@ -47,7 +64,7 @@ export default function BackupScreen() {
 
   const handleReplaceImport = useCallback(async () => {
     setConfirmReplace(false);
-    const result = await importJson('replace');
+    const result = await importJson("replace");
     if (result.imported) {
       setCountsKey((value) => value + 1);
       clearError();
@@ -75,7 +92,8 @@ export default function BackupScreen() {
             <View style={styles.cardHeaderText}>
               <Text style={styles.cardTitle}>Cópia local</Text>
               <Text style={styles.cardMeta}>
-                Os dados ficam no telemóvel. Exporta um ficheiro, guarda-o onde quiseres e importa-o para recuperar.
+                Os dados ficam no telemóvel. Exporta um ficheiro, guarda-o onde
+                quiseres e importa-o para recuperar.
               </Text>
             </View>
           </View>
@@ -101,7 +119,9 @@ export default function BackupScreen() {
             <IconTile icon={Download} />
             <View style={styles.cardHeaderText}>
               <Text style={styles.cardTitle}>Exportar</Text>
-              <Text style={styles.cardMeta}>Guarda os dados num ficheiro partilhável.</Text>
+              <Text style={styles.cardMeta}>
+                Guarda os dados num ficheiro partilhável.
+              </Text>
             </View>
           </View>
 
@@ -131,7 +151,8 @@ export default function BackupScreen() {
             <View style={styles.cardHeaderText}>
               <Text style={styles.cardTitle}>Importar</Text>
               <Text style={styles.cardMeta}>
-                Escolhe um ficheiro JSON criado por esta aplicação. Registos com o mesmo identificador são ignorados.
+                Escolhe um ficheiro JSON criado por esta aplicação. Registos com
+                o mesmo identificador são ignorados.
               </Text>
             </View>
           </View>
@@ -152,7 +173,9 @@ export default function BackupScreen() {
               onPress={() => setConfirmReplace(true)}
             />
           </View>
-          <Text style={styles.cardFooter}>Substituir apaga os dados existentes antes de importar.</Text>
+          <Text style={styles.cardFooter}>
+            Substituir apaga os dados existentes antes de importar.
+          </Text>
         </View>
 
         {busy ? (
@@ -179,6 +202,8 @@ export default function BackupScreen() {
 }
 
 function CountChip({ label, value }: { label: string; value: number }) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.chip}>
       <Text style={styles.chipValue}>{String(value)}</Text>
@@ -198,6 +223,9 @@ function ActionTile({
   disabled: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <Panel style={styles.actionTile} padded={false}>
       <Pressable
@@ -206,15 +234,30 @@ function ActionTile({
         accessibilityState={{ disabled }}
         onPress={onPress}
         disabled={disabled}
-        style={({ pressed }) => [styles.pressable, pressed && !disabled && styles.pressablePressed]}
+        style={({ pressed }) => [
+          styles.pressable,
+          pressed && !disabled && styles.pressablePressed,
+        ]}
       >
-        <Icon color={disabled ? colors.textMuted : colors.text} size={22} strokeWidth={2} />
-        <Text style={[styles.pressableLabel, disabled && styles.pressableLabelDisabled]}>{label}</Text>
+        <Icon
+          color={disabled ? colors.textMuted : colors.text}
+          size={22}
+          strokeWidth={2}
+        />
+        <Text
+          style={[
+            styles.pressableLabel,
+            disabled && styles.pressableLabelDisabled,
+          ]}
+        >
+          {label}
+        </Text>
       </Pressable>
     </Panel>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -229,9 +272,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   title: {
     fontFamily: fonts.bold,
@@ -247,8 +290,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 12,
   },
   iconTile: {
@@ -256,8 +299,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: colors.iconTileBg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardHeaderText: {
     flex: 1,
@@ -280,8 +323,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   countsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
   },
   chip: {
@@ -289,14 +332,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.chipNeutralBg,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    alignItems: 'center',
+    alignItems: "center",
     minWidth: 64,
   },
   chipValue: {
     fontFamily: fonts.bold,
     fontSize: 16,
     color: colors.text,
-    fontVariant: ['tabular-nums'],
+    fontVariant: ["tabular-nums"],
   },
   chipLabel: {
     fontFamily: fonts.regular,
@@ -304,15 +347,15 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   buttonsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
   },
   actionTile: {
     flex: 1,
   },
   pressable: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     minHeight: 64,
     paddingHorizontal: spacing.lg,
@@ -331,7 +374,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   errorPanel: {
-    borderColor: 'rgba(255,181,71,.4)',
+    borderColor: "rgba(255,181,71,.4)",
   },
   errorTitle: {
     fontFamily: fonts.bold,
@@ -346,10 +389,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   busyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingVertical: spacing.sm,
   },
   busyText: {

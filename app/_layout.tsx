@@ -6,9 +6,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 
-import { colors, fontAssets, fonts, radius, spacing } from '../src/ui/theme';
+import { fontAssets, fonts, radius, spacing, useTheme } from '../src/ui/theme';
 import { useDatabase } from '../src/db/useDatabase';
 import { ToastProvider } from '../src/ui/components/Toast';
+import * as Notifications from '../src/repos/notifications';
+import { isExpoGo } from '../src/repos/notificationRuntime';
 import { useAutoSalary } from '../src/features/salary/useSalary';
 import { useLockState } from '../src/features/security/useLockState';
 import { LockScreen } from './lock';
@@ -16,12 +18,20 @@ import { LockScreen } from './lock';
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const { colors, dark } = useTheme();
+  const styles = makeStyles(colors);
   const [fontsLoaded, fontsError] = useFonts(fontAssets);
   const { ready: dbReady, error: dbError } = useDatabase();
   const { hasPin, enabled } = useLockState();
   const [unlocked, setUnlocked] = useState(() => !(hasPin && enabled));
 
   useAutoSalary();
+
+  // Request notification permission on app start (native builds only, not Expo Go)
+  useEffect(() => {
+    if (isExpoGo()) return;
+    Notifications.requestNotificationPermission();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded || fontsError) {
@@ -53,7 +63,7 @@ export default function RootLayout() {
   if (!unlocked && hasPin && enabled) {
     return (
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        <StatusBar style={dark ? 'light' : 'dark'} />
         <LockScreen onUnlocked={handleUnlocked} />
       </SafeAreaProvider>
     );
@@ -62,7 +72,7 @@ export default function RootLayout() {
   return (
     <ToastProvider>
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        <StatusBar style={dark ? 'light' : 'dark'} />
         <Stack
           screenOptions={{
             headerShown: false,
@@ -91,7 +101,8 @@ export default function RootLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: 'center',
@@ -118,4 +129,5 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: spacing.xs,
   },
-});
+  });
+}
