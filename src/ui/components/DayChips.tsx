@@ -1,9 +1,9 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, Text } from 'react-native';
+import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet, Text } from "react-native";
 
-import { addDays, formatDayMonthPt } from '../../domain/dates';
-import { colors, fonts, gradients } from '../theme';
-import { PressableScale } from './PressableScale';
+import { addDays, formatDayMonthPt } from "../../domain/dates";
+import { fonts, useTheme, useThemedStyles, type Colors } from "../theme";
+import { PressableScale } from "./PressableScale";
 
 export function DayChips({
   value,
@@ -16,14 +16,22 @@ export function DayChips({
   onChange: (date: string) => void;
   onCustomPress: () => void;
 }) {
+  const { gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const yesterday = addDays(today, -1);
   const isCustom = value !== today && value !== yesterday;
 
   const options = [
-    { key: 'today', label: 'Hoje', date: today, active: value === today, onPress: () => onChange(today) },
     {
-      key: 'yesterday',
-      label: 'Ontem',
+      key: "today",
+      label: "Hoje",
+      date: today,
+      active: value === today,
+      onPress: () => onChange(today),
+    },
+    {
+      key: "yesterday",
+      label: "Ontem",
       date: yesterday,
       active: value === yesterday,
       onPress: () => onChange(yesterday),
@@ -31,8 +39,8 @@ export function DayChips({
     {
       // `active` não pode ser derivado de `date`: o chip "Outro dia" recebe a
       // data atual em `value`, o que o faria acender em conjunto com "Hoje".
-      key: 'custom',
-      label: isCustom ? formatDayMonthPt(value) : 'Outro dia',
+      key: "custom",
+      label: isCustom ? formatDayMonthPt(value) : "Outro dia",
       date: value,
       active: isCustom,
       onPress: onCustomPress,
@@ -58,7 +66,9 @@ export function DayChips({
             pressedScale={0.94}
             style={[styles.chip, active && styles.chipActive]}
           >
-            <Text style={[styles.label, active && styles.labelActive]}>{option.label}</Text>
+            <Text style={[styles.label, active && styles.labelActive]}>
+              {option.label}
+            </Text>
           </PressableScale>
         );
       })}
@@ -66,30 +76,31 @@ export function DayChips({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  chip: {
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.panelBorder,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipActive: {
-    backgroundColor: colors.tabPill,
-    borderColor: 'transparent',
-  },
-  label: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.text,
-  },
-  labelActive: {
-    fontFamily: fonts.bold,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    chip: {
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      paddingHorizontal: 14,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    chipActive: {
+      backgroundColor: colors.tabPill,
+      borderColor: "transparent",
+    },
+    label: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.text,
+    },
+    labelActive: {
+      fontFamily: fonts.bold,
+    },
+  });

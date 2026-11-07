@@ -1,9 +1,9 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View } from 'react-native';
-import type { LucideIcon } from 'lucide-react-native';
+import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet, View } from "react-native";
+import type { LucideIcon } from "lucide-react-native";
 
-import { colors, gradients } from '../theme';
-import { PressableScale } from './PressableScale';
+import { useTheme, useThemedStyles, type Colors } from "../theme";
+import { PressableScale } from "./PressableScale";
 
 export function IconButton({
   icon: Icon,
@@ -16,8 +16,16 @@ export function IconButton({
   onPress: () => void;
   badge?: boolean;
 }) {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
-    <PressableScale accessibilityLabel={label} onPress={onPress} style={styles.wrap} radius={22}>
+    <PressableScale
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={styles.wrap}
+      radius={22}
+    >
       <LinearGradient
         colors={gradients.panel.colors}
         start={gradients.panel.start}
@@ -31,26 +39,27 @@ export function IconButton({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    width: 44,
-    height: 44,
-  },
-  button: {
-    flex: 1,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.panelBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badge: {
-    position: 'absolute',
-    top: 10,
-    right: 11,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.warn,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    wrap: {
+      width: 44,
+      height: 44,
+    },
+    button: {
+      flex: 1,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    badge: {
+      position: "absolute",
+      top: 10,
+      right: 11,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.warn,
+    },
+  });

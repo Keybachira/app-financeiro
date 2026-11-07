@@ -1,6 +1,6 @@
-import { useId } from 'react';
-import { StyleSheet } from 'react-native';
-import { Defs, RadialGradient, Rect, Stop, Svg } from 'react-native-svg';
+import { useId } from "react";
+import { StyleSheet } from "react-native";
+import { Defs, RadialGradient, Rect, Stop, Svg } from "react-native-svg";
 
 export function RadialHighlight({
   cx,
@@ -17,7 +17,7 @@ export function RadialHighlight({
   color: string;
   opacity?: number;
 }) {
-  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const gradientId = `highlight${uid}`;
 
   return (
@@ -35,7 +35,13 @@ export function RadialHighlight({
           <Stop offset="1" stopColor={color} stopOpacity="0" />
         </RadialGradient>
       </Defs>
-      <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId})`} />
+      <Rect
+        x="0"
+        y="0"
+        width="100%"
+        height="100%"
+        fill={`url(#${gradientId})`}
+      />
     </Svg>
   );
 }

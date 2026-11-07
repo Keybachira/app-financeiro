@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from "react";
+import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 
-import { tapLight } from '../haptics';
-import { colors, radius } from '../theme';
+import { tapLight } from "../haptics";
+import { radius, useThemedStyles, type Colors } from "../theme";
 
 const KNOB_TRAVEL = 20;
 
@@ -15,6 +15,7 @@ export function Switch({
   onValueChange: (value: boolean) => void;
   label?: string;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const travel = useRef(new Animated.Value(value ? KNOB_TRAVEL : 0)).current;
 
   // Único componente de UI sem animação: a knob saltava de translateX 0 para
@@ -38,30 +39,33 @@ export function Switch({
         onValueChange(!value);
       }}
       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-      android_ripple={{ color: 'rgba(255,255,255,.14)' }}
+      android_ripple={{ color: "rgba(127,127,127,.25)" }}
       style={[styles.track, value && styles.trackOn]}
     >
-      <Animated.View style={[styles.knob, { transform: [{ translateX: travel }] }]} />
+      <Animated.View
+        style={[styles.knob, { transform: [{ translateX: travel }] }]}
+      />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  track: {
-    width: 52,
-    height: 32,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,.14)',
-    padding: 4,
-    justifyContent: 'center',
-  },
-  trackOn: {
-    backgroundColor: colors.tabPill,
-  },
-  knob: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.text,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    track: {
+      width: 52,
+      height: 32,
+      borderRadius: radius.pill,
+      backgroundColor: colors.track,
+      padding: 4,
+      justifyContent: "center",
+    },
+    trackOn: {
+      backgroundColor: colors.tabPill,
+    },
+    knob: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: colors.text,
+    },
+  });

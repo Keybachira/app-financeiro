@@ -1,8 +1,6 @@
-import type { ReactNode } from 'react';
-import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-
-import { gradients, radius, spacing } from '../theme';
+import type { ReactNode } from "react";
+import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import { type Colors, spacing, useThemedStyles } from "../theme";
 
 export function Panel({
   children,
@@ -13,26 +11,22 @@ export function Panel({
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
 }) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
-    <LinearGradient
-      colors={gradients.panel.colors}
-      start={gradients.panel.start}
-      end={gradients.panel.end}
-      style={[styles.panel, padded && styles.padded, style]}
-    >
+    <View style={[styles.panel, padded && styles.padded, style]}>
       {children}
-    </LinearGradient>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  panel: {
-    borderRadius: radius.panel,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,.07)',
-    backgroundColor: '#101839',
-  },
-  padded: {
-    padding: spacing.lg,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    panel: {
+      borderRadius: 28,
+      backgroundColor: colors.bgMid,
+    },
+    padded: {
+      padding: spacing.lg,
+    },
+  });

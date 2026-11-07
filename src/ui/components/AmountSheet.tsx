@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { X } from 'lucide-react-native';
+import { useEffect, useState } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { X } from "lucide-react-native";
 
-import { formatKz } from '../../domain/money';
-import { AmountKeypad } from './AmountKeypad';
-import { IconButton } from './IconButton';
-import { MoneyText } from './MoneyText';
-import { ScreenBackground } from './ScreenBackground';
-import { colors, fonts, gradients, radius, spacing } from '../theme';
+import { formatKz } from "../../domain/money";
+import { AmountKeypad } from "./AmountKeypad";
+import { IconButton } from "./IconButton";
+import { MoneyText } from "./MoneyText";
+import { ScreenBackground } from "./ScreenBackground";
+import { fonts, radius, spacing, useTheme, useThemedStyles, type Colors } from "../theme";
 
 export function AmountSheet({
   visible,
   title,
-  confirmLabel = 'Confirmar',
+  confirmLabel = "Confirmar",
   helper,
   maxAmount,
   onCancel,
@@ -27,11 +27,13 @@ export function AmountSheet({
   onCancel: () => void;
   onConfirm: (amount: number) => void;
 }) {
-  const [digits, setDigits] = useState('');
+  const { gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const [digits, setDigits] = useState("");
 
   useEffect(() => {
     if (visible) {
-      setDigits('');
+      setDigits("");
     }
   }, [visible]);
 
@@ -40,7 +42,12 @@ export function AmountSheet({
   const invalid = amount <= 0 || exceedsMax;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onCancel}
+    >
       <View style={styles.root}>
         <ScreenBackground />
         <View style={styles.body}>
@@ -54,11 +61,15 @@ export function AmountSheet({
           </View>
 
           <Text style={[styles.helper, exceedsMax && styles.helperWarn]}>
-            {exceedsMax ? `Máximo ${formatKz(maxAmount ?? 0)}` : (helper ?? '')}
+            {exceedsMax ? `Máximo ${formatKz(maxAmount ?? 0)}` : (helper ?? "")}
           </Text>
 
           <AmountKeypad
-            onDigit={(key) => setDigits((current) => (current === '0' ? key : (current + key).slice(0, 12)))}
+            onDigit={(key) =>
+              setDigits((current) =>
+                current === "0" ? key : (current + key).slice(0, 12),
+              )
+            }
             onBackspace={() => setDigits((current) => current.slice(0, -1))}
           />
 
@@ -67,7 +78,7 @@ export function AmountSheet({
             disabled={invalid}
             onPress={() => {
               onConfirm(amount);
-              setDigits('');
+              setDigits("");
             }}
             style={[styles.saveWrap, invalid && styles.saveDisabled]}
           >
@@ -86,57 +97,58 @@ export function AmountSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  body: {
-    flex: 1,
-    padding: spacing.lg,
-    paddingTop: spacing.xl,
-    gap: spacing.sm,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: 20,
-    color: colors.text,
-  },
-  amountWrap: {
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  helper: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  helperWarn: {
-    color: colors.warn,
-    fontFamily: fonts.medium,
-  },
-  saveWrap: {
-    borderRadius: 28,
-    marginTop: spacing.md,
-  },
-  saveDisabled: {
-    opacity: 0.5,
-  },
-  saveButton: {
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 16,
-    color: colors.text,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    body: {
+      flex: 1,
+      padding: spacing.lg,
+      paddingTop: spacing.xl,
+      gap: spacing.sm,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    title: {
+      fontFamily: fonts.bold,
+      fontSize: 20,
+      color: colors.text,
+    },
+    amountWrap: {
+      alignItems: "center",
+      paddingVertical: spacing.md,
+    },
+    helper: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textMuted,
+      textAlign: "center",
+    },
+    helperWarn: {
+      color: colors.warn,
+      fontFamily: fonts.medium,
+    },
+    saveWrap: {
+      borderRadius: 28,
+      marginTop: spacing.md,
+    },
+    saveDisabled: {
+      opacity: 0.5,
+    },
+    saveButton: {
+      height: 56,
+      borderRadius: 28,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    saveLabel: {
+      fontFamily: fonts.medium,
+      fontSize: 16,
+      color: colors.text,
+    },
+  });

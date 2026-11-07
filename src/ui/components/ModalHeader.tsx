@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import type { ReactNode } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { ArrowLeft } from "lucide-react-native";
 
-import { colors, fonts, spacing } from '../theme';
-import { IconButton } from './IconButton';
+import { fonts, spacing, useThemedStyles, type Colors } from "../theme";
+import { IconButton } from "./IconButton";
 
 /**
  * Cabeçalho para ecrãs abertos como modal, com botão de voltar explícito.
@@ -28,10 +28,15 @@ export function ModalHeader({
   right?: ReactNode;
 }) {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <View style={styles.header}>
-      <IconButton icon={ArrowLeft} label="Voltar" onPress={() => router.back()} />
+      <IconButton
+        icon={ArrowLeft}
+        label="Voltar"
+        onPress={() => router.back()}
+      />
       <View style={styles.titleBlock}>
         <Text style={styles.title} numberOfLines={1}>
           {title}
@@ -47,30 +52,31 @@ export function ModalHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  titleBlock: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: 22,
-    color: colors.text,
-  },
-  subtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  right: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    titleBlock: {
+      flex: 1,
+      gap: 2,
+    },
+    title: {
+      fontFamily: fonts.bold,
+      fontSize: 20,
+      color: colors.text,
+    },
+    subtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    right: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+  });

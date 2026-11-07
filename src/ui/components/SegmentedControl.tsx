@@ -1,8 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { tapLight } from '../haptics';
-import { colors, fonts, radius } from '../theme';
+import { tapLight } from "../haptics";
+import { fonts, radius, useThemedStyles, type Colors } from "../theme";
 
 export type SegmentedOption<T extends string> = {
   value: T;
@@ -30,12 +37,14 @@ export function SegmentedControl<T extends string>({
 }) {
   const index = Math.max(
     0,
-    options.findIndex((option) => option.value === value)
+    options.findIndex((option) => option.value === value),
   );
+  const styles = useThemedStyles(makeStyles);
   const [trackWidth, setTrackWidth] = useState(0);
   const thumb = useRef(new Animated.Value(index)).current;
 
-  const itemWidth = trackWidth > 0 ? (trackWidth - TRACK_PAD * 2) / options.length : 0;
+  const itemWidth =
+    trackWidth > 0 ? (trackWidth - TRACK_PAD * 2) / options.length : 0;
 
   useEffect(() => {
     Animated.timing(thumb, {
@@ -59,7 +68,12 @@ export function SegmentedControl<T extends string>({
       onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
     >
       {itemWidth > 0 ? (
-        <Animated.View style={[styles.thumb, { width: itemWidth, transform: [{ translateX }] }]} />
+        <Animated.View
+          style={[
+            styles.thumb,
+            { width: itemWidth, transform: [{ translateX }] },
+          ]}
+        />
       ) : null}
 
       {options.map((option) => {
@@ -81,7 +95,10 @@ export function SegmentedControl<T extends string>({
             hitSlop={4}
             style={styles.item}
           >
-            <Text style={[styles.label, active && styles.labelActive]} numberOfLines={1}>
+            <Text
+              style={[styles.label, active && styles.labelActive]}
+              numberOfLines={1}
+            >
               {option.label}
             </Text>
           </Pressable>
@@ -91,38 +108,39 @@ export function SegmentedControl<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  track: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,.05)',
-    borderRadius: radius.control,
-    borderWidth: 1,
-    borderColor: colors.hairline,
-    height: TRACK_HEIGHT,
-    padding: TRACK_PAD,
-  },
-  thumb: {
-    position: 'absolute',
-    left: TRACK_PAD,
-    top: TRACK_PAD,
-    bottom: TRACK_PAD,
-    borderRadius: ITEM_RADIUS,
-    backgroundColor: colors.chipAccentBg,
-    borderWidth: 1,
-    borderColor: 'rgba(60,116,245,.5)',
-  },
-  item: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  labelActive: {
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    track: {
+      flexDirection: "row",
+      backgroundColor: colors.inputBg,
+      borderRadius: radius.control,
+      borderWidth: 1,
+      borderColor: colors.hairline,
+      height: TRACK_HEIGHT,
+      padding: TRACK_PAD,
+    },
+    thumb: {
+      position: "absolute",
+      left: TRACK_PAD,
+      top: TRACK_PAD,
+      bottom: TRACK_PAD,
+      borderRadius: ITEM_RADIUS,
+      backgroundColor: colors.chipAccentBg,
+      borderWidth: 1,
+      borderColor: colors.chipAccentText,
+    },
+    item: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    label: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: colors.textMuted,
+    },
+    labelActive: {
+      fontFamily: fonts.bold,
+      color: colors.text,
+    },
+  });

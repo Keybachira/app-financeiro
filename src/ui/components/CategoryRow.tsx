@@ -1,10 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from "react-native";
 
-import { MoneyText } from './MoneyText';
-import { IconTile } from './IconTile';
-import { ProgressBar } from './ProgressBar';
-import { categoryIcon } from '../categoryIcons';
-import { colors, fonts } from '../theme';
+import { MoneyText } from "./MoneyText";
+import { IconTile } from "./IconTile";
+import { ProgressBar } from "./ProgressBar";
+import { categoryIcon } from "../categoryIcons";
+import { fonts, useThemedStyles, type Colors } from "../theme";
 
 export function CategoryRow({
   category,
@@ -15,6 +15,8 @@ export function CategoryRow({
   amount: number;
   share: number;
 }) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.row}>
       <IconTile icon={categoryIcon(category)} size={40} />
@@ -29,24 +31,25 @@ export function CategoryRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  info: {
-    flex: 1,
-    gap: 8,
-  },
-  top: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  name: {
-    fontFamily: fonts.medium,
-    fontSize: 16,
-    color: colors.text,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+    },
+    info: {
+      flex: 1,
+      gap: 8,
+    },
+    top: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    name: {
+      fontFamily: fonts.medium,
+      fontSize: 16,
+      color: colors.text,
+    },
+  });

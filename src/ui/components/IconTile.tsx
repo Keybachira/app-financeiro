@@ -1,21 +1,23 @@
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
-import type { LucideIcon } from 'lucide-react-native';
+import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import type { LucideIcon } from "lucide-react-native";
 
-import { colors } from '../theme';
+import { useTheme } from "../theme";
 
 export function IconTile({
   icon: Icon,
   size = 40,
   iconSize = 22,
-  tone = 'accent',
+  tone = "accent",
   style,
 }: {
   icon: LucideIcon;
   size?: number;
   iconSize?: number;
-  tone?: 'accent' | 'neutral';
+  tone?: "accent" | "neutral";
   style?: StyleProp<ViewStyle>;
 }) {
+  const { colors } = useTheme();
+
   return (
     <View
       style={[
@@ -24,19 +26,24 @@ export function IconTile({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: tone === 'accent' ? colors.iconTileBg : colors.chipNeutralBg,
+          backgroundColor:
+            tone === "accent" ? colors.iconTileBg : colors.chipNeutralBg,
         },
         style,
       ]}
     >
-      <Icon color={tone === 'accent' ? colors.accent : colors.textMuted} size={iconSize} strokeWidth={2} />
+      <Icon
+        color={tone === "accent" ? colors.accent : colors.textMuted}
+        size={iconSize}
+        strokeWidth={2}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   tile: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

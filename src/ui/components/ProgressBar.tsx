@@ -1,19 +1,21 @@
-import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
-import { colors, gradients } from '../theme';
+import { useTheme, useThemedStyles, type Colors } from "../theme";
 
-type Tone = 'white' | 'accent' | 'warn' | 'gradient';
+type Tone = "white" | "accent" | "warn" | "gradient";
 
-const FILLS: Record<Exclude<Tone, 'gradient'>, string> = {
+const fills = (
+  colors: Colors,
+): Record<Exclude<Tone, "gradient">, string> => ({
   white: colors.text,
   accent: colors.accent,
   warn: colors.warn,
-};
+});
 
 export function ProgressBar({
   value,
-  tone = 'gradient',
+  tone = "gradient",
   height = 6,
   style,
 }: {
@@ -22,6 +24,8 @@ export function ProgressBar({
   height?: number;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const pct = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 
   return (
@@ -30,8 +34,13 @@ export function ProgressBar({
       accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}
       style={[styles.track, { height, borderRadius: height / 2 }, style]}
     >
-      <View style={[styles.fillWrapper, { width: `${pct * 100}%`, height, borderRadius: height / 2 }]}>
-        {tone === 'gradient' ? (
+      <View
+        style={[
+          styles.fillWrapper,
+          { width: `${pct * 100}%`, height, borderRadius: height / 2 },
+        ]}
+      >
+        {tone === "gradient" ? (
           <LinearGradient
             colors={gradients.progress.colors}
             start={gradients.progress.start}
@@ -39,19 +48,25 @@ export function ProgressBar({
             style={StyleSheet.absoluteFill}
           />
         ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: FILLS[tone] }]} />
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: fills(colors)[tone] },
+            ]}
+          />
         )}
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  track: {
-    backgroundColor: colors.trackSoft,
-    overflow: 'hidden',
-  },
-  fillWrapper: {
-    overflow: 'hidden',
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    track: {
+      backgroundColor: colors.trackSoft,
+      overflow: "hidden",
+    },
+    fillWrapper: {
+      overflow: "hidden",
+    },
+  });

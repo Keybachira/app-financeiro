@@ -1,11 +1,24 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { Delete } from 'lucide-react-native';
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { Delete } from "lucide-react-native";
 
-import { tapLight, tapMedium } from '../haptics';
-import { colors, fonts, gradients, radius, spacing } from '../theme';
+import { tapLight, tapMedium } from "../haptics";
+import {
+  fonts,
+  radius,
+  spacing,
+  useTheme,
+  useThemedStyles,
+  type Colors,
+} from "../theme";
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', 'back'];
+const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "000", "0", "back"];
 
 export function AmountKeypad({
   onDigit,
@@ -14,6 +27,8 @@ export function AmountKeypad({
   onDigit: (key: string) => void;
   onBackspace: () => void;
 }) {
+  const { colors, gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { width } = useWindowDimensions();
   const keyWidth = (width - spacing.lg * 2 - spacing.sm * 2) / 3;
 
@@ -23,9 +38,9 @@ export function AmountKeypad({
         <Pressable
           key={key}
           accessibilityRole="button"
-          accessibilityLabel={key === 'back' ? 'Apagar último dígito' : key}
+          accessibilityLabel={key === "back" ? "Apagar último dígito" : key}
           onPress={() => {
-            if (key === 'back') {
+            if (key === "back") {
               tapLight();
               onBackspace();
               return;
@@ -33,7 +48,7 @@ export function AmountKeypad({
 
             // "000" muda três dígitos de uma vez: mimeo mais forte para o
             // utilizador perceber que o toque não foi um "0" só.
-            if (key === '000') {
+            if (key === "000") {
               tapMedium();
             } else {
               tapLight();
@@ -44,8 +59,12 @@ export function AmountKeypad({
           // Sem isto o `Pressable` não produzia nenhum estado de premido:
           // `style` como array não tem `pressed`, logo não havia feedback
           // visual em nenhuma das 12 teclas.
-          android_ripple={{ color: 'rgba(255,255,255,.14)', borderless: false }}
-          style={({ pressed }) => [styles.key, { width: keyWidth }, pressed && styles.keyPressed]}
+          android_ripple={{ color: "rgba(127,127,127,.25)", borderless: false }}
+          style={({ pressed }) => [
+            styles.key,
+            { width: keyWidth },
+            pressed && styles.keyPressed,
+          ]}
         >
           <LinearGradient
             colors={gradients.panel.colors}
@@ -53,7 +72,7 @@ export function AmountKeypad({
             end={gradients.panel.end}
             style={styles.keyBackground}
           >
-            {key === 'back' ? (
+            {key === "back" ? (
               <Delete color={colors.text} size={22} strokeWidth={2} />
             ) : (
               <Text style={styles.keyLabel}>{key}</Text>
@@ -65,31 +84,32 @@ export function AmountKeypad({
   );
 }
 
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  key: {
-    height: 56,
-    borderRadius: radius.control,
-    overflow: 'hidden',
-  },
-  keyPressed: {
-    opacity: 0.6,
-  },
-  keyBackground: {
-    flex: 1,
-    borderRadius: radius.control,
-    borderWidth: 1,
-    borderColor: colors.panelBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  keyLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 20,
-    color: colors.text,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    grid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    key: {
+      height: 56,
+      borderRadius: radius.control,
+      overflow: "hidden",
+    },
+    keyPressed: {
+      opacity: 0.6,
+    },
+    keyBackground: {
+      flex: 1,
+      borderRadius: radius.control,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    keyLabel: {
+      fontFamily: fonts.medium,
+      fontSize: 20,
+      color: colors.text,
+    },
+  });

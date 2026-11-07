@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react-native';
+import type { LucideIcon } from "lucide-react-native";
 import {
   Bus,
   Briefcase,
@@ -9,9 +9,9 @@ import {
   HeartPulse,
   Landmark,
   Utensils,
-} from 'lucide-react-native';
+} from "lucide-react-native";
 
-import { isCategory, type Category } from '../domain/categories';
+import { isCategory, type Category } from "../domain/categories";
 
 const CATEGORY_ICONS: Record<Category, LucideIcon> = {
   Alimentação: Utensils,

@@ -1,17 +1,20 @@
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { Search, X } from 'lucide-react-native';
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Search, X } from "lucide-react-native";
 
-import { colors, fonts, radius } from '../theme';
+import { fonts, radius, useTheme, useThemedStyles, type Colors } from "../theme";
 
 export function SearchInput({
   value,
   onChange,
-  placeholder = 'Procurar',
+  placeholder = "Procurar",
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.wrap}>
       <Search color={colors.textMuted} size={18} strokeWidth={2} />
@@ -25,7 +28,11 @@ export function SearchInput({
         autoCorrect={false}
       />
       {value.length > 0 ? (
-        <Pressable accessibilityLabel="Limpar pesquisa" hitSlop={8} onPress={() => onChange('')}>
+        <Pressable
+          accessibilityLabel="Limpar pesquisa"
+          hitSlop={8}
+          onPress={() => onChange("")}
+        >
           <X color={colors.textMuted} size={18} strokeWidth={2} />
         </Pressable>
       ) : null}
@@ -33,23 +40,24 @@ export function SearchInput({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: radius.control,
-    borderWidth: 1,
-    borderColor: colors.hairline,
-    backgroundColor: 'rgba(255,255,255,.06)',
-    paddingHorizontal: 12,
-  },
-  input: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.text,
-    padding: 0,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    wrap: {
+      height: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      borderRadius: radius.control,
+      borderWidth: 1,
+      borderColor: colors.hairline,
+      backgroundColor: colors.inputBg,
+      paddingHorizontal: 12,
+    },
+    input: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.text,
+      padding: 0,
+    },
+  });

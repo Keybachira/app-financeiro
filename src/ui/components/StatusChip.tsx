@@ -1,25 +1,26 @@
-import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 
-import { colors, fonts, radius } from '../theme';
+import { fonts, radius, useTheme, type Colors } from "../theme";
 
-type Tone = 'neutral' | 'warn' | 'accent';
+type Tone = "neutral" | "warn" | "accent";
 
-const TONES: Record<Tone, { bg: string; text: string }> = {
+const tones = (colors: Colors): Record<Tone, { bg: string; text: string }> => ({
   neutral: { bg: colors.chipNeutralBg, text: colors.chipNeutralText },
   warn: { bg: colors.chipWarnBg, text: colors.chipWarnText },
   accent: { bg: colors.chipAccentBg, text: colors.chipAccentText },
-};
+});
 
 export function StatusChip({
   label,
-  tone = 'neutral',
+  tone = "neutral",
   style,
 }: {
   label: string;
   tone?: Tone;
   style?: StyleProp<ViewStyle>;
 }) {
-  const t = TONES[tone];
+  const { colors } = useTheme();
+  const t = tones(colors)[tone];
 
   return (
     <View style={[styles.chip, { backgroundColor: t.bg }, style]}>
@@ -30,7 +31,7 @@ export function StatusChip({
 
 const styles = StyleSheet.create({
   chip: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     borderRadius: radius.chip,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -38,6 +39,5 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fonts.medium,
     fontSize: 12,
-    color: colors.text,
   },
 });

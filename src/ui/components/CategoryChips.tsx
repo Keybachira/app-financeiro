@@ -1,8 +1,8 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { LinearGradient } from "expo-linear-gradient";
+import { ScrollView, StyleSheet, Text } from "react-native";
 
-import { colors, fonts, gradients, radius } from '../theme';
-import { PressableScale } from './PressableScale';
+import { fonts, useTheme, useThemedStyles, type Colors } from "../theme";
+import { PressableScale } from "./PressableScale";
 
 export function CategoryChips({
   categories,
@@ -13,8 +13,15 @@ export function CategoryChips({
   value: string;
   onChange: (category: string) => void;
 }) {
+  const { gradients } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.row}
+    >
       {categories.map((category) => {
         const active = category === value;
         return (
@@ -29,12 +36,16 @@ export function CategoryChips({
             style={active && styles.chipActive}
           >
             <LinearGradient
-              colors={active ? gradients.primary.colors : gradients.panel.colors}
+              colors={
+                active ? gradients.primary.colors : gradients.panel.colors
+              }
               start={active ? gradients.primary.start : gradients.panel.start}
               end={active ? gradients.primary.end : gradients.panel.end}
               style={[styles.chip, active && styles.chipActive]}
             >
-              <Text style={[styles.label, active && styles.labelActive]}>{category}</Text>
+              <Text style={[styles.label, active && styles.labelActive]}>
+                {category}
+              </Text>
             </LinearGradient>
           </PressableScale>
         );
@@ -43,29 +54,30 @@ export function CategoryChips({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    gap: 8,
-    paddingVertical: 2,
-  },
-  chip: {
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.panelBorder,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipActive: {
-    borderColor: 'transparent',
-  },
-  label: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.text,
-  },
-  labelActive: {
-    fontFamily: fonts.bold,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    row: {
+      gap: 8,
+      paddingVertical: 2,
+    },
+    chip: {
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      paddingHorizontal: 14,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    chipActive: {
+      borderColor: "transparent",
+    },
+    label: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.text,
+    },
+    labelActive: {
+      fontFamily: fonts.bold,
+    },
+  });

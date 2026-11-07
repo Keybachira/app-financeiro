@@ -1,5 +1,5 @@
-import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
+import * as Haptics from "expo-haptics";
+import { Platform } from "react-native";
 
 /**
  * Feedback háptico centralizado.
@@ -19,7 +19,7 @@ function fire(run: () => Promise<unknown>): void {
 
 /** Toque normal: teclas, chips, cards, fechar. */
 export function tapLight(): void {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     return;
   }
 
@@ -28,7 +28,7 @@ export function tapLight(): void {
 
 /** Mimeo de uma ação que mudou algo: guardar, pagar, registar. */
 export function tapMedium(): void {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     return;
   }
 
@@ -37,16 +37,18 @@ export function tapMedium(): void {
 
 /** Sucesso confirmado: "Movimento guardado", "Conta paga". */
 export function notifySuccess(): void {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     return;
   }
 
-  fire(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
+  fire(() =>
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+  );
 }
 
 /** Erro ou ação recusada: PIN errado, "já foi paga", validação falha. */
 export function notifyError(): void {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     return;
   }
 

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import type { ReactNode } from "react";
 import {
   Animated,
   Easing,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
   type StyleProp,
   type ViewStyle,
-} from 'react-native';
+} from "react-native";
 
 /**
  * Pressable com feedback de toque reutilizável: reduz a escala e a opacidade
@@ -22,26 +22,26 @@ import {
 // Estilos que definem ONDE o botão está: ficam só no Pressable exterior.
 
 const OUTER_ONLY = new Set([
-  'position',
-  'top',
-  'bottom',
-  'left',
-  'right',
-  'zIndex',
-  'alignSelf',
-  'margin',
-  'marginTop',
-  'marginBottom',
-  'marginLeft',
-  'marginRight',
-  'marginHorizontal',
-  'marginVertical',
-  'marginStart',
-  'marginEnd',
+  "position",
+  "top",
+  "bottom",
+  "left",
+  "right",
+  "zIndex",
+  "alignSelf",
+  "margin",
+  "marginTop",
+  "marginBottom",
+  "marginLeft",
+  "marginRight",
+  "marginHorizontal",
+  "marginVertical",
+  "marginStart",
+  "marginEnd",
 ]);
 
 // Estilos de flex: ficam nos dois, para o interior preencher o exterior.
-const BOTH = new Set(['flex', 'flexGrow', 'flexShrink', 'flexBasis']);
+const BOTH = new Set(["flex", "flexGrow", "flexShrink", "flexBasis"]);
 
 function splitStyle(style: StyleProp<ViewStyle>) {
   const flat = (StyleSheet.flatten(style) ?? {}) as Record<string, unknown>;
@@ -69,7 +69,7 @@ export function PressableScale({
   pressedOpacity = 0.75,
   hitSlop,
   disabled,
-  accessibilityRole = 'button',
+  accessibilityRole = "button",
   accessibilityLabel,
   accessibilityState,
   onPress,
@@ -79,11 +79,16 @@ export function PressableScale({
   style?: StyleProp<ViewStyle>;
   pressedScale?: number;
   pressedOpacity?: number;
-  hitSlop?: number | { top?: number; bottom?: number; left?: number; right?: number };
+  hitSlop?:
+    number | { top?: number; bottom?: number; left?: number; right?: number };
   disabled?: boolean;
-  accessibilityRole?: 'button' | 'switch' | 'link';
+  accessibilityRole?: "button" | "switch" | "link";
   accessibilityLabel?: string;
-  accessibilityState?: { selected?: boolean; checked?: boolean; disabled?: boolean };
+  accessibilityState?: {
+    selected?: boolean;
+    checked?: boolean;
+    disabled?: boolean;
+  };
   onPress: () => void;
   radius?: number;
 }) {
@@ -120,7 +125,7 @@ export function PressableScale({
         }),
       ]).start();
     },
-    [scale, opacity]
+    [scale, opacity],
   );
 
   const handlePressIn = useCallback(() => {
@@ -137,7 +142,7 @@ export function PressableScale({
       return;
     }
     // Garante que o efeito de "premido" se vê pelo menos 90 ms, mesmo num toque rápido.
-    
+
     const wait = Math.max(0, 90 - (Date.now() - pressedAt.current));
     clearReleaseTimer();
     releaseTimer.current = setTimeout(() => animateTo(1, 1, 160), wait);
@@ -158,7 +163,9 @@ export function PressableScale({
       <Animated.View
         style={[
           { transform: [{ scale }], opacity },
-          radiusOverride !== undefined ? { borderRadius: radiusOverride } : null,
+          radiusOverride !== undefined
+            ? { borderRadius: radiusOverride }
+            : null,
           inner,
         ]}
       >

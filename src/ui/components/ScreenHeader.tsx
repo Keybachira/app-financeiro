@@ -1,9 +1,17 @@
-import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
-import { colors, fonts, spacing } from '../theme';
+import { fonts, spacing, useThemedStyles, type Colors } from "../theme";
 
-export function ScreenHeader({ title, right }: { title: string; right?: ReactNode }) {
+export function ScreenHeader({
+  title,
+  right,
+}: {
+  title: string;
+  right?: ReactNode;
+}) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.header}>
       <Text style={styles.title}>{title}</Text>
@@ -14,24 +22,25 @@ export function ScreenHeader({ title, right }: { title: string; right?: ReactNod
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-    minHeight: 44,
-  },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-    color: colors.text,
-  },
-  right: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: spacing.lg,
+      minHeight: 44,
+    },
+    title: {
+      fontFamily: fonts.bold,
+      fontSize: 28,
+      fontWeight: "700",
+      letterSpacing: -0.5,
+      color: colors.text,
+    },
+    right: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+  });

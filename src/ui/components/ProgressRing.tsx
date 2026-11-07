@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { StyleSheet, Text, View } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 
-import { colors, fonts } from '../theme';
+import { fonts, useTheme, useThemedStyles, type Colors } from "../theme";
 
 export function ProgressRing({
   value,
@@ -14,6 +14,8 @@ export function ProgressRing({
   stroke?: number;
   showPercent?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const pct = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -26,7 +28,7 @@ export function ProgressRing({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255,255,255,.12)"
+          stroke={colors.trackSoft}
           strokeWidth={stroke}
           fill="none"
         />
@@ -46,25 +48,28 @@ export function ProgressRing({
       </Svg>
       {showPercent ? (
         <View style={styles.center} pointerEvents="none">
-          <Text style={[styles.percent, { fontSize: Math.round(size / 4.3) }]}>{`${Math.round(pct * 100)}%`}</Text>
+          <Text
+            style={[styles.percent, { fontSize: Math.round(size / 4.3) }]}
+          >{`${Math.round(pct * 100)}%`}</Text>
         </View>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  center: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  percent: {
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    center: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    percent: {
+      fontFamily: fonts.bold,
+      color: colors.text,
+    },
+  });
