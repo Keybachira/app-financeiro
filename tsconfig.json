@@ -13,6 +13,7 @@
     "node_modules",
     ".expo",
     "dist",
-    "web-build"
+    "web-build",
+    "migrar-design"
   ]
 }
