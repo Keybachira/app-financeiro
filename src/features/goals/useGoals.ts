@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from "react";
 
 import {
   goalExpectedByNow,
@@ -7,7 +7,7 @@ import {
   isGoalCompleted,
   monthlySavingsNeeded,
   type GoalPaceStatus,
-} from '../../domain/goalMath';
+} from "../../domain/goalMath";
 import {
   createGoal,
   deleteGoal,
@@ -24,8 +24,8 @@ import {
   type GoalInput,
   type GoalOpRow,
   type GoalRow,
-} from '../../repos/goals';
-import { todayISO } from '../../domain/dates';
+} from "../../repos/goals";
+import { todayISO } from "../../domain/dates";
 
 export type GoalView = {
   goal: GoalRow;
@@ -50,9 +50,26 @@ function toView(goal: GoalRow): GoalView {
     withdraws,
     progress: goalProgress(saved, goal.target),
     completed: isGoalCompleted(saved, goal.target),
-    pace: goalPace({ saved, target: goal.target, createdAt: goal.created_at, deadline: goal.deadline, today }),
-    monthlyNeeded: monthlySavingsNeeded(goal.target, saved, goal.deadline, today),
-    paceDelta: (goalExpectedByNow({ target: goal.target, createdAt: goal.created_at, deadline: goal.deadline, today }) ?? 0) - saved,
+    pace: goalPace({
+      saved,
+      target: goal.target,
+      createdAt: goal.created_at,
+      deadline: goal.deadline,
+      today,
+    }),
+    monthlyNeeded: monthlySavingsNeeded(
+      goal.target,
+      saved,
+      goal.deadline,
+      today,
+    ),
+    paceDelta:
+      (goalExpectedByNow({
+        target: goal.target,
+        createdAt: goal.created_at,
+        deadline: goal.deadline,
+        today,
+      }) ?? 0) - saved,
   };
 }
 
@@ -79,8 +96,12 @@ export function useGoals(): {
     void tick;
     const goals = listGoals().map(toView);
     return {
-      active: goals.filter((view) => view.goal.archived_at === null && !view.completed),
-      completed: goals.filter((view) => view.goal.archived_at === null && view.completed),
+      active: goals.filter(
+        (view) => view.goal.archived_at === null && !view.completed,
+      ),
+      completed: goals.filter(
+        (view) => view.goal.archived_at === null && view.completed,
+      ),
       archived: goals.filter((view) => view.goal.archived_at !== null),
     };
   }, [tick]);
@@ -95,7 +116,7 @@ export function useGoals(): {
       const goal = getGoal(id);
       return goal ? toView(goal) : null;
     },
-    [tick]
+    [tick],
   );
 
   return {

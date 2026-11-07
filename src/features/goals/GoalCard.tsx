@@ -1,49 +1,68 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Target } from 'lucide-react-native';
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Target } from "lucide-react-native";
 
-import { formatKz } from '../../domain/money';
-import { monthShort } from '../../domain/dates';
-import { IconTile } from '../../ui/components/IconTile';
-import { MoneyText } from '../../ui/components/MoneyText';
-import { Panel } from '../../ui/components/Panel';
-import { ProgressRing } from '../../ui/components/ProgressRing';
-import { StatusChip } from '../../ui/components/StatusChip';
-import { colors, fonts, radius, spacing } from '../../ui/theme';
-import type { GoalView } from './useGoals';
+import { formatKz } from "../../domain/money";
+import { monthShort } from "../../domain/dates";
+import { IconTile } from "../../ui/components/IconTile";
+import { MoneyText } from "../../ui/components/MoneyText";
+import { Panel } from "../../ui/components/Panel";
+import { ProgressRing } from "../../ui/components/ProgressRing";
+import { StatusChip } from "../../ui/components/StatusChip";
+import {
+  fonts,
+  radius,
+  spacing,
+  useThemedStyles,
+  type Colors,
+} from "../../ui/theme";
+import type { GoalView } from "./useGoals";
 
 function paceChip(view: GoalView) {
   if (view.completed) {
-    return { tone: 'accent' as const, label: 'Concluída' };
+    return { tone: "accent" as const, label: "Concluída" };
   }
 
   if (view.goal.deadline === null) {
-    return { tone: 'neutral' as const, label: 'Sem prazo' };
+    return { tone: "neutral" as const, label: "Sem prazo" };
   }
 
-  if (view.pace === 'ahead') {
-    return { tone: 'accent' as const, label: `Adiantado ${formatKz(Math.round(view.paceDelta))}` };
+  if (view.pace === "ahead") {
+    return {
+      tone: "accent" as const,
+      label: `Adiantado ${formatKz(Math.round(view.paceDelta))}`,
+    };
   }
 
-  if (view.pace === 'behind') {
-    return { tone: 'warn' as const, label: `Atrasado ${formatKz(Math.round(view.paceDelta))}` };
+  if (view.pace === "behind") {
+    return {
+      tone: "warn" as const,
+      label: `Atrasado ${formatKz(Math.round(view.paceDelta))}`,
+    };
   }
 
-  return { tone: 'neutral' as const, label: 'No ritmo' };
+  return { tone: "neutral" as const, label: "No ritmo" };
 }
 
 function footerText(view: GoalView): string {
   if (view.completed) {
-    return 'Valor reservado disponível para levantar';
+    return "Valor reservado disponível para levantar";
   }
 
   if (view.goal.deadline === null) {
-    return 'Sem prazo definido';
+    return "Sem prazo definido";
   }
 
   return `Poupar ${formatKz(view.monthlyNeeded)}/mês · até ${monthShort(view.goal.deadline)}`;
 }
 
-export function GoalCard({ view, onPress }: { view: GoalView; onPress: () => void }) {
+export function GoalCard({
+  view,
+  onPress,
+}: {
+  view: GoalView;
+  onPress: () => void;
+}) {
+  const styles = useThemedStyles(makeStyles);
   const chip = paceChip(view);
 
   // Sem label, o TalkBack lia o anel de progresso e os textos soltos sem dizer
@@ -55,10 +74,14 @@ export function GoalCard({ view, onPress }: { view: GoalView; onPress: () => voi
     footerText(view),
   ]
     .filter(Boolean)
-    .join('. ');
+    .join(". ");
 
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+    >
       <Panel>
         <View style={styles.row}>
           <ProgressRing value={view.progress} />
@@ -83,58 +106,61 @@ export function GoalCard({ view, onPress }: { view: GoalView; onPress: () => voi
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  info: {
-    flex: 1,
-    gap: 4,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  title: {
-    flex: 1,
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: colors.text,
-  },
-  saved: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    fontVariant: ['tabular-nums'],
-  },
-  chip: {
-    marginTop: 2,
-  },
-  footer: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,.08)',
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  empty: {
-    borderRadius: radius.panel,
-    borderWidth: 1,
-    borderColor: colors.panelBorder,
-    backgroundColor: colors.bgMid,
-    padding: spacing.lg,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-});
+const makeStyles = (colors: Colors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+    },
+    info: {
+      flex: 1,
+      gap: 4,
+    },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    title: {
+      flex: 1,
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: colors.text,
+    },
+    saved: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textMuted,
+      fontVariant: ["tabular-nums"],
+    },
+    chip: {
+      marginTop: 2,
+    },
+    footer: {
+      marginTop: spacing.md,
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.hairline,
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    empty: {
+      borderRadius: radius.panel,
+      borderWidth: 1,
+      borderColor: colors.panelBorder,
+      backgroundColor: colors.bgMid,
+      padding: spacing.lg,
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+  });
 
 export function GoalsEmptyState({ onCreate }: { onCreate: () => void }) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <Pressable
       accessibilityRole="button"

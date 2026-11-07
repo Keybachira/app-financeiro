@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from "react";
 
-import { projectPaymentLabel } from '../../domain/projectMath';
-import { todayISO } from '../../domain/dates';
+import { projectPaymentLabel } from "../../domain/projectMath";
+import { todayISO } from "../../domain/dates";
 import {
   createProject,
   deleteProject,
@@ -16,10 +16,10 @@ import {
   updateProjectPayment,
   type ProjectInput,
   type ProjectView,
-} from '../../repos/projects';
-import { getSetting, setSetting } from '../../repos/settings';
+} from "../../repos/projects";
+import { getSetting, setSetting } from "../../repos/settings";
 
-const INCOME_OPTION_KEY = 'project_payments_create_income';
+const INCOME_OPTION_KEY = "project_payments_create_income";
 
 export function useProjects() {
   const [tick, setTick] = useState(0);
@@ -40,7 +40,7 @@ export function useProjects() {
     return projectsOutstanding();
   }, [tick]);
 
-  const createIncomeDefault = getSetting(INCOME_OPTION_KEY) !== '0';
+  const createIncomeDefault = getSetting(INCOME_OPTION_KEY) !== "0";
 
   return {
     today,
@@ -61,7 +61,12 @@ export function useProjects() {
       deleteProject(id);
       refresh();
     },
-    pay: (id: string, amount: number, date?: string, createIncome?: boolean) => {
+    pay: (
+      id: string,
+      amount: number,
+      date?: string,
+      createIncome?: boolean,
+    ) => {
       payProject(id, amount, date, createIncome ?? createIncomeDefault);
       refresh();
     },
@@ -83,7 +88,7 @@ export function useProjects() {
     },
     createIncomeDefault,
     setCreateIncomeDefault: (value: boolean) => {
-      setSetting(INCOME_OPTION_KEY, value ? '1' : '0');
+      setSetting(INCOME_OPTION_KEY, value ? "1" : "0");
       refresh();
     },
   };

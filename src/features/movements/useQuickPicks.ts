@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
-import { formatKzNumber } from '../../domain/money';
-import { suggestCategory } from '../../domain/categoryHints';
-import { lastMovement, quickPicks } from '../../domain/quickPicks';
-import { recentMovements } from '../../repos/movements';
-import { useCategoryHints } from './useCategoryHints';
+import { formatKzNumber } from "../../domain/money";
+import { suggestCategory } from "../../domain/categoryHints";
+import { lastMovement, quickPicks } from "../../domain/quickPicks";
+import { recentMovements } from "../../repos/movements";
+import { useCategoryHints } from "./useCategoryHints";
 
 export { useCategoryHints };
 
@@ -13,7 +13,7 @@ export type QuickChipData = {
   label: string;
   note: string | null;
   amount: number;
-  type: 'income' | 'expense';
+  type: "income" | "expense";
   category: string | null;
   highlighted: boolean;
 };
@@ -28,8 +28,9 @@ export function useQuickChips(today: string, limit = 2): QuickChipData[] {
     const chips: QuickChipData[] = [];
 
     if (last) {
-      const lastNote = last.note && last.note.trim().length > 0 ? last.note : null;
-      const fallbackLabel = last.type === 'income' ? 'Receita' : 'Despesa';
+      const lastNote =
+        last.note && last.note.trim().length > 0 ? last.note : null;
+      const fallbackLabel = last.type === "income" ? "Receita" : "Despesa";
 
       chips.push({
         key: `last-${last.id}`,

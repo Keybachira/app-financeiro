@@ -1,20 +1,21 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 
 import {
   backupToJson,
   movementsToCsv,
   parseBackup,
   type BackupPayload,
-} from '../../domain/backup';
+} from "../../domain/backup";
 import {
   buildBackup,
   importBackup,
   pickBackupFile,
   shareExportFile,
   type ImportMode,
-} from '../../repos/backup';
+} from "../../repos/backup";
 
-export type ImportResult = { imported: true; mode: ImportMode } | { imported: false };
+export type ImportResult =
+  { imported: true; mode: ImportMode } | { imported: false };
 
 export function useBackup() {
   const [busy, setBusy] = useState(false);
@@ -27,7 +28,11 @@ export function useBackup() {
     try {
       await action();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Erro inesperado. Tenta outra vez.');
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Erro inesperado. Tenta outra vez.",
+      );
     } finally {
       setBusy(false);
     }
@@ -36,14 +41,22 @@ export function useBackup() {
   const exportJson = useCallback(async () => {
     const payload = buildBackup();
     await run(async () => {
-      await shareExportFile(`financas-${payload.exportedAt}.json`, backupToJson(payload), 'application/json');
+      await shareExportFile(
+        `financas-${payload.exportedAt}.json`,
+        backupToJson(payload),
+        "application/json",
+      );
     });
   }, [run]);
 
   const exportCsv = useCallback(async () => {
     const payload = buildBackup();
     await run(async () => {
-      await shareExportFile(`financas-movimentos-${payload.exportedAt}.csv`, movementsToCsv(payload.movements), 'text/csv');
+      await shareExportFile(
+        `financas-movimentos-${payload.exportedAt}.csv`,
+        movementsToCsv(payload.movements),
+        "text/csv",
+      );
     });
   }, [run]);
 
@@ -71,7 +84,7 @@ export function useBackup() {
 
       return result;
     },
-    [run]
+    [run],
   );
 
   const clearError = useCallback(() => setError(null), []);

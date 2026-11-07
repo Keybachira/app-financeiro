@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { monthKey, todayISO } from '../../domain/dates';
+import { monthKey, todayISO } from "../../domain/dates";
 import {
   billView,
   billsMonthProgress,
@@ -9,6 +9,7 @@ import {
   deleteBill,
   deleteBillPayment,
   getBill,
+  getBillNotificationsStatus,
   isBillPaidInMonth,
   listBillPayments,
   listBills,
@@ -17,17 +18,23 @@ import {
   setBillActive,
   updateBill,
   type BillInput,
-} from '../../repos/bills';
+  type BillNotificationStatus,
+} from "../../repos/bills";
+import { subscribeDataVersion } from "../../repos/dataVersion";
+import { isExpoGo } from "../../repos/notificationRuntime";
 
 export function useBillsSummary() {
   const [tick, setTick] = useState(0);
   const refresh = useCallback(() => setTick((value) => value + 1), []);
+  useEffect(() => subscribeDataVersion(refresh), [refresh]);
   const today = todayISO();
   const month = monthKey(today);
 
   const openCount = useMemo(() => {
     void tick;
-    return listBills().filter((bill) => bill.active === 1 && !isBillPaidInMonth(bill.id, month)).length;
+    return listBills().filter(
+      (bill) => bill.active === 1 && !isBillPaidInMonth(bill.id, month),
+    ).length;
   }, [tick, month]);
 
   return { openCount, refresh };
@@ -35,13 +42,20 @@ export function useBillsSummary() {
 
 export function useBills() {
   const [tick, setTick] = useState(0);
+  const [notificationStatus, setNotificationStatus] =
+    useState<BillNotificationStatus | null>(() => getBillNotificationsStatus());
   const refresh = useCallback(() => setTick((value) => value + 1), []);
   const today = todayISO();
   const month = monthKey(today);
+  useEffect(() => subscribeDataVersion(refresh), [refresh]);
 
   useEffect(() => {
-    void rescheduleAllBillNotifications();
-  }, [tick]);
+    if (isExpoGo()) return;
+    void rescheduleAllBillNotifications().then((status) => {
+      setNotificationStatus(status);
+      refresh();
+    });
+  }, [refresh]);
 
   const views = useMemo(() => {
     void tick;
@@ -58,8 +72,12 @@ export function useBills() {
     return billsMonthProgress(month);
   }, [tick, month]);
 
-  const open = views.filter((view) => view.bill.active === 1 && !view.paidThisMonth);
-  const payable = views.filter((view) => view.bill.active === 1 && view.status !== 'paid');
+  const open = views.filter(
+    (view) => view.bill.active === 1 && !view.paidThisMonth,
+  );
+  const payable = views.filter(
+    (view) => view.bill.active === 1 && view.status !== "paid",
+  );
 
   return {
     today,
@@ -69,6 +87,7 @@ export function useBills() {
     payable,
     unpaidTotal,
     progress,
+    notificationStatus,
     refresh,
     create: (input: BillInput) => {
       const row = createBill(input);

@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from "react";
 
-import { formatDayMonthPt, todayISO } from '../../domain/dates';
-import { formatKz } from '../../domain/money';
+import { formatDayMonthPt, todayISO } from "../../domain/dates";
+import { formatKz } from "../../domain/money";
 import {
   createDebt,
   deleteDebt,
@@ -15,7 +15,7 @@ import {
   debtView,
   type DebtInput,
   type DebtView,
-} from '../../repos/debts';
+} from "../../repos/debts";
 
 export function useDebts() {
   const [tick, setTick] = useState(0);
@@ -70,17 +70,17 @@ export function useDebts() {
 }
 
 export function debtStatusLabel(view: DebtView): string {
-  if (view.status === 'paid') {
-    return 'Liquidada';
+  if (view.status === "paid") {
+    return "Liquidada";
   }
-  if (view.status === 'overdue') {
-    return 'Atrasada';
+  if (view.status === "overdue") {
+    return "Atrasada";
   }
-  return 'Em aberto';
+  return "Em aberto";
 }
 
 export function debtMeta(view: DebtView): string {
-  if (view.status === 'paid') {
+  if (view.status === "paid") {
     return `Liquidada · ${formatDayMonthPt(view.debt.due_date ?? view.debt.loan_date)}`;
   }
 
@@ -89,7 +89,7 @@ export function debtMeta(view: DebtView): string {
       ? view.debt.due_date < todayISO()
         ? `venceu a ${formatDayMonthPt(view.debt.due_date)}`
         : `vence a ${formatDayMonthPt(view.debt.due_date)}`
-      : 'sem vencimento';
+      : "sem vencimento";
 
   return `Falta ${formatKz(view.remaining)} · ${suffix}`;
 }

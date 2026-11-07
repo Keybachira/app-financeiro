@@ -1,18 +1,22 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from "react";
 
-import { monthNet, spendablePerDay, type SpendablePerDay } from '../../domain/balance';
-import { daysLeftInMonth, monthDaysOf, monthKey } from '../../domain/dates';
-import { daysUntilSalary, nextSalaryDate } from '../../domain/salary';
+import {
+  monthNet,
+  spendablePerDay,
+  type SpendablePerDay,
+} from "../../domain/balance";
+import { daysLeftInMonth, monthDaysOf, monthKey } from "../../domain/dates";
+import { daysUntilSalary, nextSalaryDate } from "../../domain/salary";
 import {
   categoryExpenseTotals,
   dailyExpenseTotals,
   expensesOnDate,
   monthTotals,
   movementNetBefore,
-} from '../../repos/movements';
-import { goalNetBefore, monthGoalOps, reservedTotal } from '../../repos/goals';
-import { billsUnpaidTotal } from '../../repos/bills';
-import { useMonthlyLimit, useSalarySettings } from '../settings/useSettings';
+} from "../../repos/movements";
+import { goalNetBefore, monthGoalOps, reservedTotal } from "../../repos/goals";
+import { billsUnpaidTotal } from "../../repos/bills";
+import { useMonthlyLimit, useSalarySettings } from "../settings/useSettings";
 
 export type MonthSummary = {
   month: string;
@@ -36,9 +40,16 @@ export type MonthSummary = {
   nextSalary: string | null;
 };
 
-export function useMonthSummary(today: string): { summary: MonthSummary; refresh: () => void } {
+export function useMonthSummary(today: string): {
+  summary: MonthSummary;
+  refresh: () => void;
+} {
   const { limit, refresh: refreshLimit } = useMonthlyLimit();
-  const { salaryDay, adjustBusinessDay, refresh: refreshSalary } = useSalarySettings();
+  const {
+    salaryDay,
+    adjustBusinessDay,
+    refresh: refreshSalary,
+  } = useSalarySettings();
   const [tick, setTick] = useState(0);
   const refresh = useCallback(() => {
     refreshSalary();
@@ -58,12 +69,22 @@ export function useMonthSummary(today: string): { summary: MonthSummary; refresh
       share: expenses > 0 ? row.amount / expenses : 0,
     }));
     const nextSalary =
-      salaryDay === null ? null : nextSalaryDate({ salaryDay, adjustBusinessDay, today });
-    const daysToSalary = nextSalary === null ? daysLeftInMonth(today) : daysUntilSalary(today, nextSalary);
+      salaryDay === null
+        ? null
+        : nextSalaryDate({ salaryDay, adjustBusinessDay, today });
+    const daysToSalary =
+      nextSalary === null
+        ? daysLeftInMonth(today)
+        : daysUntilSalary(today, nextSalary);
     const monthDays = monthDaysOf(today);
     const goalOps = monthGoalOps(month);
     const unpaidBills = billsUnpaidTotal(month);
-    const monthBalance = monthNet(income, expenses, goalOps.deposits, goalOps.withdraws);
+    const monthBalance = monthNet(
+      income,
+      expenses,
+      goalOps.deposits,
+      goalOps.withdraws,
+    );
     // O dinheiro que sobrou nos meses anteriores continua a ser do utilizador:
     // o saldo do mês passado não pode desaparecer no dia 1. O valor reservado em
     // metas já sai do líquido de cada mês, por isso não é descontado outra vez.

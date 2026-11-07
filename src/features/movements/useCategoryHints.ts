@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 
-import { subscribeDataVersion } from '../../repos/dataVersion';
-import { listCategoryHints } from '../../repos/movements';
+import { subscribeDataVersion } from "../../repos/dataVersion";
+import { listCategoryHints } from "../../repos/movements";
 
 export function useCategoryHints(): { keyword: string; category: string }[] {
   const [version, setVersion] = useState(0);
@@ -13,7 +13,7 @@ export function useCategoryHints(): { keyword: string; category: string }[] {
       subscribeDataVersion(() => {
         setVersion((value) => value + 1);
       }),
-    []
+    [],
   );
 
   return useMemo(() => {

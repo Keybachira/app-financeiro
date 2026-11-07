@@ -1,16 +1,19 @@
-import { useCallback, useEffect, useState } from 'react';
-import * as Crypto from 'expo-crypto';
-import * as ScreenCapture from 'expo-screen-capture';
+import { useCallback, useEffect, useState } from "react";
+import * as Crypto from "expo-crypto";
+import * as ScreenCapture from "expo-screen-capture";
 
-import { subscribeDataVersion } from '../../repos/dataVersion';
-import { getSetting, removeSetting, setSetting } from '../../repos/settings';
+import { subscribeDataVersion } from "../../repos/dataVersion";
+import { getSetting, removeSetting, setSetting } from "../../repos/settings";
 
-const LOCK_KEY = 'app_lock_enabled';
-const HASH_KEY = 'app_pin_hash';
-const SALT_KEY = 'app_pin_salt';
+const LOCK_KEY = "app_lock_enabled";
+const HASH_KEY = "app_pin_hash";
+const SALT_KEY = "app_pin_salt";
 
 async function hashPin(pin: string, salt: string): Promise<string> {
-  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `${salt}:${pin}`);
+  return Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    `${salt}:${pin}`,
+  );
 }
 
 export type LockState = {
@@ -27,16 +30,18 @@ export function useLockState(): LockState {
   // lock ou remover o PIN sem que nenhum destes ecrãs se remonte.
   const [hasPin, setHasPin] = useState(() => getSetting(HASH_KEY) !== null);
   const [enabled, setEnabledState] = useState(
-    () => getSetting(LOCK_KEY) === '1' && getSetting(HASH_KEY) !== null
+    () => getSetting(LOCK_KEY) === "1" && getSetting(HASH_KEY) !== null,
   );
 
   useEffect(
     () =>
       subscribeDataVersion(() => {
         setHasPin(getSetting(HASH_KEY) !== null);
-        setEnabledState(getSetting(LOCK_KEY) === '1' && getSetting(HASH_KEY) !== null);
+        setEnabledState(
+          getSetting(LOCK_KEY) === "1" && getSetting(HASH_KEY) !== null,
+        );
       }),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -55,7 +60,7 @@ export function useLockState(): LockState {
   }, [enabled]);
 
   const setEnabled = useCallback((value: boolean) => {
-    setSetting(LOCK_KEY, value ? '1' : '0');
+    setSetting(LOCK_KEY, value ? "1" : "0");
     setEnabledState(value && getSetting(HASH_KEY) !== null);
   }, []);
 
@@ -65,7 +70,7 @@ export function useLockState(): LockState {
 
     setSetting(SALT_KEY, salt);
     setSetting(HASH_KEY, hash);
-    setSetting(LOCK_KEY, '1');
+    setSetting(LOCK_KEY, "1");
     setHasPin(true);
     setEnabledState(true);
   }, []);
