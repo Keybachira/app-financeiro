@@ -1,6 +1,6 @@
-import { deflateSync, inflateSync } from 'node:zlib';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { deflateSync, inflateSync } from "node:zlib";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
   let c = n;
@@ -21,14 +21,16 @@ function crc32(buffer) {
 function chunk(type, data) {
   const length = Buffer.alloc(4);
   length.writeUInt32BE(data.length);
-  const typeAndData = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+  const typeAndData = Buffer.concat([Buffer.from(type, "ascii"), data]);
   const crc = Buffer.alloc(4);
   crc.writeUInt32BE(crc32(typeAndData));
   return Buffer.concat([length, typeAndData, crc]);
 }
 
 export function encodePng(width, height, rgba) {
-  const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const signature = Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+  ]);
 
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
@@ -48,7 +50,12 @@ export function encodePng(width, height, rgba) {
 
   const compressed = deflateSync(raw, { level: 9 });
 
-  return Buffer.concat([signature, chunk('IHDR', ihdr), chunk('IDAT', compressed), chunk('IEND', Buffer.alloc(0))]);
+  return Buffer.concat([
+    signature,
+    chunk("IHDR", ihdr),
+    chunk("IDAT", compressed),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
 }
 
 export function writePng(path, width, height, rgba) {
@@ -76,24 +83,26 @@ export function decodePng(buffer) {
 
   while (offset < buffer.length) {
     const length = buffer.readUInt32BE(offset);
-    const type = buffer.toString('ascii', offset + 4, offset + 8);
+    const type = buffer.toString("ascii", offset + 4, offset + 8);
     const data = buffer.subarray(offset + 8, offset + 8 + length);
     offset += length + 12;
 
-    if (type === 'IHDR') {
+    if (type === "IHDR") {
       width = data.readUInt32BE(0);
       height = data.readUInt32BE(4);
       bitDepth = data[8];
       colorType = data[9];
-    } else if (type === 'IDAT') {
+    } else if (type === "IDAT") {
       idat.push(Buffer.from(data));
-    } else if (type === 'IEND') {
+    } else if (type === "IEND") {
       break;
     }
   }
 
   if (bitDepth !== 8 || (colorType !== 2 && colorType !== 6)) {
-    throw new Error(`Formato PNG não suportado: depth=${bitDepth} type=${colorType}`);
+    throw new Error(
+      `Formato PNG não suportado: depth=${bitDepth} type=${colorType}`,
+    );
   }
 
   const channels = colorType === 6 ? 4 : 3;
@@ -103,7 +112,10 @@ export function decodePng(buffer) {
 
   for (let y = 0; y < height; y += 1) {
     const filter = raw[y * (stride + 1)];
-    const line = raw.subarray(y * (stride + 1) + 1, y * (stride + 1) + 1 + stride);
+    const line = raw.subarray(
+      y * (stride + 1) + 1,
+      y * (stride + 1) + 1 + stride,
+    );
     const previous = y > 0 ? out.subarray((y - 1) * stride, y * stride) : null;
     const target = out.subarray(y * stride, (y + 1) * stride);
 

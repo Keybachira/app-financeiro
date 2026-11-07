@@ -1,4 +1,4 @@
-import { decodePng, projectRoot, readFileSync, writePng } from './png.mjs';
+import { decodePng, projectRoot, readFileSync, writePng } from "./png.mjs";
 
 const BG_DEEP = [7, 12, 36];
 const BG_MID = [11, 21, 56];
@@ -131,27 +131,69 @@ function drawCentered(target, size, source, sourceSize, scale, alpha = 255) {
       const targetIndex = (py * size + px) * 4;
       const a = (sourceAlpha / 255) * (alpha / 255);
 
-      target[targetIndex] = Math.round(source[sourceIndex] * a + target[targetIndex] * (1 - a));
-      target[targetIndex + 1] = Math.round(source[sourceIndex + 1] * a + target[targetIndex + 1] * (1 - a));
-      target[targetIndex + 2] = Math.round(source[sourceIndex + 2] * a + target[targetIndex + 2] * (1 - a));
+      target[targetIndex] = Math.round(
+        source[sourceIndex] * a + target[targetIndex] * (1 - a),
+      );
+      target[targetIndex + 1] = Math.round(
+        source[sourceIndex + 1] * a + target[targetIndex + 1] * (1 - a),
+      );
+      target[targetIndex + 2] = Math.round(
+        source[sourceIndex + 2] * a + target[targetIndex + 2] * (1 - a),
+      );
       target[targetIndex + 3] = 255;
     }
   }
 }
 
-const source = decodePng(readFileSync(projectRoot('assets/logo.png')));
+const source = decodePng(readFileSync(projectRoot("assets/logo.png")));
 const navy = sampleEdgeColor(source);
-const fullBleed = toRgba(source, { cornerFill: BG_MID, cornerTransparent: false });
-const transparentCorners = toRgba(source, { cornerFill: BG_MID, cornerTransparent: true });
+const fullBleed = toRgba(source, {
+  cornerFill: BG_MID,
+  cornerTransparent: false,
+});
+const transparentCorners = toRgba(source, {
+  cornerFill: BG_MID,
+  cornerTransparent: true,
+});
 
 const icon = resizeTo({ ...source, channels: 4, pixels: fullBleed }, ICON_SIZE);
-const foreground = resizeTo({ ...source, channels: 4, pixels: transparentCorners }, ICON_SIZE);
+const foreground = resizeTo(
+  { ...source, channels: 4, pixels: transparentCorners },
+  ICON_SIZE,
+);
 
-writePng(projectRoot('assets/icon.png'), ICON_SIZE, ICON_SIZE, icon);
-writePng(projectRoot('assets/adaptive-icon.png'), ICON_SIZE, ICON_SIZE, foreground);
-writePng(projectRoot('assets/favicon.png'), 196, 196, resizeTo({ ...source, channels: 4, pixels: fullBleed }, 196));
+writePng(projectRoot("assets/icon.png"), ICON_SIZE, ICON_SIZE, icon);
+writePng(
+  projectRoot("assets/adaptive-icon.png"),
+  ICON_SIZE,
+  ICON_SIZE,
+  foreground,
+);
+writePng(
+  projectRoot("assets/favicon.png"),
+  196,
+  196,
+  resizeTo({ ...source, channels: 4, pixels: fullBleed }, 196),
+);
 
-const splash = composeOn(ICON_SIZE, (target, size) => drawCentered(target, size, foreground, ICON_SIZE, 0.62));
-writePng(projectRoot('assets/splash-icon.png'), ICON_SIZE, ICON_SIZE, splash);
+const splash = composeOn(ICON_SIZE, (target, size) =>
+  drawCentered(target, size, foreground, ICON_SIZE, 0.62),
+);
+writePng(projectRoot("assets/splash-icon.png"), ICON_SIZE, ICON_SIZE, splash);
 
-console.log(JSON.stringify({ sourceSize: `${source.width}x${source.height}`, edgeNavy: navy, outputs: ['icon.png', 'adaptive-icon.png', 'favicon.png', 'splash-icon.png'] }, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      sourceSize: `${source.width}x${source.height}`,
+      edgeNavy: navy,
+      outputs: [
+        "icon.png",
+        "adaptive-icon.png",
+        "favicon.png",
+        "splash-icon.png",
+      ],
+    },
+    null,
+    2,
+  ),
+);
