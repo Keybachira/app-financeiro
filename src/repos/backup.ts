@@ -18,6 +18,7 @@ import { todayISO } from '../domain/dates';
 import { db } from '../db/client';
 import { bumpDataVersion } from './dataVersion';
 import { isMovementOrigin } from './movements';
+import { resetBillNotificationsState, rescheduleAllBillNotifications } from './bills';
 
 export type { BackupPayload };
 
@@ -136,6 +137,12 @@ export function validateReferences(
   for (const movement of payload.movements) {
     if (movement.bill_id !== null && !billIds.has(movement.bill_id)) {
       return 'movimentos: referência a conta fixa inexistente.';
+    }
+    if (movement.project_payment_id !== null) {
+      const knownProjectPayment = payload.projectPayments.some((p) => p.id === movement.project_payment_id);
+      if (!knownProjectPayment && mode === 'replace') {
+        return 'movimentos: referência a pagamento de projeto inexistente.';
+      }
     }
   }
 
@@ -265,6 +272,10 @@ export function importBackup(payload: BackupPayload, mode: ImportMode): void {
   // O backup pode trazer settings, category_hints e PIN diferentes dos atuais.
   // Sem este aviso, os hooks continuariam com os valores antigos em memória.
   bumpDataVersion();
+
+  // Notificações dependem dos dados restaurados; não mostrar como agendadas sem reavaliar.
+  void resetBillNotificationsState();
+  void rescheduleAllBillNotifications();
 }
 
 // A escrita/partilha vive em `exportFile` para poder ser testada sem SQLite.

@@ -3,7 +3,13 @@ import * as Crypto from 'expo-crypto';
 import { addDays, monthKey, todayISO } from '../domain/dates';
 import { nextBillDueDate } from '../domain/bills';
 import { db } from '../db/client';
-import { getNotifications } from './notifications';
+import {
+  configureNotificationHandling,
+  getNotifications,
+  requestNotificationPermission,
+  type NotificationPermissionState,
+} from './notifications';
+import { getSetting, setSetting } from './settings';
 
 export type BillRow = {
   id: string;
@@ -34,7 +40,58 @@ export type BillInput = {
   icon: string | null;
 };
 
+export type BillNotificationStatus = {
+  state: 'scheduled' | 'permission_denied' | 'unavailable' | 'not_scheduled' | 'error';
+  message: string | null;
+  checkedAt: string;
+};
+
+const BILL_NOTIFICATIONS_STATUS_KEY = 'bill_notifications_status';
 const CHANNEL_ID = 'bills';
+
+export function getBillNotificationsStatus(): BillNotificationStatus | null {
+  const raw = getSetting(BILL_NOTIFICATIONS_STATUS_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<BillNotificationStatus>;
+    if (
+      parsed &&
+      typeof parsed.state === 'string' &&
+      typeof parsed.checkedAt === 'string'
+    ) {
+      return {
+        state: parsed.state as BillNotificationStatus['state'],
+        message: typeof parsed.message === 'string' ? parsed.message : null,
+        checkedAt: parsed.checkedAt,
+      };
+    }
+  } catch {
+    // Ignorar valor invÃ¡lido.
+  }
+  return null;
+}
+
+function setBillNotificationsStatus(status: BillNotificationStatus): void {
+  setSetting(BILL_NOTIFICATIONS_STATUS_KEY, JSON.stringify(status));
+}
+
+export async function ensureNotificationSetup(): Promise<NotificationPermissionState> {
+  const Notifications = getNotifications();
+  if (!Notifications) return 'unavailable';
+  try {
+    await configureNotificationHandling();
+    const permission = await requestNotificationPermission();
+    if (permission !== 'granted') return permission;
+    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+      name: 'Contas fixas',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      lightColor: '#5B8DFF',
+    });
+    return 'granted';
+  } catch {
+    return 'unavailable';
+  }
+}
 
 export const listBills = (): BillRow[] =>
   db.getAllSync<BillRow>(
@@ -215,60 +272,50 @@ export function billView(bill: BillRow, today: string) {
 
 export type BillView = ReturnType<typeof billView>;
 
-export async function ensureNotificationSetup(): Promise<void> {
+export async function scheduleBillNotification(bill: BillRow): Promise<BillNotificationStatus> {
+  const checkedAt = todayISO();
   const Notifications = getNotifications();
-
   if (!Notifications) {
-    return;
+    const status: BillNotificationStatus = { state: 'unavailable', message: 'Notificações indisponíveis neste dispositivo/build.', checkedAt };
+    setBillNotificationsStatus(status);
+    return status;
   }
-
-  const { status } = await Notifications.getPermissionsAsync();
-  let finalStatus = status;
-
-  if (status !== 'granted') {
-    const request = await Notifications.requestPermissionsAsync();
-    finalStatus = request.status;
-  }
-
-  if (finalStatus !== 'granted') {
-    return;
-  }
-
-  await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-    name: 'Contas fixas',
-    importance: Notifications.AndroidImportance.DEFAULT,
-    lightColor: '#5B8DFF',
-  });
-}
-
-export async function scheduleBillNotification(bill: BillRow): Promise<void> {
-  const Notifications = getNotifications();
-
-  if (!Notifications) {
-    return;
-  }
-
   try {
+    if (bill.active !== 1) {
+      await cancelBillNotification(bill.id);
+      return { state: 'not_scheduled', message: null, checkedAt };
+    }
+    const permission = await ensureNotificationSetup();
+    if (permission === 'denied') {
+      const status: BillNotificationStatus = { state: 'permission_denied', message: 'Permissão de notificações recusada.', checkedAt };
+      setBillNotificationsStatus(status);
+      return status;
+    }
+    if (permission === 'unavailable') {
+      const status: BillNotificationStatus = { state: 'unavailable', message: 'Sistema de notificações indisponível.', checkedAt };
+      setBillNotificationsStatus(status);
+      return status;
+    }
+
     const today = todayISO();
     const dueDate = nextBillDueDate({ dayOfMonth: bill.day_of_month }, today, (month) => paidMonthsForBill(bill.id).has(month));
-
-    if (dueDate === null) {
-      return;
-    }
-
     await cancelBillNotification(bill.id);
-
-    const triggerDate = triggerDateFor(dueDate, bill.remind_days_before);
-
-    if (triggerDate.getTime() <= Date.now()) {
-      return;
+    if (dueDate === null) {
+      const status: BillNotificationStatus = { state: 'not_scheduled', message: null, checkedAt };
+      setBillNotificationsStatus(status);
+      return status;
     }
-
+    const triggerDate = triggerDateFor(dueDate, bill.remind_days_before);
+    if (triggerDate.getTime() <= Date.now()) {
+      const status: BillNotificationStatus = { state: 'not_scheduled', message: 'Data de lembrete já passou para o próximo vencimento.', checkedAt };
+      setBillNotificationsStatus(status);
+      return status;
+    }
     await Notifications.scheduleNotificationAsync({
       identifier: notificationId(bill.id),
       content: {
         title: bill.name,
-        body: `Vence a ${formatDayPt(dueDate)} Â· ${bill.amount.toLocaleString('pt-AO')} Kz`,
+        body: `Vence a ${formatDayPt(dueDate)} · ${bill.amount.toLocaleString('pt-AO')} Kz`,
         data: { billId: bill.id },
       },
       trigger: {
@@ -277,33 +324,65 @@ export async function scheduleBillNotification(bill: BillRow): Promise<void> {
         channelId: CHANNEL_ID,
       },
     });
-  } catch {
-    // Sem permissÃµes ou indisponÃ­vel: a aplicaÃ§Ã£o continua a funcionar sem notificaÃ§Ãµes.
+    const status: BillNotificationStatus = { state: 'scheduled', message: null, checkedAt };
+    setBillNotificationsStatus(status);
+    return status;
+  } catch (error) {
+    const status: BillNotificationStatus = {
+      state: 'error',
+      message: error instanceof Error ? error.message : 'Falha ao agendar notificação.',
+      checkedAt,
+    };
+    setBillNotificationsStatus(status);
+    return status;
   }
 }
 
 export async function cancelBillNotification(billId: string): Promise<void> {
   const Notifications = getNotifications();
-
-  if (!Notifications) {
-    return;
-  }
-
+  if (!Notifications) return;
   try {
     await Notifications.cancelScheduledNotificationAsync(notificationId(billId));
   } catch {
-    // NotificaÃ§Ã£o inexistente: nada a cancelar.
+    // Notificação inexistente: nada a cancelar.
   }
 }
 
-export async function rescheduleAllBillNotifications(): Promise<void> {
-  await ensureNotificationSetup();
-
+export async function rescheduleAllBillNotifications(): Promise<BillNotificationStatus> {
+  const checkedAt = todayISO();
+  const permission = await ensureNotificationSetup();
+  if (permission === 'denied') {
+    const status: BillNotificationStatus = { state: 'permission_denied', message: 'Permissão de notificações recusada.', checkedAt };
+    setBillNotificationsStatus(status);
+    return status;
+  }
+  if (permission === 'unavailable') {
+    const status: BillNotificationStatus = { state: 'unavailable', message: 'Notificações indisponíveis.', checkedAt };
+    setBillNotificationsStatus(status);
+    return status;
+  }
+  let last: BillNotificationStatus = { state: 'not_scheduled', message: null, checkedAt };
   for (const bill of listBills()) {
     if (bill.active === 1) {
-      await scheduleBillNotification(bill);
+      last = await scheduleBillNotification(bill);
+    } else {
+      await cancelBillNotification(bill.id);
     }
   }
+  setBillNotificationsStatus(last);
+  return last;
+}
+
+export async function resetBillNotificationsState(): Promise<void> {
+  const Notifications = getNotifications();
+  if (Notifications) {
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch {
+      // Ignorar.
+    }
+  }
+  setBillNotificationsStatus({ state: 'not_scheduled', message: 'Estado de notificações reiniciado após importação.', checkedAt: todayISO() });
 }
 
 function notificationId(billId: string): string {
@@ -312,7 +391,8 @@ function notificationId(billId: string): string {
 
 function triggerDateFor(dueDate: string, remindDaysBefore: number): Date {
   const remind = addDays(dueDate, -remindDaysBefore);
-  return new Date(`${remind}T09:00:00`);
+  const d = new Date(`${remind}T09:00:00`);
+  return Number.isNaN(d.getTime()) ? new Date(Date.now() + 60_000) : d;
 }
 
 function formatDayPt(iso: string): string {
