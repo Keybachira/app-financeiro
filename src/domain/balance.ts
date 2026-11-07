@@ -3,7 +3,12 @@ export type SpendablePerDay = {
   overLimit: boolean;
 };
 
-export function monthNet(income: number, expenses: number, goalDeposits: number, goalWithdrawals: number): number {
+export function monthNet(
+  income: number,
+  expenses: number,
+  goalDeposits: number,
+  goalWithdrawals: number,
+): number {
   return income - expenses - (goalDeposits - goalWithdrawals);
 }
 
@@ -11,7 +16,7 @@ export function spendablePerDay(
   limit: number | null,
   monthSpent: number,
   unpaidBills: number,
-  daysToNextSalary: number
+  daysToNextSalary: number,
 ): SpendablePerDay {
   if (limit === null) {
     return { amount: Number.POSITIVE_INFINITY, overLimit: false };

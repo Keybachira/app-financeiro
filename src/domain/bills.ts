@@ -1,4 +1,4 @@
-import { dateWithClampedDay, monthKey, monthWithOffset } from './dates';
+import { dateWithClampedDay, monthKey, monthWithOffset } from "./dates";
 
 export type Bill = {
   id: string;
@@ -10,7 +10,7 @@ export type Bill = {
 export function nextBillDueDate(
   bill: { dayOfMonth: number },
   today: string,
-  isPaidMonth: (month: string) => boolean
+  isPaidMonth: (month: string) => boolean,
 ): string {
   let candidate = today;
 
@@ -35,7 +35,7 @@ export function nextBillDueDate(
 export function billsUnpaidThisMonth(
   bills: Bill[],
   currentMonth: string,
-  isPaidMonth: (month: string) => boolean
+  isPaidMonth: (month: string) => boolean,
 ): number {
   return bills
     .filter((bill) => bill.active && !isPaidMonth(currentMonth))

@@ -13,16 +13,21 @@ export function projectPercentPaid(total: number, received: number): number {
 
 export function projectPaymentLabel(percent: number): string {
   if (percent >= 100) {
-    return 'Pago';
+    return "Pago";
   }
 
   if (percent <= 0) {
-    return 'Por receber';
+    return "Por receber";
   }
 
   return `${percent}% pago`;
 }
 
-export function projectsOutstandingTotal(projects: { total: number; received: number }[]): number {
-  return projects.reduce((sum, project) => sum + projectRemaining(project.total, project.received), 0);
+export function projectsOutstandingTotal(
+  projects: { total: number; received: number }[],
+): number {
+  return projects.reduce(
+    (sum, project) => sum + projectRemaining(project.total, project.received),
+    0,
+  );
 }

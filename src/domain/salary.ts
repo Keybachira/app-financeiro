@@ -1,4 +1,12 @@
-import { addDays, dateWithClampedDay, daysBetween, isWeekend, monthKey, monthWithOffset, parseISO } from './dates';
+import {
+  addDays,
+  dateWithClampedDay,
+  daysBetween,
+  isWeekend,
+  monthKey,
+  monthWithOffset,
+  parseISO,
+} from "./dates";
 
 export type SalarySettings = {
   amount: number | null;
@@ -10,7 +18,7 @@ export type SalarySettings = {
 
 export function pendingSalaryLaunch(
   settings: SalarySettings,
-  today: string
+  today: string,
 ): { month: string; date: string } | null {
   const { amount, day, adjustBusinessDay, autoIncome, lastMonth } = settings;
 
@@ -38,7 +46,11 @@ export function pendingSalaryLaunch(
   return { month, date: adjusted };
 }
 
-export function salaryDateForMonth(year: number, month: number, day: number): string {
+export function salaryDateForMonth(
+  year: number,
+  month: number,
+  day: number,
+): string {
   return dateWithClampedDay(year, month, day);
 }
 
@@ -81,7 +93,9 @@ export function nextSalaryDate(options: {
   for (let offset = 0; offset < 3; offset += 1) {
     const { year, month } = monthWithOffset(today, offset);
     const candidate = salaryDateForMonth(year, month, salaryDay);
-    const adjusted = adjustBusinessDay ? adjustToBusinessDay(candidate) : candidate;
+    const adjusted = adjustBusinessDay
+      ? adjustToBusinessDay(candidate)
+      : candidate;
     lastCandidate = adjusted;
 
     if (adjusted >= today) {

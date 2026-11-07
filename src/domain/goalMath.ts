@@ -1,6 +1,6 @@
-import { monthsBetween } from './dates';
+import { monthsBetween } from "./dates";
 
-export type GoalPaceStatus = 'completed' | 'ahead' | 'onTrack' | 'behind';
+export type GoalPaceStatus = "completed" | "ahead" | "onTrack" | "behind";
 
 export function goalSaved(deposits: number, withdraws: number): number {
   return deposits - withdraws;
@@ -18,7 +18,10 @@ export function isGoalCompleted(saved: number, target: number): boolean {
   return target > 0 && saved >= target;
 }
 
-export function monthsUntilDeadline(deadline: string | null, today: string): number {
+export function monthsUntilDeadline(
+  deadline: string | null,
+  today: string,
+): number {
   if (!deadline) {
     return 0;
   }
@@ -30,7 +33,7 @@ export function monthlySavingsNeeded(
   target: number,
   saved: number,
   deadline: string | null,
-  today: string
+  today: string,
 ): number {
   const remaining = target - saved;
 
@@ -52,31 +55,34 @@ export function goalPace(input: {
   const { saved, target, createdAt, deadline, today } = input;
 
   if (isGoalCompleted(saved, target)) {
-    return 'completed';
+    return "completed";
   }
 
   if (!deadline) {
-    return 'onTrack';
+    return "onTrack";
   }
 
   const totalMonths = monthsBetween(createdAt, deadline);
 
   if (totalMonths <= 0) {
-    return 'behind';
+    return "behind";
   }
 
-  const elapsed = Math.min(Math.max(monthsBetween(createdAt, today), 0), totalMonths);
+  const elapsed = Math.min(
+    Math.max(monthsBetween(createdAt, today), 0),
+    totalMonths,
+  );
   const expected = (target * elapsed) / totalMonths;
 
   if (saved > expected) {
-    return 'ahead';
+    return "ahead";
   }
 
   if (saved < expected) {
-    return 'behind';
+    return "behind";
   }
 
-  return 'onTrack';
+  return "onTrack";
 }
 
 export function goalExpectedByNow(input: {
@@ -97,6 +103,9 @@ export function goalExpectedByNow(input: {
     return target;
   }
 
-  const elapsed = Math.min(Math.max(monthsBetween(createdAt, today), 0), totalMonths);
+  const elapsed = Math.min(
+    Math.max(monthsBetween(createdAt, today), 0),
+    totalMonths,
+  );
   return (target * elapsed) / totalMonths;
 }

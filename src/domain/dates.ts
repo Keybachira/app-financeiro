@@ -1,18 +1,31 @@
-const WEEKDAYS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-const MONTHS_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const WEEKDAYS_PT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const MONTHS_PT = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+];
 const MONTH_NAMES_PT = [
-  'janeiro',
-  'fevereiro',
-  'março',
-  'abril',
-  'maio',
-  'junho',
-  'julho',
-  'agosto',
-  'setembro',
-  'outubro',
-  'novembro',
-  'dezembro',
+  "janeiro",
+  "fevereiro",
+  "março",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
 ];
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -29,7 +42,9 @@ export function monthDaysOf(iso: string): number {
 
 export function daysLeftInMonth(iso: string): number {
   const date = parseISO(iso);
-  return daysInMonth(date.getFullYear(), date.getMonth() + 1) - date.getDate() + 1;
+  return (
+    daysInMonth(date.getFullYear(), date.getMonth() + 1) - date.getDate() + 1
+  );
 }
 
 export function isValidDate(iso: string): boolean {
@@ -37,7 +52,7 @@ export function isValidDate(iso: string): boolean {
     return false;
   }
 
-  const [year, month, day] = iso.split('-').map(Number);
+  const [year, month, day] = iso.split("-").map(Number);
   if (month < 1 || month > 12) {
     return false;
   }
@@ -46,14 +61,14 @@ export function isValidDate(iso: string): boolean {
 }
 
 export function parseISO(iso: string): Date {
-  const [year, month, day] = iso.split('-').map(Number);
+  const [year, month, day] = iso.split("-").map(Number);
   return new Date(year, month - 1, day);
 }
 
 export function toISO(date: Date): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -77,16 +92,23 @@ export function addMonths(iso: string, months: number): string {
   return toISO(date);
 }
 
-export function dateWithClampedDay(year: number, month: number, day: number): string {
+export function dateWithClampedDay(
+  year: number,
+  month: number,
+  day: number,
+): string {
   const clamped = Math.min(Math.max(day, 1), daysInMonth(year, month));
-  return `${year}-${String(month).padStart(2, '0')}-${String(clamped).padStart(2, '0')}`;
+  return `${year}-${String(month).padStart(2, "0")}-${String(clamped).padStart(2, "0")}`;
 }
 
 export function monthKey(iso: string): string {
   return iso.slice(0, 7);
 }
 
-export function monthWithOffset(iso: string, offset: number): { year: number; month: number } {
+export function monthWithOffset(
+  iso: string,
+  offset: number,
+): { year: number; month: number } {
   const date = parseISO(iso);
   const total = date.getFullYear() * 12 + date.getMonth() + offset;
   return { year: Math.floor(total / 12), month: (total % 12) + 1 };
@@ -99,7 +121,9 @@ export function daysBetween(fromIso: string, toIso: string): number {
 export function monthsBetween(fromIso: string, toIso: string): number {
   const from = parseISO(fromIso);
   const to = parseISO(toIso);
-  let months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+  let months =
+    (to.getFullYear() - from.getFullYear()) * 12 +
+    (to.getMonth() - from.getMonth());
 
   if (to.getDate() < from.getDate()) {
     months -= 1;
@@ -143,6 +167,6 @@ export function formatShortPt(iso: string): string {
 }
 
 function utcTime(iso: string): number {
-  const [year, month, day] = iso.split('-').map(Number);
+  const [year, month, day] = iso.split("-").map(Number);
   return Date.UTC(year, month - 1, day);
 }

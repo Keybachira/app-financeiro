@@ -1,20 +1,22 @@
-import { addDays } from './dates';
+import { addDays } from "./dates";
 
 export type QuickMovement = {
-  type: 'income' | 'expense';
+  type: "income" | "expense";
   amount: number;
   note: string | null;
   date: string;
 };
 
 export type QuickPick = {
-  type: 'income' | 'expense';
+  type: "income" | "expense";
   note: string;
   amount: number;
   count: number;
 };
 
-export function lastMovement<T extends QuickMovement>(movements: T[]): T | null {
+export function lastMovement<T extends QuickMovement>(
+  movements: T[],
+): T | null {
   let latest: T | null = null;
 
   for (const movement of movements) {
@@ -32,7 +34,7 @@ export function quickPicks(
   movements: QuickMovement[],
   today: string,
   days = 60,
-  limit = 2
+  limit = 2,
 ): QuickPick[] {
   const since = addDays(today, -days);
   const counts = new Map<string, QuickPick & { lastDate: string }>();
@@ -51,14 +53,25 @@ export function quickPicks(
 
     if (existing) {
       existing.count += 1;
-      existing.lastDate = movement.date > existing.lastDate ? movement.date : existing.lastDate;
+      existing.lastDate =
+        movement.date > existing.lastDate ? movement.date : existing.lastDate;
     } else {
-      counts.set(key, { type: movement.type, note, amount: movement.amount, count: 1, lastDate: movement.date });
+      counts.set(key, {
+        type: movement.type,
+        note,
+        amount: movement.amount,
+        count: 1,
+        lastDate: movement.date,
+      });
     }
   }
 
   return [...counts.values()]
-    .sort((a, b) => b.count - a.count || (b.lastDate > a.lastDate ? 1 : b.lastDate < a.lastDate ? -1 : 0))
+    .sort(
+      (a, b) =>
+        b.count - a.count ||
+        (b.lastDate > a.lastDate ? 1 : b.lastDate < a.lastDate ? -1 : 0),
+    )
     .slice(0, limit)
     .map(({ type, note, amount, count }) => ({ type, note, amount, count }));
 }
