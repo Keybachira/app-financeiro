@@ -5,7 +5,6 @@
 **Controla o teu dinheiro em Kwanzas, sem conta, sem internet e sem complicações.**
 
 ![Android](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-000000?logo=apple&logoColor=white)
 ![Offline](https://img.shields.io/badge/Funciona-offline-2F5FE0)
 ![Privacidade](https://img.shields.io/badge/Dados-só%20no%20teu%20telemóvel-0B1538)
 
