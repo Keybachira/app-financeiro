@@ -49,7 +49,7 @@ npm run android    # build de desenvolvimento no Android
 npm run ios        # build de desenvolvimento no iOS
 ```
 
-O projeto usa `expo-dev-client`, por isso corre numa *development build* e não no Expo Go.
+Podes usar o Expo Go normal para desenvolver e navegar na app. A única restrição é que os lembretes automáticos (contas, dívidas e previsões) não são agendados nesse ambiente; para os testar, usa uma *development build* (`npm run android` / `npm run ios`).
 
 ## Como o código está organizado
 
