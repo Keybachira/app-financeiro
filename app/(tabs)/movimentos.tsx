@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import {
-  CAT,
   DIA,
   ICON,
-  Mov,
   ago,
   fdl,
   go,
@@ -17,6 +17,10 @@ import {
   parseISO,
   useTheme,
 } from "../../data";
+import { monthKey, todayISO } from "../../src/domain/dates";
+import { useAllMovements } from "../../src/features/movements/useMovements";
+import type { MovementRow } from "../../src/repos/movements";
+import { categoryVisual } from "../../src/ui/categoryVisuals";
 
 const PERIODOS = [
   { k: "", l: "Tudo" },
@@ -26,8 +30,9 @@ const PERIODOS = [
 ];
 
 export default function Movimentos() {
-  const { t, s, st } = useTheme();
+  const { t, s } = useTheme();
   const ins = useSafeAreaInsets();
+  const { movements, refresh } = useAllMovements();
   const [q, setQ] = useState("");
   const [pr, setPr] = useState("");
   const [dt, setDt] = useState("");
@@ -36,36 +41,51 @@ export default function Movimentos() {
   const [gr, setGr] = useState<"d" | "c">("d");
   const [fo, setFo] = useState(false);
 
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
+
+  const today = todayISO();
   const cats = useMemo(
-    () => Array.from(new Set(st.movs.map((m) => m.c))).sort(),
-    [st.movs],
+    () =>
+      Array.from(new Set(movements.map((m) => m.category))).sort((a, b) =>
+        a.localeCompare(b, "pt"),
+      ),
+    [movements],
   );
   const nFiltros =
     (dt ? 1 : 0) + (cat ? 1 : 0) + (tp ? 1 : 0) + (gr === "c" ? 1 : 0);
 
   const lista = useMemo(() => {
     const nq = nz(q.trim());
-    const mesAtual = ago(0).slice(0, 7);
-    return st.movs
+    const mesAtual = monthKey(today);
+    const seteDias = ago(6);
+
+    return movements
       .filter(
         (m) =>
-          (!dt || m.dt === dt) &&
+          (!dt || m.date === dt) &&
           (!pr ||
             (pr === "h"
-              ? m.dt === ago(0)
+              ? m.date === today
               : pr === "7"
-                ? m.dt >= ago(6)
-                : m.dt.slice(0, 7) === mesAtual)) &&
-          (!cat || m.c === cat) &&
-          (!tp || (tp === "r" ? m.v > 0 : m.v < 0)) &&
-          (!nq || nz(m.t + " " + m.c).includes(nq)),
+                ? m.date >= seteDias
+                : monthKey(m.date) === mesAtual)) &&
+          (!cat || m.category === cat) &&
+          (!tp || (tp === "r" ? m.type === "income" : m.type === "expense")) &&
+          (!nq || nz(`${m.note ?? ""} ${m.category}`).includes(nq)),
       )
-      .sort((a, b) => (a.dt < b.dt ? 1 : a.dt > b.dt ? -1 : 0));
-  }, [st.movs, q, pr, dt, cat, tp]);
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  }, [movements, q, pr, dt, cat, tp, today]);
 
   let rec = 0,
     des = 0;
-  lista.forEach((m) => (m.v > 0 ? (rec += m.v) : (des -= m.v)));
+  lista.forEach((m) => {
+    if (m.type === "income") rec += m.amount;
+    else des += m.amount;
+  });
   const net = rec - des;
   const sp = rec > 0 ? Math.min(100, Math.round((des / rec) * 100)) : 0;
   const label = [
@@ -84,24 +104,28 @@ export default function Movimentos() {
     .join(" · ");
 
   const grupos = useMemo(() => {
-    const G: Record<string, Mov[]> = {};
+    const G: Record<string, MovementRow[]> = {};
     const ordem: string[] = [];
     lista.forEach((m) => {
-      const k = gr === "c" ? m.c : m.dt;
+      const k = gr === "c" ? m.category : m.date;
       if (!G[k]) {
         G[k] = [];
         ordem.push(k);
       }
       G[k].push(m);
     });
-    const tot = (g: Mov[]) => g.reduce((a, m) => a + m.v, 0);
+    const tot = (g: MovementRow[]) =>
+      g.reduce((a, m) => a + (m.type === "income" ? m.amount : -m.amount), 0);
     if (gr === "c")
       ordem.sort((a, b) => Math.abs(tot(G[b])) - Math.abs(tot(G[a])));
     return ordem.map((k) => ({
       k,
       itens: G[k],
       total: tot(G[k]),
-      desp: G[k].reduce((a, m) => a + (m.v < 0 ? -m.v : 0), 0),
+      desp: G[k].reduce(
+        (a, m) => a + (m.type === "expense" ? m.amount : 0),
+        0,
+      ),
     }));
   }, [lista, gr]);
 
@@ -286,13 +310,13 @@ export default function Movimentos() {
         )}
       </View>
 
-      {st.movs.length === 0 ? (
+      {movements.length === 0 ? (
         <View style={s.panel}>
           <View style={s.empty}>
             <Text style={s.emptyTxt}>Ainda sem movimentos.</Text>
             <Pressable
               style={s.emptyBtn}
-              onPress={() => go("/novo-movimento?tipo=d")}
+              onPress={() => go("/movement/new?type=expense")}
             >
               <Text style={s.emptyBtnTxt}>Registar despesa</Text>
             </Pressable>
@@ -352,7 +376,7 @@ export default function Movimentos() {
             const cn = `${g.itens.length} ${g.itens.length === 1 ? "movimento" : "movimentos"}`;
             const sub = isC ? cn : `${DIA[parseISO(g.k).getDay()]} · ${cn}`;
             const share = isC && des > 0 ? Math.round((g.desp / des) * 100) : 0;
-            const gc = CAT[g.k] || CAT.Outros;
+            const gc = categoryVisual(g.k);
             return (
               <View key={g.k} style={s.panel}>
                 <View style={s.eh}>
@@ -367,11 +391,7 @@ export default function Movimentos() {
                       <View
                         style={[s.circSm, { backgroundColor: gc.color + "22" }]}
                       >
-                        <Feather
-                          name={ICON[gc.icon]}
-                          size={17}
-                          color={gc.color}
-                        />
+                        <Feather name={gc.icon} size={17} color={gc.color} />
                       </View>
                     )}
                     <View>
@@ -400,31 +420,30 @@ export default function Movimentos() {
                   </>
                 )}
                 {g.itens.map((mv) => {
-                  const c = CAT[mv.c] || CAT.Outros;
+                  const c = categoryVisual(mv.category);
+                  const income = mv.type === "income";
                   return (
                     <Pressable
                       key={mv.id}
                       style={s.it}
-                      onPress={() => go(`/novo-movimento?id=${mv.id}`)}
+                      onPress={() => go(`/movement/${mv.id}`)}
                     >
                       <View
                         style={[s.circSm, { backgroundColor: c.color + "22" }]}
                       >
-                        <Feather
-                          name={ICON[c.icon]}
-                          size={17}
-                          color={c.color}
-                        />
+                        <Feather name={c.icon} size={17} color={c.color} />
                       </View>
                       <View style={s.itBody}>
-                        <Text style={s.itTxt}>{mv.t}</Text>
+                        <Text style={s.itTxt} numberOfLines={1}>
+                          {mv.note?.trim() || mv.category}
+                        </Text>
                         <Text style={s.itSub}>
-                          {mv.c} • {fdl(mv.dt)}
+                          {mv.category} • {fdl(mv.date)}
                         </Text>
                       </View>
-                      <Text style={[s.pTxt, mv.v > 0 ? s.pos : s.neg]}>
-                        {mv.v > 0 ? "+" : "−"}
-                        {kz(Math.abs(mv.v))}
+                      <Text style={[s.pTxt, income ? s.pos : s.neg]}>
+                        {income ? "+" : "−"}
+                        {kz(mv.amount)}
                       </Text>
                     </Pressable>
                   );

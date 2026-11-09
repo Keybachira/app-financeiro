@@ -2,23 +2,37 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ICON, ModKey, go, goBack, useTheme } from "../data";
+import { ICON, go, goBack, useTheme } from "../data";
+import type { ModuleId } from "../src/domain/modules";
+import { useModuleConfig } from "../src/features/modules/useModuleConfig";
 
 const ITENS: {
-  k: Exclude<ModKey, "salario" | "limite">;
+  id: ModuleId;
   icon: string;
   label: string;
+  route: string;
 }[] = [
-  { k: "metas", icon: "goal", label: "Metas e poupanças" },
-  { k: "dividas", icon: "debt", label: "Dívidas" },
-  { k: "projetos", icon: "proj", label: "Projetos" },
-  { k: "fixas", icon: "fix", label: "Despesas fixas" },
+  {
+    id: "goals_savings",
+    icon: "goal",
+    label: "Metas e poupanças",
+    route: "/goals",
+  },
+  { id: "debts", icon: "debt", label: "Dívidas", route: "/debts" },
+  { id: "projects", icon: "proj", label: "Projetos", route: "/projects" },
+  {
+    id: "fixed_expenses",
+    icon: "fix",
+    label: "Contas fixas",
+    route: "/bill",
+  },
 ];
 
 export default function Mais() {
-  const { t, s, st } = useTheme();
+  const { t, s } = useTheme();
   const ins = useSafeAreaInsets();
-  const lista = ITENS.filter((x) => st.mod[x.k]);
+  const { isEnabled } = useModuleConfig();
+  const lista = ITENS.filter((x) => isEnabled(x.id));
 
   return (
     <ScrollView
@@ -34,9 +48,26 @@ export default function Mais() {
       </View>
 
       <View style={s.panel}>
+        <Pressable
+          style={s.it}
+          onPress={() => go("/inteligencia")}
+          accessibilityLabel="Inteligência financeira"
+        >
+          <View style={[s.circSm, { backgroundColor: t.acc + "22" }]}>
+            <Feather name={ICON.stat} size={17} color={t.acc} />
+          </View>
+          <View style={s.itBody}>
+            <Text style={s.itTxt}>Inteligência financeira</Text>
+            <Text style={[s.itSub, { marginTop: 2 }]}>
+              Previsões, padrões e gastos fora do normal
+            </Text>
+          </View>
+          <Feather name={ICON.chev} size={16} color={t.muted} />
+        </Pressable>
+
         {lista.length ? (
           lista.map((x) => (
-            <Pressable key={x.k} style={s.it} onPress={() => go(`/${x.k}`)}>
+            <Pressable key={x.id} style={s.it} onPress={() => go(x.route)}>
               <View style={[s.circSm, { backgroundColor: t.circ }]}>
                 <Feather name={ICON[x.icon]} size={17} color={t.text} />
               </View>

@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import {
-  CAT,
-  ICON,
+  DIA,
   ago,
   goBack,
   kmt,
@@ -12,19 +13,29 @@ import {
   parseISO,
   pct,
   stLbl,
-  DIA,
   useTheme,
 } from "../../data";
+import { useAllMovements } from "../../src/features/movements/useMovements";
+import type { MovementRow } from "../../src/repos/movements";
+import { categoryVisual } from "../../src/ui/categoryVisuals";
 
 export default function Estatisticas() {
-  const { t, s, st } = useTheme();
+  const { t, s } = useTheme();
   const ins = useSafeAreaInsets();
+  const { movements, refresh } = useAllMovements();
   const [n, setN] = useState<7 | 30>(7);
   const [k, setK] = useState<"e" | "g">("e");
   const [sel, setSel] = useState<number | null>(null);
 
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
+
   const d = useMemo(() => {
     const days = Array.from({ length: n }, (_, i) => ago(n - 1 - i));
+    const daySet = new Set(days);
     const E: Record<string, number> = {},
       G: Record<string, number> = {},
       c: Record<string, number> = {};
@@ -32,19 +43,21 @@ export default function Estatisticas() {
       E[x] = 0;
       G[x] = 0;
     });
-    let best: { t: string; v: number } | null = null;
-    st.movs.forEach((m) => {
-      if (!(m.dt in E)) return;
-      if (m.v < 0) {
-        E[m.dt] -= m.v;
-        c[m.c] = (c[m.c] || 0) - m.v;
-      } else G[m.dt] += m.v;
+    let best: MovementRow | null = null;
+    for (const m of movements) {
+      if (!daySet.has(m.date)) continue;
+      if (m.type === "expense") {
+        E[m.date] += m.amount;
+        c[m.category] = (c[m.category] || 0) + m.amount;
+      } else {
+        G[m.date] += m.amount;
+      }
       if (
-        (k === "e" ? m.v < 0 : m.v > 0) &&
-        (!best || Math.abs(m.v) > Math.abs(best.v))
+        (k === "e" ? m.type === "expense" : m.type === "income") &&
+        (!best || m.amount > best.amount)
       )
         best = m;
-    });
+    }
     const ev = days.map((x) => E[x]);
     const gv = days.map((x) => G[x]);
     const te = ev.reduce((a, b) => a + b, 0);
@@ -62,10 +75,10 @@ export default function Estatisticas() {
       vals,
       tot,
       mx,
-      best: best as { t: string; v: number } | null,
+      best,
       act: vals.filter(Boolean).length,
     };
-  }, [st.movs, n, k]);
+  }, [movements, n, k]);
 
   const net = d.tg - d.te;
   const pk = d.vals.indexOf(d.mx);
@@ -85,7 +98,7 @@ export default function Estatisticas() {
     >
       <View style={s.back}>
         <Pressable style={s.circ} onPress={goBack} accessibilityLabel="Voltar">
-          <Feather name={ICON.back} size={20} color={t.text} />
+          <Feather name="chevron-left" size={20} color={t.text} />
         </Pressable>
         <Text style={s.backTxt}>Estatísticas</Text>
       </View>
@@ -245,10 +258,10 @@ export default function Estatisticas() {
                   style={[s.rowTxt, { fontSize: 12.5, marginVertical: 2 }]}
                   numberOfLines={1}
                 >
-                  {d.best?.t ?? "—"}
+                  {d.best ? d.best.note?.trim() || d.best.category : "—"}
                 </Text>
                 <Text style={s.itSub}>
-                  {d.best ? kz(Math.abs(d.best.v)) : ""}
+                  {d.best ? kz(d.best.amount) : ""}
                 </Text>
               </View>
             </View>
@@ -269,7 +282,7 @@ export default function Estatisticas() {
         <Text style={s.ehTxt}>Despesas por categoria</Text>
         {d.te > 0 ? (
           d.cats.map((c) => {
-            const x = CAT[c] || CAT.Outros;
+            const x = categoryVisual(c);
             return (
               <View
                 key={c}
@@ -289,7 +302,7 @@ export default function Estatisticas() {
                     },
                   ]}
                 >
-                  <Feather name={ICON[x.icon]} size={15} color={x.color} />
+                  <Feather name={x.icon} size={15} color={x.color} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={s.rowH}>

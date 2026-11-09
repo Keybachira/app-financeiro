@@ -9,9 +9,9 @@ import { useFonts } from 'expo-font';
 import { fontAssets, fonts, radius, spacing, useTheme } from '../src/ui/theme';
 import { useDatabase } from '../src/db/useDatabase';
 import { ToastProvider } from '../src/ui/components/Toast';
-import * as Notifications from '../src/repos/notifications';
-import { isExpoGo } from '../src/repos/notificationRuntime';
 import { useAutoSalary } from '../src/features/salary/useSalary';
+import { useNotificationSetup } from '../src/features/notifications/useNotificationSetup';
+import { useIntelligenceBoot } from '../src/features/intelligence/useIntelligence';
 import { useLockState } from '../src/features/security/useLockState';
 import { LockScreen } from './lock';
 
@@ -26,12 +26,8 @@ export default function RootLayout() {
   const [unlocked, setUnlocked] = useState(() => !(hasPin && enabled));
 
   useAutoSalary();
-
-  // Request notification permission on app start (native builds only, not Expo Go)
-  useEffect(() => {
-    if (isExpoGo()) return;
-    Notifications.requestNotificationPermission();
-  }, []);
+  useNotificationSetup(dbReady);
+  useIntelligenceBoot(dbReady);
 
   useEffect(() => {
     if (fontsLoaded || fontsError) {
@@ -95,6 +91,8 @@ export default function RootLayout() {
           <Stack.Screen name="salary" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="bill" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="bill/new" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="notificacoes" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="inteligencia" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         </Stack>
       </SafeAreaProvider>
     </ToastProvider>

@@ -1,19 +1,182 @@
-import React from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import React, { useCallback, useState, type ComponentProps } from "react";
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { A, ICON, NK, go, goBack, ntT, unreadCount, useTheme } from "../data";
+
+import { ICON, go, goBack, useTheme } from "../data";
+import { addDays, formatDayMonthPt, todayISO } from "../src/domain/dates";
+import {
+  getBillNotificationsStatus,
+  type BillNotificationStatus,
+} from "../src/repos/bills";
+import { isExpoGo } from "../src/repos/notificationRuntime";
+import { sendTestNotification } from "../src/features/notifications/notificationActions";
+import {
+  useNotificationCenter,
+  type AppNotification,
+  type AppNotificationKind,
+} from "../src/features/notifications/useNotificationCenter";
+import { useNotificationPermission } from "../src/features/notifications/useNotificationPermission";
+
+type FeatherName = ComponentProps<typeof Feather>["name"];
+
+const KIND_ICON: Record<AppNotificationKind, FeatherName> = {
+  bill: ICON.fix,
+  debt: ICON.debt,
+  project: ICON.proj,
+  goal: ICON.goal,
+};
+
+function relativeTime(iso: string): string {
+  const day = iso.slice(0, 10);
+  const today = todayISO();
+  if (day === today) return "Hoje";
+  if (day === addDays(today, -1)) return "Ontem";
+  return formatDayMonthPt(day);
+}
+
+function permissionLabel(
+  state: "granted" | "denied" | "unavailable" | null,
+): string {
+  if (state === "granted") return "Ativas";
+  if (state === "denied") return "Desativadas";
+  if (state === "unavailable") return "Indisponível";
+  return "A verificar";
+}
+
+function billStatusLabel(status: BillNotificationStatus | null): string {
+  if (!status) return "A preparar lembretes de contas.";
+  switch (status.state) {
+    case "scheduled":
+      return "Lembretes de contas agendados.";
+    case "permission_denied":
+      return "Falta permissão para agendar os lembretes.";
+    case "not_scheduled":
+      return "Sem contas ativas para lembrar.";
+    case "error":
+      return "Não foi possível agendar os lembretes.";
+    default:
+      return "Notificações do sistema indisponíveis.";
+  }
+}
+
+function NotificationRow({
+  item,
+  onPress,
+}: {
+  item: AppNotification;
+  onPress: () => void;
+}) {
+  const { t, s } = useTheme();
+  const color =
+    item.kind === "debt" ? t.neg : item.kind === "bill" ? t.amb : t.acc;
+
+  return (
+    <Pressable
+      style={[s.ni, !item.read && s.niUn]}
+      onPress={onPress}
+      accessibilityLabel={`${item.title}. ${item.body}`}
+    >
+      <View
+        style={[
+          s.circSm,
+          {
+            width: 38,
+            height: 38,
+            borderRadius: 19,
+            backgroundColor: color + "22",
+          },
+        ]}
+      >
+        <Feather name={KIND_ICON[item.kind]} size={18} color={color} />
+      </View>
+      <View style={s.itBody}>
+        <Text style={s.itTxt} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={[s.itSub, { marginTop: 2, lineHeight: 15 }]}>
+          {item.body}
+        </Text>
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingTop: 2,
+        }}
+      >
+        {!item.read && (
+          <View
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: 4,
+              backgroundColor: t.acc,
+              marginRight: 6,
+            }}
+          />
+        )}
+        <Text style={s.itSub}>{relativeTime(item.createdAt)}</Text>
+      </View>
+    </Pressable>
+  );
+}
 
 export default function Notificacoes() {
-  const { t, s, st } = useTheme();
+  const { t, s } = useTheme();
   const ins = useSafeAreaInsets();
-  const u = unreadCount(st);
-  const lista = [...st.notifs].sort((a, b) => b.ts - a.ts);
+  const { items, unreadCount, markRead, markAllRead, refresh } =
+    useNotificationCenter();
+  const {
+    state: permission,
+    refresh: refreshPermission,
+    request,
+  } = useNotificationPermission();
+  const [billStatus, setBillStatus] = useState(getBillNotificationsStatus);
+  const [testBusy, setTestBusy] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
-  const fechar = () => {
-    A.markAllRead(); // como no protótipo: ao fechar, tudo fica lido
-    goBack();
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+      void refreshPermission();
+      setBillStatus(getBillNotificationsStatus());
+    }, [refresh, refreshPermission]),
+  );
+
+  const handleEnable = async () => {
+    setFeedback(null);
+    const next = await request();
+    setBillStatus(getBillNotificationsStatus());
+    if (next === "granted") {
+      setFeedback("Notificações ativadas.");
+    } else if (next === "denied") {
+      setFeedback("Permissão recusada. Podes ativá-la nas definições do sistema.");
+    } else {
+      setFeedback("Notificações indisponíveis neste ambiente.");
+    }
   };
+
+  const handleTest = async () => {
+    setTestBusy(true);
+    setFeedback(null);
+    const result = await sendTestNotification();
+    setTestBusy(false);
+    setBillStatus(getBillNotificationsStatus());
+    setFeedback(result.message);
+  };
+
+  const expoGo = isExpoGo();
+  const description = expoGo
+    ? "No Expo Go os lembretes automáticos (contas e previsões) não são agendados. Podes continuar a usar a app normalmente."
+    : permission === "granted"
+      ? billStatusLabel(billStatus)
+      : permission === "denied"
+        ? "Ativa as notificações para receberes os lembretes de contas e vencimentos."
+        : permission === "unavailable"
+          ? "Este ambiente não suporta notificações do sistema."
+          : "A verificar a permissão de notificações.";
 
   return (
     <ScrollView
@@ -22,88 +185,121 @@ export default function Notificacoes() {
       showsVerticalScrollIndicator={false}
     >
       <View style={s.back}>
-        <Pressable style={s.circ} onPress={fechar} accessibilityLabel="Fechar">
+        <Pressable style={s.circ} onPress={goBack} accessibilityLabel="Fechar">
           <Feather name={ICON.x} size={20} color={t.text} />
         </Pressable>
         <Text style={s.backTxt}>Notificações</Text>
-        <Pressable onPress={A.markAllRead}>
-          <Text style={{ color: t.acc, fontSize: 12, fontWeight: "500" }}>
-            Marcar lidas
-          </Text>
-        </Pressable>
+        {unreadCount > 0 && (
+          <Pressable onPress={markAllRead} hitSlop={8}>
+            <Text style={{ color: t.acc, fontSize: 12, fontWeight: "500" }}>
+              Marcar lidas
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       <Pressable style={s.alr} onPress={() => go("/ajustes")}>
         <View style={[s.alrDot, { backgroundColor: t.acc }]} />
         <Text style={s.alrTxt}>
           <Text style={{ fontWeight: "500" }}>Definições de alertas</Text> ·
-          limite e gatilhos
+          contas, dívidas e prazos
         </Text>
         <Text style={s.link}>›</Text>
       </Pressable>
 
       <View style={s.panel}>
         <View style={s.eh}>
-          <Text style={s.ehTxt}>Recentes</Text>
-          <Text style={s.link}>
-            {u ? `${u} ${u === 1 ? "nova" : "novas"}` : "Tudo lido"}
+          <Text style={s.ehTxt}>Notificações do sistema</Text>
+          <Text style={[s.link, { color: permission === "granted" ? t.pos : t.muted }]}>
+            {permissionLabel(permission)}
           </Text>
         </View>
-        {lista.length === 0 && (
+        <Text style={[s.tgSub, { lineHeight: 16, marginTop: 2 }]}>
+          {description}
+        </Text>
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+          {permission === "granted" ? (
+            <Pressable
+              style={[s.emptyBtn, { marginTop: 0, opacity: testBusy ? 0.6 : 1 }]}
+              onPress={handleTest}
+              disabled={testBusy}
+            >
+              <Text style={s.emptyBtnTxt}>
+                {testBusy ? "A enviar…" : "Enviar teste"}
+              </Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={[s.emptyBtn, { marginTop: 0 }]}
+              onPress={handleEnable}
+            >
+              <Text style={s.emptyBtnTxt}>Ativar notificações</Text>
+            </Pressable>
+          )}
+
+          {permission === "denied" && (
+            <Pressable
+              style={[s.emptyBtn, { marginTop: 0, backgroundColor: t.circ }]}
+              onPress={() => void Linking.openSettings()}
+            >
+              <Text style={[s.emptyBtnTxt, { color: t.text }]}>
+                Abrir definições
+              </Text>
+            </Pressable>
+          )}
+
+          <Pressable
+            style={[s.emptyBtn, { marginTop: 0, backgroundColor: t.circ }]}
+            onPress={() => go("/bill")}
+          >
+            <Text style={[s.emptyBtnTxt, { color: t.text }]}>Contas fixas</Text>
+          </Pressable>
+
+          <Pressable
+            style={[s.emptyBtn, { marginTop: 0, backgroundColor: t.circ }]}
+            onPress={() => go("/inteligencia")}
+          >
+            <Text style={[s.emptyBtnTxt, { color: t.text }]}>Previsões</Text>
+          </Pressable>
+        </View>
+
+        {feedback && (
+          <Text style={[s.tgSub, { marginTop: 8, lineHeight: 15 }]}>
+            {feedback}
+          </Text>
+        )}
+      </View>
+
+      <View style={s.panel}>
+        <View style={s.eh}>
+          <Text style={s.ehTxt}>Recentes</Text>
+          <Text style={s.link}>
+            {unreadCount
+              ? `${unreadCount} ${unreadCount === 1 ? "nova" : "novas"}`
+              : "Tudo lido"}
+          </Text>
+        </View>
+
+        {items.length === 0 && (
           <View style={s.empty}>
-            <Text style={s.emptyTxt}>Sem notificações.</Text>
+            <Text style={s.emptyTxt}>
+              Sem notificações por agora. Os lembretes de contas, dívidas,
+              projetos e metas aparecem aqui.
+            </Text>
           </View>
         )}
-        {lista.map((n) => {
-          const c = NK[n.k].color;
-          return (
-            <Pressable
-              key={n.id}
-              style={[s.ni, !n.read && s.niUn]}
-              onPress={() => A.toggleRead(n.id)}
-            >
-              <View
-                style={[
-                  s.circSm,
-                  {
-                    width: 38,
-                    height: 38,
-                    borderRadius: 19,
-                    backgroundColor: c + "22",
-                  },
-                ]}
-              >
-                <Feather name={ICON[n.i] ?? ICON.bell} size={18} color={c} />
-              </View>
-              <View style={s.itBody}>
-                <Text style={s.itTxt}>{n.t}</Text>
-                <Text style={[s.itSub, { marginTop: 2, lineHeight: 15 }]}>
-                  {n.b}
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingTop: 2,
-                }}
-              >
-                {!n.read && (
-                  <View
-                    style={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: 4,
-                      backgroundColor: t.acc,
-                      marginRight: 6,
-                    }}
-                  />
-                )}
-                <Text style={s.itSub}>{ntT(n.ts)}</Text>
-              </View>
-            </Pressable>
-          );
-        })}
+
+        {items.map((item) => (
+          <NotificationRow
+            key={item.id}
+            item={item}
+            onPress={() => {
+              markRead(item.id);
+              go(item.href);
+            }}
+          />
+        ))}
       </View>
     </ScrollView>
   );
