@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import * as Crypto from "expo-crypto";
 import * as ScreenCapture from "expo-screen-capture";
 
-import { subscribeDataVersion } from "../../repos/dataVersion";
+import { bumpDataVersion, subscribeDataVersion } from "../../repos/dataVersion";
 import { getSetting, removeSetting, setSetting } from "../../repos/settings";
 
 const LOCK_KEY = "app_lock_enabled";
@@ -62,6 +62,7 @@ export function useLockState(): LockState {
   const setEnabled = useCallback((value: boolean) => {
     setSetting(LOCK_KEY, value ? "1" : "0");
     setEnabledState(value && getSetting(HASH_KEY) !== null);
+    bumpDataVersion();
   }, []);
 
   const setPin = useCallback(async (pin: string) => {
@@ -73,6 +74,7 @@ export function useLockState(): LockState {
     setSetting(LOCK_KEY, "1");
     setHasPin(true);
     setEnabledState(true);
+    bumpDataVersion();
   }, []);
 
   const removePin = useCallback(async () => {
@@ -81,6 +83,7 @@ export function useLockState(): LockState {
     removeSetting(LOCK_KEY);
     setHasPin(false);
     setEnabledState(false);
+    bumpDataVersion();
   }, []);
 
   const unlock = useCallback(async (pin: string) => {
