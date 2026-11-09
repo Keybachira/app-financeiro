@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useColorScheme } from "react-native";
 
-import { useStore } from "../../data";
+import { useAppPreferences } from "../features/settings/useAppPreferences";
 
 // Paleta clara — valores originais do design (não mexer: é a referência visual).
 const lightPalette = {
@@ -107,7 +107,7 @@ export const darkColors: Colors = {
 };
 
 export function useTheme() {
-  const { theme } = useStore();
+  const { theme } = useAppPreferences();
   const system = useColorScheme();
   const dark = theme === "system" ? system === "dark" : theme === "dark";
   const colors = dark ? darkColors : lightColors;
