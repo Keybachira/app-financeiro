@@ -8,7 +8,8 @@
  * utilizador via "PIN incorreto" para um PIN que já não era o seu.
  *
  * `bumpDataVersion()` é chamado depois de qualquer escrita que invalide
- * Definições; os hooks subscritos relêem do SQLite.
+ * vistas em memória (definições, importação de backup, salário automático);
+ * os hooks subscritos relêem do SQLite.
  */
 let version = 0;
 const listeners = new Set<() => void>();

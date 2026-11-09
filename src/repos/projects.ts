@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { projectRemaining } from '../domain/projectMath';
 import { todayISO } from '../domain/dates';
 import { db } from '../db/client';
+import { bumpDataVersion } from './dataVersion';
 
 export type ProjectRow = {
   id: string;
@@ -110,6 +111,7 @@ export function payProject(id: string, amount: number, date = todayISO(), create
   db.withTransactionSync(() => {
     insertPayment(id, amount, date, createIncome);
   });
+  bumpDataVersion();
 }
 
 export function updateProjectPayment(paymentId: string, amount: number, date: string): void {
@@ -125,6 +127,7 @@ export function updateProjectPayment(paymentId: string, amount: number, date: st
       db.runSync('UPDATE movements SET amount = ?, date = ? WHERE id = ?', [amount, date, payment.movement_id]);
     }
   });
+  bumpDataVersion();
 }
 
 export function deleteProjectPayment(paymentId: string): void {
@@ -140,6 +143,7 @@ export function deleteProjectPayment(paymentId: string): void {
       db.runSync('DELETE FROM movements WHERE id = ?', [payment.movement_id]);
     }
   });
+  bumpDataVersion();
 }
 
 export function projectView(project: ProjectRow) {

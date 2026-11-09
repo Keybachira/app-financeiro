@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { debtRemaining, debtStatus } from '../domain/debtStatus';
 import { todayISO } from '../domain/dates';
 import { db } from '../db/client';
+import { bumpDataVersion } from './dataVersion';
 
 export type DebtRow = {
   id: string;
@@ -126,6 +127,7 @@ export function payDebt(id: string, amount: number, date = todayISO()): void {
   db.withTransactionSync(() => {
     insertPayment(id, amount, date);
   });
+  bumpDataVersion();
 }
 
 export function updateDebtPayment(paymentId: string, amount: number, date: string): void {
@@ -140,6 +142,7 @@ export function updateDebtPayment(paymentId: string, amount: number, date: strin
       db.runSync('UPDATE movements SET amount = ?, date = ? WHERE id = ?', [amount, date, payment.movement_id]);
     }
   });
+  bumpDataVersion();
 }
 
 export function deleteDebtPayment(paymentId: string): void {
@@ -154,6 +157,7 @@ export function deleteDebtPayment(paymentId: string): void {
       db.runSync('DELETE FROM movements WHERE id = ?', [payment.movement_id]);
     }
   });
+  bumpDataVersion();
 }
 
 export function debtView(debt: DebtRow, today: string) {
