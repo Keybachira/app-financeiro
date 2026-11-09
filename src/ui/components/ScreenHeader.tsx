@@ -5,16 +5,25 @@ import { fonts, spacing, useThemedStyles, type Colors } from "../theme";
 
 export function ScreenHeader({
   title,
+  subtitle,
   right,
 }: {
   title: string;
+  subtitle?: string;
   right?: ReactNode;
 }) {
   const styles = useThemedStyles(makeStyles);
 
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.titleBlock}>
+        <Text style={styles.title}>{title}</Text>
+        {subtitle ? (
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
       {/* O slot era renderizado cru: `styles.right` estava definido mas nunca
           aplicado, por isso vários ícones no `right` ficavam colados sem gap. */}
       {right ? <View style={styles.right}>{right}</View> : null}
@@ -30,6 +39,15 @@ const makeStyles = (colors: Colors) =>
       justifyContent: "space-between",
       marginBottom: spacing.lg,
       minHeight: 44,
+    },
+    titleBlock: {
+      flex: 1,
+      gap: 2,
+    },
+    subtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textMuted,
     },
     title: {
       fontFamily: fonts.bold,

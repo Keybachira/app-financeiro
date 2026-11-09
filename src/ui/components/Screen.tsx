@@ -71,7 +71,7 @@ export function Screen({
         {header ? header : back ? (
           <ModalHeader title={title} subtitle={subtitle} right={right} />
         ) : (
-          <ScreenHeader title={title} right={right} />
+          <ScreenHeader title={title} subtitle={subtitle} right={right} />
         )}
         <Animated.View style={{ opacity: entrance, transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>{children}</Animated.View>
       </ScrollView>
