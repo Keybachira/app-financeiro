@@ -7,8 +7,13 @@ import { useMemo, useSyncExternalStore, type ComponentProps } from "react";
 import { StyleSheet, useColorScheme } from "react-native";
 import { router } from "expo-router";
 import type { Feather } from "@expo/vector-icons";
+import { getSetting, setSetting } from "./src/repos/settings";
+import { bumpDataVersion } from "./src/repos/dataVersion";
+import { useAppPreferences } from "./src/features/settings/useAppPreferences";
 
-export const USE_SAMPLE_DATA = true;
+// A fonte financeira oficial é o SQLite. Os ecrãs em migração podem continuar
+// a importar helpers deste módulo, mas não devem usar o store demo abaixo.
+export const USE_SAMPLE_DATA = false;
 
 /* ───────────── Tipos ───────────── */
 export type Mov = { id: string; t: string; c: string; v: number; dt: string };
@@ -517,9 +522,15 @@ function ntCheck(s: State, pre: number, a: number, m: { t: string }): Notif[] {
 
 /* ───────────── Ações ───────────── */
 export const A = {
-  toggleHid: () => setState((s) => ({ hid: !s.hid })),
+  toggleHid: () => {
+    setSetting("hide_amounts", getSetting("hide_amounts") === "1" ? "0" : "1");
+    bumpDataVersion();
+  },
   setName: (name: string) => setState((s) => ({ name: name.trim() || s.name })),
-  setTheme: (theme: ThemePref) => setState({ theme }),
+  setTheme: (theme: ThemePref) => {
+    setSetting("theme_preference", theme);
+    bumpDataVersion();
+  },
   toggleMod: (k: ModKey) =>
     setState((s) => ({
       mod: { ...s.mod, [k]: !s.mod[k] },
@@ -643,9 +654,11 @@ export const A = {
 
 /* ───────────── Tema ───────────── */
 export const FONT = {
-  reg: "Poppins_400Regular",
-  med: "Poppins_500Medium",
-  semi: "Poppins_600SemiBold",
+  // A app carrega DMSans no layout raiz; manter a mesma família evita
+  // fallback silencioso para a fonte do sistema nestes ecrãs.
+  reg: "DMSans_400Regular",
+  med: "DMSans_500Medium",
+  semi: "DMSans_700Bold",
 };
 // Se a fonte não estiver carregada (useFonts), o RN usa a fonte do sistema.
 
@@ -654,7 +667,7 @@ const LIGHT = {
   panel: "#ffffff",
   text: "#0d0d0d",
   muted: "#8d8d8d",
-  circ: "#efefef",
+  circ: "#f0f0f0",
   acc: "#9c32d7",
   amb: "#ffd35b",
   hbtn: "#ffffff",
@@ -685,9 +698,15 @@ const DARK = {
 export type Theme = typeof LIGHT;
 
 export function useTheme() {
-  const st = useStore();
+  const preferences = useAppPreferences();
   const sys = useColorScheme();
-  const dark = st.theme === "system" ? sys === "dark" : st.theme === "dark";
+  const theme = preferences.theme;
+  const dark = theme === "system" ? sys === "dark" : theme === "dark";
+  const st = {
+    theme,
+    hid: preferences.hideAmounts,
+    name: getSetting("user_name") ?? "",
+  } as Pick<State, "theme" | "hid" | "name">;
   const t = dark ? DARK : LIGHT;
   const s = useMemo(() => makeStyles(t), [dark]); // eslint-disable-line react-hooks/exhaustive-deps
   return { t, s, st, dark };
@@ -702,7 +721,7 @@ export function makeStyles(t: Theme) {
   });
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: t.bg },
-    content: { paddingHorizontal: 18, paddingBottom: 120 },
+    content: { paddingHorizontal: 16, paddingBottom: 132 },
     top: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -761,14 +780,16 @@ export function makeStyles(t: Theme) {
       letterSpacing: -0.4,
       marginTop: 16,
     },
-    sub: { ...tx(12, F.reg, t.muted), marginTop: 3 },
+    sub: { ...tx(13, F.reg, t.muted), marginTop: 4 },
     note: { ...tx(10, F.reg, t.muted), textAlign: "center", marginTop: 16 },
     panel: {
       backgroundColor: t.panel,
-      borderRadius: 28,
+      borderRadius: 20,
       paddingVertical: 18,
       paddingHorizontal: 14,
       marginTop: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: t.ring,
     },
     eh: {
       flexDirection: "row",
@@ -777,7 +798,7 @@ export function makeStyles(t: Theme) {
       marginBottom: 6,
     },
     ehTxt: tx(14, F.med),
-    link: tx(11, F.reg, t.muted),
+    link: tx(12, F.med, t.acc),
     gs: { ...tx(10, F.reg, t.muted), marginTop: 1 },
     it: {
       flexDirection: "row",
@@ -988,22 +1009,6 @@ export function makeStyles(t: Theme) {
       height: 56,
       backgroundColor: t.bg,
       borderTopLeftRadius: 24,
-    },
-    fillet: {
-      position: "absolute",
-      width: 24,
-      height: 24,
-      overflow: "hidden",
-      backgroundColor: t.bg,
-    },
-    filletDisc: {
-      position: "absolute",
-      left: -24,
-      top: -24,
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: t.acc,
     },
     add: {
       position: "absolute",
