@@ -6,7 +6,36 @@ import {
   useState,
 } from "react";
 
-import { listMovementsForMonth, type MovementRow } from "../../repos/movements";
+import { subscribeDataVersion } from "../../repos/dataVersion";
+import {
+  listMovements,
+  listMovementsForMonth,
+  type MovementRow,
+} from "../../repos/movements";
+
+/**
+ * Lista completa de movimentos. É a fonte das abas Início, Movimentos e
+ * Estatísticas: os ecrãs filtram e agrupam em memória, mas os valores vêm
+ * sempre do SQLite.
+ */
+export function useAllMovements(): {
+  movements: MovementRow[];
+  refresh: () => void;
+} {
+  const [movements, setMovements] = useState<MovementRow[]>(() =>
+    listMovements(),
+  );
+  const refresh = useCallback(() => setMovements(listMovements()), []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  // Uma importação de backup substitui a tabela sem remontar as abas.
+  useEffect(() => subscribeDataVersion(refresh), [refresh]);
+
+  return useMemo(() => ({ movements, refresh }), [movements, refresh]);
+}
 
 export function useMonthMovements(
   month: string,

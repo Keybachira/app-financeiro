@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { pendingSalaryLaunch, type SalarySettings } from "../../domain/salary";
 import { todayISO } from "../../domain/dates";
+import { bumpDataVersion } from "../../repos/dataVersion";
 import { getSetting, removeSetting, setSetting } from "../../repos/settings";
 import { createMovement } from "../../repos/movements";
 
@@ -88,6 +89,10 @@ export function useAutoSalary(): void {
           origin: "salary",
         });
         setSetting(KEYS.lastMonth, pending.month);
+        // O lançamento acontece num efeito do layout raiz, depois da primeira
+        // leitura das abas. Sem este aviso, o Início só mostrava o salário
+        // depois de o utilizador mudar de ecrã.
+        bumpDataVersion();
       } catch {
         // Falha silenciosa: tenta novamente no próximo arranque.
       }

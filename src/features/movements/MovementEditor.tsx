@@ -44,13 +44,20 @@ import {
   useQuickChips,
   type QuickChipData,
 } from "./useQuickPicks";
+import { syncIntelligenceAfterMovementChange } from "../intelligence/engine";
 
 const TYPE_OPTIONS: { value: MovementType; label: string }[] = [
   { value: "expense", label: "Despesa" },
   { value: "income", label: "Receita" },
 ];
 
-export function MovementEditor({ movement }: { movement: MovementRow | null }) {
+export function MovementEditor({
+  movement,
+  initialType = "expense",
+}: {
+  movement: MovementRow | null;
+  initialType?: MovementType;
+}) {
   const { colors, gradients } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const today = todayISO();
@@ -60,7 +67,9 @@ export function MovementEditor({ movement }: { movement: MovementRow | null }) {
   const quickChips = useQuickChips(today);
   const actionLockRef = useRef(false);
 
-  const [type, setType] = useState<MovementType>(movement?.type ?? "expense");
+  const [type, setType] = useState<MovementType>(
+    movement?.type ?? initialType,
+  );
   const [digits, setDigits] = useState(() =>
     movement ? String(movement.amount) : "",
   );
@@ -104,10 +113,14 @@ export function MovementEditor({ movement }: { movement: MovementRow | null }) {
         };
 
         const created = createMovement(input);
+        syncIntelligenceAfterMovementChange();
         toast({
           message: `Registado ${chip.label}`,
           actionLabel: "Desfazer",
-          onAction: () => deleteMovement(created.id),
+          onAction: () => {
+            deleteMovement(created.id);
+            syncIntelligenceAfterMovementChange();
+          },
         });
         router.back();
       } catch {
@@ -139,24 +152,31 @@ export function MovementEditor({ movement }: { movement: MovementRow | null }) {
       if (movement) {
         const previous = movement;
         updateMovement(previous.id, input);
+        syncIntelligenceAfterMovementChange();
         toast({
           message: "Movimento atualizado",
           actionLabel: "Desfazer",
-          onAction: () =>
+          onAction: () => {
             updateMovement(previous.id, {
               type: previous.type,
               amount: previous.amount,
               category: previous.category,
               date: previous.date,
               note: previous.note,
-            }),
+            });
+            syncIntelligenceAfterMovementChange();
+          },
         });
       } else {
         const created = createMovement(input);
+        syncIntelligenceAfterMovementChange();
         toast({
           message: "Movimento registado",
           actionLabel: "Desfazer",
-          onAction: () => deleteMovement(created.id),
+          onAction: () => {
+            deleteMovement(created.id);
+            syncIntelligenceAfterMovementChange();
+          },
         });
       }
 
@@ -176,11 +196,15 @@ export function MovementEditor({ movement }: { movement: MovementRow | null }) {
     try {
       const deleted = movement;
       deleteMovement(deleted.id);
+      syncIntelligenceAfterMovementChange();
       setConfirmDelete(false);
       toast({
         message: "Movimento apagado",
         actionLabel: "Desfazer",
-        onAction: () => restoreMovement(deleted),
+        onAction: () => {
+          restoreMovement(deleted);
+          syncIntelligenceAfterMovementChange();
+        },
       });
       router.back();
     } catch {

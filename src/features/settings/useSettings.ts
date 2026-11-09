@@ -1,7 +1,43 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { subscribeDataVersion } from "../../repos/dataVersion";
+import {
+  bumpDataVersion,
+  subscribeDataVersion,
+} from "../../repos/dataVersion";
 import { getSetting, removeSetting, setSetting } from "../../repos/settings";
+
+const USER_NAME_KEY = "user_name";
+
+/** Nome mostrado no Início e editado nos Ajustes. */
+export function useUserName(): {
+  name: string;
+  setName: (value: string) => void;
+  refresh: () => void;
+} {
+  const [tick, setTick] = useState(0);
+  const refresh = useCallback(() => setTick((value) => value + 1), []);
+
+  useEffect(() => subscribeDataVersion(refresh), [refresh]);
+
+  const name = useMemo(() => {
+    void tick;
+    return getSetting(USER_NAME_KEY)?.trim() ?? "";
+  }, [tick]);
+
+  const setName = useCallback((value: string) => {
+    const trimmed = value.trim();
+
+    if (trimmed.length === 0) {
+      removeSetting(USER_NAME_KEY);
+    } else {
+      setSetting(USER_NAME_KEY, trimmed);
+    }
+
+    bumpDataVersion();
+  }, []);
+
+  return { name, setName, refresh };
+}
 
 export function useMonthlyLimit(): {
   limit: number | null;

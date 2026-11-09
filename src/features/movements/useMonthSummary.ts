@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   monthNet,
@@ -16,6 +16,7 @@ import {
 } from "../../repos/movements";
 import { goalNetBefore, monthGoalOps, reservedTotal } from "../../repos/goals";
 import { billsUnpaidTotal } from "../../repos/bills";
+import { subscribeDataVersion } from "../../repos/dataVersion";
 import { useMonthlyLimit, useSalarySettings } from "../settings/useSettings";
 
 export type MonthSummary = {
@@ -56,6 +57,10 @@ export function useMonthSummary(today: string): {
     refreshLimit();
     setTick((value) => value + 1);
   }, [refreshSalary, refreshLimit]);
+
+  // Escritas fora destes ecrãs (salário automático, importação de backup)
+  // avisam por aqui para o resumo não ficar com valores antigos.
+  useEffect(() => subscribeDataVersion(refresh), [refresh]);
 
   const summary = useMemo<MonthSummary>(() => {
     const month = monthKey(today);
