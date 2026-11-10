@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Ab-finance",
+    "name": "Meu Kumbo",
     "slug": "ab-finance",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "runtimeVersion": { "policy": "appVersion" },
     "updates": {
       "url": "https://u.expo.dev/65313746-67bc-4bf4-93b1-0bcfd7dbdc48",
@@ -13,9 +13,7 @@
     "backgroundColor": "#EDEDED",
     "primaryColor": "#9C32D7",
     "scheme": "abfinance",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "com.bachira242.abfinance",
@@ -23,7 +21,12 @@
     },
     "android": {
       "package": "com.bachira242.abfinance",
-      "permissions": ["POST_NOTIFICATIONS", "RECEIVE_BOOT_COMPLETED", "SCHEDULE_EXACT_ALARM"],
+      "versionCode": 5,
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#EDEDED"

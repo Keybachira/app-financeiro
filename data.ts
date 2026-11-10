@@ -1,4 +1,4 @@
-// AB Finance — data.ts
+// Meu Kumbo — data.ts
 // Tipos, dados de exemplo, tema (claro/escuro), store em memória, helpers e estilos partilhados.
 // Ponto de integração: troca as ações do objeto `A` por chamadas ao teu repositório SQLite.
 // Fallback de desenvolvimento: com USE_SAMPLE_DATA = true a app arranca com dados de exemplo.
