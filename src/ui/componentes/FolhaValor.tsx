@@ -4,13 +4,21 @@ import { LinearGradient } from "expo-linear-gradient";
 import { X } from "lucide-react-native";
 
 import { formatKz } from "../../domain/money";
-import { AmountKeypad } from "./AmountKeypad";
-import { IconButton } from "./IconButton";
-import { MoneyText } from "./MoneyText";
-import { ScreenBackground } from "./ScreenBackground";
-import { fonts, radius, spacing, useTheme, useThemedStyles, type Colors } from "../theme";
+import { TecladoValor } from "./TecladoValor";
+import { BotaoIcone } from "./BotaoIcone";
+import { TextoValor } from "./TextoValor";
+import { FundoEcra } from "./FundoEcra";
+import { fonts, radius, spacing, useTema, useEstilosTema, type Cores } from "../tema";
 
-export function AmountSheet({
+/**
+ * Modal de ecrã inteiro para introduzir um valor com o teclado próprio.
+ *
+ * O valor mostrado é sempre 'digits' (string) reinterpretado como número, para
+ * não perder zeros à esquerda enquanto se escreve. O botão de confirmar fica
+ * desativado se o valor for 0 ou se ultrapassar 'maxAmount'; nesse caso a linha
+ * de ajuda passa a mostrar o máximo em vez do texto explicativo.
+ */
+export function FolhaValor({
   visible,
   title,
   confirmLabel = "Confirmar",
@@ -27,8 +35,8 @@ export function AmountSheet({
   onCancel: () => void;
   onConfirm: (amount: number) => void;
 }) {
-  const { gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const [digits, setDigits] = useState("");
 
   useEffect(() => {
@@ -49,22 +57,22 @@ export function AmountSheet({
       onRequestClose={onCancel}
     >
       <View style={styles.root}>
-        <ScreenBackground />
+        <FundoEcra />
         <View style={styles.body}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
-            <IconButton icon={X} label="Cancelar" onPress={onCancel} />
+            <BotaoIcone icon={X} label="Cancelar" onPress={onCancel} />
           </View>
 
           <View style={styles.amountWrap}>
-            <MoneyText value={amount} size="hero" />
+            <TextoValor value={amount} size="hero" />
           </View>
 
           <Text style={[styles.helper, exceedsMax && styles.helperWarn]}>
             {exceedsMax ? `Máximo ${formatKz(maxAmount ?? 0)}` : (helper ?? "")}
           </Text>
 
-          <AmountKeypad
+          <TecladoValor
             onDigit={(key) =>
               setDigits((current) =>
                 current === "0" ? key : (current + key).slice(0, 12),
@@ -97,7 +105,7 @@ export function AmountSheet({
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
     root: {
       flex: 1,

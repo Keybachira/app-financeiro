@@ -1,47 +1,37 @@
-import { fonts, lightColors, radius, spacing, useTheme } from '../theme';
+import { duracao } from '../movimento';
+import { coresClaras, fonts, layout, radius, spacing, useTema } from '../tema';
 
-/** Tokens derivados diretamente da referência Hello Nasara / Meu Kumbo. */
+/**
+ * Tokens derivados do design system canónico (`src/ui/tema` + `src/ui/movimento`).
+ *
+ * Não há valores próprios aqui: raios, espaçamentos, tipografia e durações vêm
+ * todos da mesma fonte que os componentes usam, para não voltar a existir uma
+ * segunda paleta a divergir da primeira.
+ */
 const baseTokens = {
   fonts,
-  radius: { ...radius, panel: 28, circle: 999 },
-  spacing: { ...spacing, page: 18, section: 16 },
-  motion: {
-    pressIn: 70,
-    pressOut: 160,
-    sheet: 320,
-    entrance: 300,
-    stagger: 45,
+  radius,
+  spacing: {
+    ...spacing,
+    /** Padding horizontal de página (`.scroll`). */
+    page: layout.screenPadding,
+    section: spacing.lg,
   },
+  motion: duracao,
 } as const;
 
-export const designTokens = {
+export const tokensDesign = {
   ...baseTokens,
-  colors: {
-    ...lightColors,
-    referenceBackground: '#EDEDED',
-    referencePanel: '#FFFFFF',
-    referenceAccent: '#9C32D7',
-    referenceYellow: '#FFD35B',
-    referencePositive: '#1F9D57',
-    referenceNegative: '#D9423B',
-  },
+  colors: coresClaras,
 } as const;
 
 /** Tokens com a paleta ativa (clara ou escura). */
-export function useDesignTokens() {
-  const { colors, dark } = useTheme();
+export function useTokensDesign() {
+  const { colors, dark } = useTema();
 
   return {
     ...baseTokens,
+    colors,
     dark,
-    colors: {
-      ...colors,
-      referenceBackground: colors.bg,
-      referencePanel: colors.bgMid,
-      referenceAccent: colors.accent,
-      referenceYellow: colors.warn,
-      referencePositive: colors.success,
-      referenceNegative: colors.danger,
-    },
   };
 }

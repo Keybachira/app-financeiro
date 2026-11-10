@@ -1,10 +1,16 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, Text } from "react-native";
 
-import { fonts, useTheme, useThemedStyles, type Colors } from "../theme";
-import { PressableScale } from "./PressableScale";
+import { fonts, useTema, useEstilosTema, type Cores } from "../tema";
+import { PressivelEscala } from "./PressivelEscala";
 
-export function CategoryChips({
+/**
+ * Fila horizontal de categorias; a selecionada usa o gradiente primário.
+ *
+ * É um 'ScrollView' horizontal sem indicador porque a lista de categorias não
+ * cabe na largura do telemóvel; o toque devolve sempre a categoria escolhida.
+ */
+export function ChipsCategoria({
   categories,
   value,
   onChange,
@@ -13,8 +19,8 @@ export function CategoryChips({
   value: string;
   onChange: (category: string) => void;
 }) {
-  const { gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
 
   return (
     <ScrollView
@@ -25,7 +31,7 @@ export function CategoryChips({
       {categories.map((category) => {
         const active = category === value;
         return (
-          <PressableScale
+          <PressivelEscala
             key={category}
             accessibilityLabel={category}
             accessibilityState={{ selected: active }}
@@ -47,14 +53,14 @@ export function CategoryChips({
                 {category}
               </Text>
             </LinearGradient>
-          </PressableScale>
+          </PressivelEscala>
         );
       })}
     </ScrollView>
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
     row: {
       gap: 8,

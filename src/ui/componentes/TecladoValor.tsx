@@ -8,27 +8,36 @@ import {
 } from "react-native";
 import { Delete } from "lucide-react-native";
 
-import { tapLight, tapMedium } from "../haptics";
+import { toqueLigeiro, toqueMedio } from "../haptica";
 import {
   fonts,
   radius,
   spacing,
-  useTheme,
-  useThemedStyles,
-  type Colors,
-} from "../theme";
+  useTema,
+  useEstilosTema,
+  type Cores,
+} from "../tema";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "000", "0", "back"];
 
-export function AmountKeypad({
+/**
+ * Teclado numérico 3×4 usado em todos os ecrãs que pedem um valor.
+ *
+ * Cada tecla envia apenas o texto premido ("0".."9" ou "000") para o ecrã pai —
+ * quem decide como concatenar e limitar o número é o formulário. A tecla "000"
+ * atalha três dígitos e vibra mais forte para o utilizador perceber que não foi
+ * um "0" isolado. A largura de cada tecla é calculada a partir da largura real
+ * do ecrã (três colunas com os mesmos espaçamentos da grelha).
+ */
+export function TecladoValor({
   onDigit,
   onBackspace,
 }: {
   onDigit: (key: string) => void;
   onBackspace: () => void;
 }) {
-  const { colors, gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors, gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const { width } = useWindowDimensions();
   const keyWidth = (width - spacing.lg * 2 - spacing.sm * 2) / 3;
 
@@ -41,7 +50,7 @@ export function AmountKeypad({
           accessibilityLabel={key === "back" ? "Apagar último dígito" : key}
           onPress={() => {
             if (key === "back") {
-              tapLight();
+              toqueLigeiro();
               onBackspace();
               return;
             }
@@ -49,9 +58,9 @@ export function AmountKeypad({
             // "000" muda três dígitos de uma vez: mimeo mais forte para o
             // utilizador perceber que o toque não foi um "0" só.
             if (key === "000") {
-              tapMedium();
+              toqueMedio();
             } else {
-              tapLight();
+              toqueLigeiro();
             }
 
             onDigit(key);
@@ -84,7 +93,7 @@ export function AmountKeypad({
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
     grid: {
       flexDirection: "row",

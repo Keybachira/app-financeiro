@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { FONT, kz, useTheme, type Theme } from "../../../data";
+import { FONT, kz, useTemaBase, type Theme } from "../../../data";
 
 // [2026-11-10] Medidas partilhadas entre botão e recorte (ajusta aqui e tudo acompanha)
 const BTN_W = 120;
@@ -21,7 +21,15 @@ type BalanceCardProps = {
   onRegister: () => void;
 };
 
-export function BalanceCard({
+/**
+ * Cartão principal do Início: saldo disponível, receitas, despesas e o botão
+ * "Registar" encaixado num recorte do canto inferior direito.
+ *
+ * Usa o tema legado de 'data.ts' (não o de 'src/ui/tema.ts') porque o ecrã do
+ * Início ainda vive nesse sistema. Os quatro cantos em "fillet" são desenhados
+ * com círculos recortados sobre a cor do fundo — a alternativa seriam imagens.
+ */
+export function CartaoSaldo({
   balance,
   income,
   expenses,
@@ -30,7 +38,7 @@ export function BalanceCard({
   onToggleHidden,
   onRegister,
 }: BalanceCardProps) {
-  const { t } = useTheme();
+  const { t } = useTemaBase();
   const styles = makeStyles(t);
   const amount = (value: number, mask: string) => (hidden ? mask : kz(value));
 
