@@ -1,4 +1,4 @@
-# AB Finance — Functional Audit (Benguela TIC / Public Presentation)
+# Meu Kumbo — Functional Audit (Benguela TIC / Public Presentation)
 
 **Date:** 2026-11-06  
 **Workspace:** `C:\Projects\app-financeiro` (`main`)  

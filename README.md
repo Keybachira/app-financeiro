@@ -1,6 +1,6 @@
 <div align="center">
 
-# App Financeiro
+# Meu Kumbo
 
 **Controla o teu dinheiro em Kwanzas, sem conta, sem internet e sem complicações.**
 
@@ -14,9 +14,9 @@
 
 ---
 
-## Porque usar o App Financeiro
+## Porque usar o Meu Kumbo
 
-A maioria das apps de finanças pede conta, envia os teus dados para a nuvem e não foi pensada para a nossa realidade. O App Financeiro foi feito para Angola: valores em **Kwanzas (Kz)**, português de Angola e tudo guardado **apenas no teu telemóvel**.
+A maioria das apps de finanças pede conta, envia os teus dados para a nuvem e não foi pensada para a nossa realidade. O Meu Kumbo foi feito para Angola: valores em **Kwanzas (Kz)**, português de Angola e tudo guardado **apenas no teu telemóvel**.
 
 <table>
 <tr>
@@ -76,7 +76,7 @@ As ações principais ficam ao alcance do polegar.
 <img src="https://api.iconify.design/logos/android-icon.svg" width="18"> **Android**
 1. Descarrega o ficheiro de instalação através do botão no topo desta página.
 2. Abre o ficheiro no telemóvel. Se for pedido, permite a instalação de fontes externas.
-3. Abre o App Financeiro e começa a registar.
+3. Abre o Meu Kumbo e começa a registar.
 
 <img src="https://api.iconify.design/logos/apple.svg" width="18"> **iOS**
 1. Abre o link de descarga no topo desta página no teu iPhone.
@@ -84,7 +84,7 @@ As ações principais ficam ao alcance do polegar.
 
 ## Entrar em contacto
  
-O App Financeiro é **totalmente grátis**. Queres pedir o link de instalação, tirar uma dúvida ou fazer uma sugestão? Fala diretamente comigo. Respondo o mais rápido possível.
+O Meu Kumbo é **totalmente grátis**. Queres pedir o link de instalação, tirar uma dúvida ou fazer uma sugestão? Fala diretamente comigo. Respondo o mais rápido possível.
  
 | | Canal | Contacto |
 | :-: | --- | --- |

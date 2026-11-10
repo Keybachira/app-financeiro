@@ -1,4 +1,4 @@
-# Contribuir para o App Financeiro
+# Contribuir para o Meu Kumbo
 
 ![Expo](https://img.shields.io/badge/Expo-000020?logo=expo&logoColor=white)
 ![React Native](https://img.shields.io/badge/React%20Native-20232A?logo=react&logoColor=61DAFB)

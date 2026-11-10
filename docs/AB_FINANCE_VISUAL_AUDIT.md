@@ -1,4 +1,4 @@
-# AB Finance — Auditoria visual e UX
+# Meu Kumbo — Auditoria visual e UX
 
 Data: 2026-11-09  
 Escopo: estado atual do working tree em `main`; análise estática, screenshots existentes e tentativa de execução Expo Web.

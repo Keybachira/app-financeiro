@@ -1,4 +1,4 @@
-# AB Finance — Relatório de reconstrução
+# Meu Kumbo — Relatório de reconstrução
 
 Data: 2026-11-07
 

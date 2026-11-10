@@ -1,4 +1,4 @@
-# AB Finance — Roadmap final para entrega
+# Meu Kumbo — Roadmap final para entrega
 
 Data: 2026-11-09
 

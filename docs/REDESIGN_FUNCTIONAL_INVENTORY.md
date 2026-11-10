@@ -1,4 +1,4 @@
-# AB Finance — Inventário funcional para reconstrução
+# Meu Kumbo — Inventário funcional para reconstrução
 
 Data: 2026-11-07  
 Referência visual: `migrar-design/ab-finance.html` e `migrar-design/files/*.tsx`

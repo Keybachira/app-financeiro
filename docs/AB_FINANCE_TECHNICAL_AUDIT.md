@@ -1,4 +1,4 @@
-# AB Finance — Auditoria técnica, SQLite e navegação
+# Meu Kumbo — Auditoria técnica, SQLite e navegação
 
 Data: 2026-11-09
 

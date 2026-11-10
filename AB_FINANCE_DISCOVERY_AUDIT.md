@@ -1,4 +1,4 @@
-# AB Finance — Auditoria Técnica e Funcional Completa
+# Meu Kumbo — Auditoria Técnica e Funcional Completa
 
 **Data da auditoria:** 06/11/2026  
 **Repositório:** `C:\Projects\app-financeiro`  
@@ -9,7 +9,7 @@
 
 ## 1. Resumo Executivo
 
-O **AB Finance** (apresentado ao usuário como "App Financeiro") é uma aplicação móvel de finanças pessoais desenvolvida em **Expo + React Native + TypeScript**, direcionada ao mercado angolano. Armazena todos os dados localmente em **SQLite** no próprio dispositivo, funciona totalmente **offline**, não exige conta nem servidor, e usa **Kwanzas (AOA)** como moeda base com valores inteiros sem casas decimais.
+O **Meu Kumbo** (apresentado ao usuário como "App Financeiro") é uma aplicação móvel de finanças pessoais desenvolvida em **Expo + React Native + TypeScript**, direcionada ao mercado angolano. Armazena todos os dados localmente em **SQLite** no próprio dispositivo, funciona totalmente **offline**, não exige conta nem servidor, e usa **Kwanzas (AOA)** como moeda base com valores inteiros sem casas decimais.
 
 O projeto está em **estado avançado de implementação**: todas as funcionalidades principais descritas no plano técnico (`plano_financas.md`) estão codificadas, com persistência real, validações de domínio, testes unitários para a camada de negócio, e um esquema de banco de dados com migrações versionadas. Não há backend, não há nuvem, não há IA.
 
@@ -17,9 +17,9 @@ O projeto está em **estado avançado de implementação**: todas as funcionalid
 
 ---
 
-## 2. Identidade e Propósito do AB Finance
+## 2. Identidade e Propósito do Meu Kumbo
 
-### O que é o AB Finance
+### O que é o Meu Kumbo
 Uma aplicação móvel de finanças pessoais (mobile-first, Android e iOS) que permite ao utilizador registar receitas e despesas, gerir metas de poupança, controlar dívidas, acompanhar projetos de trabalho, configurar salário recorrente e pagar contas fixas — tudo armazenado apenas no telemóvel.
 
 ### Problema que procura resolver

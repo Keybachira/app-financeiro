@@ -1,4 +1,4 @@
-# AB Finance — Auditoria funcional
+# Meu Kumbo — Auditoria funcional
 
 Data: 2026-11-09  
 Estado avaliado: working tree atual; sem alterações realizadas durante a auditoria.
