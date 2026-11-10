@@ -1,6 +1,6 @@
 import { fonts, lightColors, radius, spacing, useTheme } from '../theme';
 
-/** Tokens derivados diretamente da referência Hello Nasara / AB Finance. */
+/** Tokens derivados diretamente da referência Hello Nasara / Meu Kumbo. */
 const baseTokens = {
   fonts,
   radius: { ...radius, panel: 28, circle: 999 },
