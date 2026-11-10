@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useColorScheme } from "react-native";
 
-import { useAppPreferences } from "../features/settings/useAppPreferences";
+import { usePreferenciasApp } from "../features/definicoes/usePreferenciasApp";
 
 // Paleta clara — valores originais do design (não mexer: é a referência visual).
 const lightPalette = {
@@ -9,22 +9,17 @@ const lightPalette = {
   bgMid: "#FFFFFF",
   bgDeep: "#EDEDED",
   bgTop: "#EDEDED",
-  glowTop: "#FFFFFF",
-  glowWhite: "#FFFFFF",
-  glowDeep: "#9C32D7",
   panelFrom: "#FFFFFF",
   panelTo: "#FFFFFF",
   panelBorder: "#E2E2E2",
-  glassFrom: "#A63ADD",
-  glassMid: "#9C32D7",
-  glassTo: "#8123B9",
-  glassBorder: "rgba(156,50,215,.18)",
+  /** Texto sobre a superfície de destaque (`.hs` do protótipo). */
   glassText: "#FFFFFF",
-  chipOnGlass: "rgba(255,255,255,.18)",
   primaryFrom: "#A63ADD",
   primaryTo: "#8123B9",
   accent: "#9C32D7",
   accentSoft: "#9C32D7",
+  /** Superfície âmbar da referência (`--amb`); não muda no modo escuro. */
+  amber: "#FFD35B",
   warn: "#D9A514",
   text: "#0D0D0D",
   textMuted: "#8D8D8D",
@@ -48,6 +43,10 @@ const lightPalette = {
   progressFillTo: "#8123B9",
   avatarBg: "#111111",
   avatarText: "#FFFFFF",
+  /** Botão "Registar" (`.add`) e respetivo círculo. */
+  addBg: "#000000",
+  addCircle: "#FFFFFF",
+  addIcon: "#000000",
   backdrop: "rgba(4,8,24,.72)",
   success: "#1F9D57",
   danger: "#D9423B",
@@ -57,24 +56,21 @@ const lightPalette = {
   inputBg: "rgba(13,13,13,.04)",
 };
 
-export type Colors = { readonly [K in keyof typeof lightPalette]: string };
+export type Cores = { readonly [K in keyof typeof lightPalette]: string };
 
-export const lightColors: Colors = lightPalette;
+export const coresClaras: Cores = lightPalette;
 
 // Paleta escura — mesmas chaves, superfícies escuras e acentos mais claros para
 // manter contraste sobre preto.
-export const darkColors: Colors = {
+export const coresEscuras: Cores = {
   ...lightPalette,
   bg: "#000000",
   bgMid: "#151515",
   bgDeep: "#000000",
   bgTop: "#0A0A0A",
-  glowTop: "#262626",
-  glowDeep: "#6D1E97",
   panelFrom: "#1E1E1E",
   panelTo: "#161616",
   panelBorder: "#2C2C2C",
-  glassBorder: "rgba(255,255,255,.16)",
   accent: "#C77DFF",
   accentSoft: "#C77DFF",
   warn: "#F0C14B",
@@ -106,39 +102,51 @@ export const darkColors: Colors = {
   inputBg: "rgba(255,255,255,.06)",
 };
 
-export function useTheme() {
-  const { theme } = useAppPreferences();
+/**
+ * Tema ativo: cores, gradientes e se está em modo escuro.
+ *
+ * A preferência vem das definições ("system" | "light" | "dark"); em "system"
+ * segue o esquema do telemóvel. Os gradientes são recalculados só quando a
+ * paleta muda.
+ */
+export function useTema() {
+  const { theme } = usePreferenciasApp();
   const system = useColorScheme();
   const dark = theme === "system" ? system === "dark" : theme === "dark";
-  const colors = dark ? darkColors : lightColors;
-  const gradients = useMemo(() => makeGradients(colors), [colors]);
+  const colors = dark ? coresEscuras : coresClaras;
+  const gradients = useMemo(() => criarGradientes(colors), [colors]);
 
   return { colors, gradients, dark };
 }
 
 /** Estilos que dependem da paleta: recalculados quando o modo muda. */
-export function useThemedStyles<T>(factory: (c: Colors) => T): T {
-  const { colors } = useTheme();
+export function useEstilosTema<T>(factory: (c: Cores) => T): T {
+  const { colors } = useTema();
   return useMemo(() => factory(colors), [colors, factory]);
 }
 
+/**
+ * Tipografia da referência (`migrar-design/ab-finance.html`).
+ *
+ * O protótipo usa Poppins 400/500/600; a app usa exatamente a mesma família
+ * para que as métricas de linha e os pesos coincidam.
+ */
 export const fonts = {
-  regular: "DMSans_400Regular",
-  medium: "DMSans_500Medium",
-  bold: "DMSans_700Bold",
+  regular: "Poppins_400Regular",
+  medium: "Poppins_500Medium",
+  bold: "Poppins_600SemiBold",
 } as const;
 
 export const fontAssets = {
-  DMSans_400Regular: require("../../assets/fonts/DMSans-Regular.ttf"),
-  DMSans_500Medium: require("../../assets/fonts/DMSans-Medium.ttf"),
-  DMSans_700Bold: require("../../assets/fonts/DMSans-Bold.ttf"),
+  Poppins_400Regular: require("../../assets/fonts/Poppins-Regular.ttf"),
+  Poppins_500Medium: require("../../assets/fonts/Poppins-Medium.ttf"),
+  Poppins_600SemiBold: require("../../assets/fonts/Poppins-SemiBold.ttf"),
 } as const;
 
 export const radius = {
   chip: 12,
   control: 14,
-  panel: 20,
-  glass: 24,
+  panel: 28,
   pill: 999,
 } as const;
 
@@ -151,7 +159,10 @@ export const spacing = {
 } as const;
 
 export const layout = {
-  screenPadding: 16,
+  /** Padding horizontal do conteúdo no protótipo (`.scroll`). */
+  screenPadding: 18,
+  /** Espaço inferior reservado para a tab bar flutuante. */
+  screenBottom: 120,
   touchTarget: 44,
   primaryButton: 56,
   tabPillWidth: 56,
@@ -170,9 +181,9 @@ function angle(deg: number) {
   };
 }
 
-export type Gradients = ReturnType<typeof makeGradients>;
+export type Gradientes = ReturnType<typeof criarGradientes>;
 
-function makeGradients(colors: Colors) {
+function criarGradientes(colors: Cores) {
   return {
     background: {
       colors: [colors.bg, colors.bg, colors.bg, colors.bg] as [
@@ -187,14 +198,6 @@ function makeGradients(colors: Colors) {
     panel: {
       colors: [colors.panelFrom, colors.panelTo] as [string, string],
       ...angle(160),
-    },
-    glass: {
-      colors: [colors.glassFrom, colors.glassMid, colors.glassTo] as [
-        string,
-        string,
-        string,
-      ],
-      ...angle(135),
     },
     primary: {
       colors: [colors.primaryFrom, colors.primaryTo] as [string, string],

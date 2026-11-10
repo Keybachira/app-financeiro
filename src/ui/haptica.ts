@@ -18,7 +18,7 @@ function fire(run: () => Promise<unknown>): void {
 }
 
 /** Toque normal: teclas, chips, cards, fechar. */
-export function tapLight(): void {
+export function toqueLigeiro(): void {
   if (Platform.OS === "web") {
     return;
   }
@@ -27,7 +27,7 @@ export function tapLight(): void {
 }
 
 /** Mimeo de uma ação que mudou algo: guardar, pagar, registar. */
-export function tapMedium(): void {
+export function toqueMedio(): void {
   if (Platform.OS === "web") {
     return;
   }
@@ -36,7 +36,7 @@ export function tapMedium(): void {
 }
 
 /** Sucesso confirmado: "Movimento guardado", "Conta paga". */
-export function notifySuccess(): void {
+export function notificarSucesso(): void {
   if (Platform.OS === "web") {
     return;
   }
@@ -47,7 +47,7 @@ export function notifySuccess(): void {
 }
 
 /** Erro ou ação recusada: PIN errado, "já foi paga", validação falha. */
-export function notifyError(): void {
+export function notificarErro(): void {
   if (Platform.OS === "web") {
     return;
   }
