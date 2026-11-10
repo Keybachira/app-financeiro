@@ -29,20 +29,20 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
   },
   {
     id: "salary_income",
-    label: "Salário e rendimentos",
-    description: "Configuração e automação de rendimentos.",
+    label: "Salï¿½rio e rendimentos",
+    description: "Configuraï¿½ï¿½o e automaï¿½ï¿½o de rendimentos.",
     dependsOn: ["movements"],
   },
   {
     id: "goals_savings",
-    label: "Metas e poupanças",
-    description: "Metas, depósitos e levantamentos.",
+    label: "Metas e poupanï¿½as",
+    description: "Metas, depï¿½sitos e levantamentos.",
     dependsOn: ["movements"],
   },
   {
     id: "debts",
-    label: "Dívidas",
-    description: "Dívidas a pagar/receber e pagamentos.",
+    label: "Dï¿½vidas",
+    description: "Dï¿½vidas a pagar/receber e pagamentos.",
   },
   {
     id: "projects",
@@ -57,8 +57,8 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
   },
   {
     id: "daily_limit",
-    label: "Limite diário",
-    description: "Limite mensal e controlo diário.",
+    label: "Limite diï¿½rio",
+    description: "Limite mensal e controlo diï¿½rio.",
   },
 ];
 
@@ -116,7 +116,7 @@ export function sanitizeModuleStates(
     }
   }
   next.movements = true; // essencial
-  // dependências: desativar dependentes se dependência estiver off
+  // dependï¿½ncias: desativar dependentes se dependï¿½ncia estiver off
   let changed = true;
   while (changed) {
     changed = false;
