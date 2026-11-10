@@ -181,9 +181,12 @@ export function MovementEditor({
       }
 
       router.back();
-    } catch {
+    } catch (error) {
       actionLockRef.current = false;
-      toast({ message: "Não foi possível guardar o movimento." });
+      toast({
+        message: error instanceof Error ? error.message : "Não foi possível guardar o movimento.",
+        tone: "error",
+      });
     }
   }, [amount, category, date, movement, note, router, toast, type]);
 
@@ -207,10 +210,13 @@ export function MovementEditor({
         },
       });
       router.back();
-    } catch {
+    } catch (error) {
       actionLockRef.current = false;
       setConfirmDelete(false);
-      toast({ message: "Não foi possível apagar o movimento." });
+      toast({
+        message: error instanceof Error ? error.message : "Não foi possível apagar o movimento.",
+        tone: "error",
+      });
     }
   }, [movement, router, toast]);
 
@@ -235,7 +241,7 @@ export function MovementEditor({
           <SegmentedControl
             options={TYPE_OPTIONS}
             value={type}
-            onChange={setType}
+            onChange={movement?.origin === "manual" ? setType : () => undefined}
           />
 
           <View style={styles.amountWrap}>
@@ -336,7 +342,7 @@ export function MovementEditor({
             </LinearGradient>
           </Pressable>
 
-          {movement ? (
+          {movement?.origin === "manual" ? (
             <Pressable
               accessibilityRole="button"
               onPress={() => setConfirmDelete(true)}
@@ -345,6 +351,11 @@ export function MovementEditor({
               <Trash color={colors.warn} size={18} strokeWidth={2} />
               <Text style={styles.deleteLabel}>Apagar movimento</Text>
             </Pressable>
+          ) : null}
+          {movement && movement.origin !== "manual" ? (
+            <Text style={styles.linkedHint}>
+              Este movimento pertence a um pagamento. Edita ou apaga-o no módulo de origem.
+            </Text>
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -468,5 +479,13 @@ const makeStyles = (colors: Colors) =>
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.warn,
+  },
+  linkedHint: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textMuted,
+    textAlign: "center",
+    marginTop: spacing.sm,
   },
 });

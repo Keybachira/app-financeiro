@@ -1,5 +1,6 @@
 import type { NotificationResponse } from "expo-notifications";
 import { useRouter } from "expo-router";
+import { AppState } from "react-native";
 import { useEffect, useRef } from "react";
 
 import { rescheduleAllBillNotifications } from "../../repos/bills";
@@ -20,7 +21,17 @@ export function useNotificationSetup(ready: boolean): void {
   // Reagenda os lembretes de contas mesmo que o utilizador não abra o ecrã.
   useEffect(() => {
     if (!ready || isExpoGo()) return;
-    void rescheduleAllBillNotifications().catch(() => undefined);
+
+    const reschedule = () => {
+      void rescheduleAllBillNotifications().catch(() => undefined);
+    };
+
+    reschedule();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") reschedule();
+    });
+
+    return () => subscription.remove();
   }, [ready]);
 
   useEffect(() => {

@@ -7,6 +7,7 @@ import {
 import { getSetting, removeSetting, setSetting } from "../../repos/settings";
 
 const USER_NAME_KEY = "user_name";
+const USER_AVATAR_KEY = "user_avatar";
 
 /** Nome mostrado no Início e editado nos Ajustes. */
 export function useUserName(): {
@@ -37,6 +38,34 @@ export function useUserName(): {
   }, []);
 
   return { name, setName, refresh };
+}
+
+/** Avatar escolhido pelo utilizador. Vazio significa usar a inicial do nome. */
+export function useUserAvatar(): {
+  avatar: string;
+  setAvatar: (value: string | null) => void;
+  refresh: () => void;
+} {
+  const [tick, setTick] = useState(0);
+  const refresh = useCallback(() => setTick((value) => value + 1), []);
+
+  useEffect(() => subscribeDataVersion(refresh), [refresh]);
+
+  const avatar = useMemo(() => {
+    void tick;
+    return getSetting(USER_AVATAR_KEY) ?? "";
+  }, [tick]);
+
+  const setAvatar = useCallback((value: string | null) => {
+    if (value) {
+      setSetting(USER_AVATAR_KEY, value);
+    } else {
+      removeSetting(USER_AVATAR_KEY);
+    }
+    bumpDataVersion();
+  }, []);
+
+  return { avatar, setAvatar, refresh };
 }
 
 export function useMonthlyLimit(): {
