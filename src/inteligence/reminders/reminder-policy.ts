@@ -1,8 +1,17 @@
-import { BehaviorProfile, DEFAULT_CONFIG, IntelligenceConfig, Prediction, Reminder } from '../types/intelligence.types';
-import { addDays } from '../time/dates';
-import { isSilenced } from '../learning/feedback-learner';
+import {
+  BehaviorProfile,
+  DEFAULT_CONFIG,
+  IntelligenceConfig,
+  Prediction,
+  Reminder,
+} from "../types/intelligence.types";
+import { addDays } from "../time/dates";
+import { isSilenced } from "../learning/feedback-learner";
 
-const kz = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Kz';
+const kz = (n: number) =>
+  Math.round(n)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Kz";
 
 /**
  * Decide que previsões merecem lembrete. Puro: não agenda nada.
@@ -30,17 +39,19 @@ export function decideReminders(
       fireOn = addDays(today, 1);
       if (fireOn > p.expectedDate) continue;
     }
-    const income = p.type === 'income';
+    const income = p.type === "income";
     out.push({
       id: p.id,
       predictionId: p.id,
       fireOn,
       hour: cfg.reminderHour,
-      title: income ? 'Possível receita a chegar' : 'Possível despesa a chegar',
+      title: income ? "Possível receita a chegar" : "Possível despesa a chegar",
       body: `${p.label}: previsto para ${p.expectedDate} (~${kz(p.expectedAmount)}). É uma previsão, não um registo.`,
       _c: p.confidence,
     });
   }
-  out.sort((a, b) => (a.fireOn < b.fireOn ? -1 : a.fireOn > b.fireOn ? 1 : b._c - a._c));
+  out.sort((a, b) =>
+    a.fireOn < b.fireOn ? -1 : a.fireOn > b.fireOn ? 1 : b._c - a._c,
+  );
   return out.slice(0, cfg.maxScheduled).map(({ _c, ...r }) => r);
 }

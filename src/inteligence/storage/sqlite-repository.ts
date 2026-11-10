@@ -40,20 +40,17 @@ export function createSqliteRepository(db: SqlDb): IntelligenceRepository {
         [since],
       );
 
-      return rows.map(
-        (r): MovementInput => ({
-          id: r.id,
-          type: r.type,
-          amount: r.amount,
-          category: r.category,
-          date: r.date,
-          note: r.note,
-          // Movimentos antigos de contas fixas podem não ter `bill_id`; o
-          // `origin` evita que a inteligência os trate como despesas recorrentes.
-          billId:
-            r.bill_id ?? (r.origin === "bill" ? "legacy-bill" : null),
-        }),
-      );
+      return rows.map((r): MovementInput => ({
+        id: r.id,
+        type: r.type,
+        amount: r.amount,
+        category: r.category,
+        date: r.date,
+        note: r.note,
+        // Movimentos antigos de contas fixas podem não ter `bill_id`; o
+        // `origin` evita que a inteligência os trate como despesas recorrentes.
+        billId: r.bill_id ?? (r.origin === "bill" ? "legacy-bill" : null),
+      }));
     },
 
     async loadProfile() {
@@ -65,10 +62,10 @@ export function createSqliteRepository(db: SqlDb): IntelligenceRepository {
     },
 
     async saveProfile(profile: BehaviorProfile) {
-      db.runSync(
-        "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
-        [PROFILE_KEY, JSON.stringify(profile)],
-      );
+      db.runSync("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", [
+        PROFILE_KEY,
+        JSON.stringify(profile),
+      ]);
     },
   };
 }

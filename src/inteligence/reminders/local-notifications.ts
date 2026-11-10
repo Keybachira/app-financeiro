@@ -1,6 +1,9 @@
 import { isExpoGo } from "../../repos/notificationRuntime";
 import { getNotifications } from "../../repos/notifications";
-import type { NotificationScheduler, Reminder } from "../types/intelligence.types";
+import type {
+  NotificationScheduler,
+  Reminder,
+} from "../types/intelligence.types";
 
 const SOURCE = "intelligence";
 const CHANNEL_ID = "intelligence";

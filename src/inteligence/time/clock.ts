@@ -1,4 +1,4 @@
-import { fmtDate } from './dates';
+import { fmtDate } from "./dates";
 
 /** Relógio injetável: nos testes usa-se fixedClock, na app systemClock. */
 export interface Clock {
@@ -26,7 +26,7 @@ export function fixedClock(date: string, hour = 8): FixedClock {
   let d = date,
     h = hour;
   return {
-    now: () => new Date(`${d}T${String(h).padStart(2, '0')}:00:00`),
+    now: () => new Date(`${d}T${String(h).padStart(2, "0")}:00:00`),
     today: () => d,
     hour: () => h,
     set(nd, nh = h) {
