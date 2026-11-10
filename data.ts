@@ -4,13 +4,13 @@
 // Fallback de desenvolvimento: com USE_SAMPLE_DATA = true a app arranca com dados de exemplo.
 
 import { useMemo, useSyncExternalStore, type ComponentProps } from "react";
-import { StyleSheet, useColorScheme } from "react-native";
+import { StyleSheet } from "react-native";
 import { router } from "expo-router";
 import type { Feather } from "@expo/vector-icons";
 import { getSetting, setSetting } from "./src/repos/settings";
 import { bumpDataVersion } from "./src/repos/dataVersion";
-import { useAppPreferences } from "./src/features/settings/useAppPreferences";
-import { darkColors, lightColors } from "./src/ui/theme";
+import { usePreferenciasApp } from "./src/features/definicoes/usePreferenciasApp";
+import { useTema, type Cores } from "./src/ui/tema";
 
 // A fonte financeira oficial é o SQLite. Os ecrãs em migração podem continuar
 // a importar helpers deste módulo, mas não devem usar o store demo abaixo.
@@ -696,22 +696,21 @@ export const A = {
 
 /* ───────────── Tema ───────────── */
 export const FONT = {
-  // A app carrega DMSans no layout raiz; manter a mesma família evita
-  // fallback silencioso para a fonte do sistema nestes ecrãs.
-  reg: "DMSans_400Regular",
-  med: "DMSans_500Medium",
-  semi: "DMSans_700Bold",
+  // Tipografia única da app: Poppins, a mesma do protótipo de referência.
+  reg: "Poppins_400Regular",
+  med: "Poppins_500Medium",
+  semi: "Poppins_600SemiBold",
 };
-// Se a fonte não estiver carregada (useFonts), o RN usa a fonte do sistema.
 
 // Os ecrãs legados ainda consomem esta forma curta de tema. Os valores vêm do
-// mesmo design system de `src/ui/theme`, evitando duas paletas divergentes.
-const toLegacyTheme = (colors: typeof lightColors) => ({
+// mesmo design system de `src/ui/tema` — esta é a única ponte entre os dois
+// formatos, para não haver paletas divergentes.
+const toLegacyTheme = (colors: Cores) => ({
   bg: colors.bg,
   panel: colors.bgMid,
   text: colors.text,
   muted: colors.textMuted,
-  circ: colors.iconTileBg,
+  circ: colors.chipNeutralBg,
   acc: colors.accent,
   amb: colors.warn,
   hbtn: colors.bgMid,
@@ -724,22 +723,25 @@ const toLegacyTheme = (colors: typeof lightColors) => ({
   av: colors.avatarBg,
   avTxt: colors.avatarText,
 });
-const LIGHT = toLegacyTheme(lightColors);
-const DARK = toLegacyTheme(darkColors);
-export type Theme = typeof LIGHT;
+export type Theme = ReturnType<typeof toLegacyTheme>;
 
-export function useTheme() {
-  const preferences = useAppPreferences();
-  const sys = useColorScheme();
-  const theme = preferences.theme;
-  const dark = theme === "system" ? sys === "dark" : theme === "dark";
+/**
+ * Compatibilidade para os ecrãs ainda não migrados.
+ *
+ * Deriva tudo do tema ativo (`useTema`), incluindo o modo claro/escuro, para
+ * que exista uma só fonte de verdade. Ecrãs novos devem usar `useTema`
+ * diretamente.
+ */
+export function useTemaBase() {
+  const preferences = usePreferenciasApp();
+  const { colors, dark } = useTema();
+  const t = useMemo(() => toLegacyTheme(colors), [colors]);
   const st = {
-    theme,
+    theme: preferences.theme,
     hid: preferences.hideAmounts,
     name: getSetting("user_name") ?? "",
   } as Pick<State, "theme" | "hid" | "name">;
-  const t = dark ? DARK : LIGHT;
-  const s = useMemo(() => makeStyles(t), [dark]); // eslint-disable-line react-hooks/exhaustive-deps
+  const s = useMemo(() => makeStyles(t), [t]);
   return { t, s, st, dark };
 }
 
@@ -752,7 +754,7 @@ export function makeStyles(t: Theme) {
   });
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: t.bg },
-    content: { paddingHorizontal: 16, paddingBottom: 132 },
+    content: { paddingHorizontal: 18, paddingBottom: 120 },
     top: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -811,11 +813,11 @@ export function makeStyles(t: Theme) {
       letterSpacing: -0.4,
       marginTop: 16,
     },
-    sub: { ...tx(13, F.reg, t.muted), marginTop: 4 },
+    sub: { ...tx(12, F.reg, t.muted), marginTop: 3 },
     note: { ...tx(10, F.reg, t.muted), textAlign: "center", marginTop: 16 },
     panel: {
       backgroundColor: t.panel,
-      borderRadius: 20,
+      borderRadius: 28,
       paddingVertical: 18,
       paddingHorizontal: 14,
       marginTop: 16,
