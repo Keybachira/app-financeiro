@@ -186,7 +186,7 @@ export default function Onboarding() {
                 <Feather name={ICON.debt} size={44} color="#fff" />
               </View>
               <Text style={[s.h1, { marginTop: 0, textAlign: "center" }]}>
-                Bem-vindo ao AB Finance
+                Bem-vindo ao Meu Kumbo
               </Text>
               <Text style={[s.sub, { textAlign: "center" }]}>
                 Vamos configurar a tua conta em menos de um minuto.
