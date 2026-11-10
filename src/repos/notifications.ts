@@ -1,7 +1,7 @@
 import type * as NotificationsModule from 'expo-notifications';
 
 /**
- * Wrapper de carregamento preguiçoso para `expo-notifications`.
+ * Wrapper de carregamento preguiï¿½oso para `expo-notifications`.
  */
 
 let cached: typeof NotificationsModule | null | undefined;
