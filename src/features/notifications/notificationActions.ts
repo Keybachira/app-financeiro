@@ -22,7 +22,7 @@ export async function sendTestNotification(): Promise<{
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Notificações ativas",
-        body: "Teste do Ab-finance. Os teus lembretes vão aparecer assim.",
+        body: "Teste do Meu Kumbo. Os teus lembretes vão aparecer assim.",
         data: { screen: "notifications" },
       },
       trigger: null,
