@@ -3,6 +3,11 @@
     "name": "Ab-finance",
     "slug": "ab-finance",
     "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "updates": {
+      "url": "https://u.expo.dev/65313746-67bc-4bf4-93b1-0bcfd7dbdc48",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#EDEDED",
@@ -30,6 +35,7 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
+      "expo-updates",
       [
         "expo-splash-screen",
         {
@@ -57,8 +63,7 @@
       "router": {},
       "eas": {
         "projectId": "65313746-67bc-4bf4-93b1-0bcfd7dbdc48"
-      },
-      "enableBackgroundRemoteNotifications": true
+      }
     }
   }
 }

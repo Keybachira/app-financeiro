@@ -10,6 +10,7 @@ import type { Feather } from "@expo/vector-icons";
 import { getSetting, setSetting } from "./src/repos/settings";
 import { bumpDataVersion } from "./src/repos/dataVersion";
 import { useAppPreferences } from "./src/features/settings/useAppPreferences";
+import { darkColors, lightColors } from "./src/ui/theme";
 
 // A fonte financeira oficial é o SQLite. Os ecrãs em migração podem continuar
 // a importar helpers deste módulo, mas não devem usar o store demo abaixo.
@@ -29,7 +30,7 @@ export type Fixa = { id: string; nome: string; valor: number; dia: number };
 export type ModKey =
   "salario" | "metas" | "dividas" | "projetos" | "fixas" | "limite";
 export type Perfil =
-  "Estudante" | "Trabalhador" | "Freelancer" | "Personalizado";
+  "Estudante" | "Trabalhador" | "Freelancer" | "Empresario" |"Personalizado";
 export type NotifKind = "danger" | "warn" | "info" | "ok";
 export type Notif = {
   id: string;
@@ -154,9 +155,42 @@ export const CAT: Record<string, { icon: string; color: string }> = {
   Extra: { icon: "plus", color: "#1f9d57" },
   Outros: { icon: "more", color: "#8d8d8d" },
 };
+// [2026-11-10] Versão anterior mantida como referência:
+// export const CK = {
+//   d: ["Comida", "Casa", "Serviços", "Transporte", "Lazer", "Saúde", "Outros"],
+//   r: ["Salário", "Extra", "Outros"],
+// };
+
 export const CK = {
-  d: ["Comida", "Casa", "Serviços", "Transporte", "Lazer", "Saúde", "Outros"],
-  r: ["Salário", "Extra", "Outros"],
+  // Despesas
+  d: [
+    "Comida", // mercado, cesta básica, restaurantes
+    "Casa", // renda, condomínio, manutenção
+    "Água e Luz", // EPAL, ENDE/EDEL, gerador, combustível
+    "Telefone e Internet", // Unitel, Africell, dados móveis, Zap/DStv
+    "Transporte", // táxi, candongueiro, moto-táxi, combustível
+    "Educação", // propinas, material escolar, explicações
+    "Saúde", // consultas, farmácia, seguro
+    "Família", // ajuda a familiares, mesada, apoio
+    "Lazer", // saídas, festas, streaming
+    "Vestuário", // roupa, calçado, cabeleireiro
+    "Dívidas e Poupança", // empréstimos, kixikila, prestações
+    "Igreja e Doações", // dízimo, ofertas, solidariedade
+    "Taxas e Impostos", // taxas bancárias, Multicaixa, licenças
+    "Outros",
+  ],
+
+  // Receitas
+  r: [
+    "Salário",
+    "Subsídios", // férias, Natal, transporte, alimentação
+    "Negócio / Vendas", // comércio, loja, zunga
+    "Biscates / Extra", // trabalhos pontuais, freelancing
+    "Rendas", // arrendamento de imóveis
+    "Remessas", // dinheiro enviado por familiares
+    "Kixikila / Poupança", // resgate de poupança colectiva
+    "Outros",
+  ],
 };
 
 type IconName = ComponentProps<typeof Feather>["name"];
@@ -235,6 +269,14 @@ export const PERFIS: Record<
   },
   Freelancer: {
     salario: true,
+    metas: true,
+    dividas: true,
+    projetos: true,
+    fixas: true,
+    limite: false,
+  },
+  Empresario: {
+    salario: false,
     metas: true,
     dividas: true,
     projetos: true,
@@ -662,39 +704,28 @@ export const FONT = {
 };
 // Se a fonte não estiver carregada (useFonts), o RN usa a fonte do sistema.
 
-const LIGHT = {
-  bg: "#ededed",
-  panel: "#ffffff",
-  text: "#0d0d0d",
-  muted: "#8d8d8d",
-  circ: "#f0f0f0",
-  acc: "#9c32d7",
-  amb: "#ffd35b",
-  hbtn: "#ffffff",
-  ring: "#dedede",
-  neg: "#d9423b",
-  pos: "#1f9d57",
-  add: "#000000",
-  addc: "#ffffff",
-  addp: "#000000",
-  av: "#111111",
-  avTxt: "#ffffff",
-};
-const DARK = {
-  ...LIGHT,
-  bg: "#000000",
-  panel: "#141414",
-  text: "#ffffff",
-  muted: "#7a7a7a",
-  circ: "#000000",
-  hbtn: "#262626",
-  ring: "#262626",
-  add: "#1d1d1d",
-  addc: "#333333",
-  addp: "#ffffff",
-  av: "#2b2b2b",
-  avTxt: "#ffffff",
-};
+// Os ecrãs legados ainda consomem esta forma curta de tema. Os valores vêm do
+// mesmo design system de `src/ui/theme`, evitando duas paletas divergentes.
+const toLegacyTheme = (colors: typeof lightColors) => ({
+  bg: colors.bg,
+  panel: colors.bgMid,
+  text: colors.text,
+  muted: colors.textMuted,
+  circ: colors.iconTileBg,
+  acc: colors.accent,
+  amb: colors.warn,
+  hbtn: colors.bgMid,
+  ring: colors.hairline,
+  neg: colors.danger,
+  pos: colors.success,
+  add: colors.avatarBg,
+  addc: colors.avatarText,
+  addp: colors.avatarBg,
+  av: colors.avatarBg,
+  avTxt: colors.avatarText,
+});
+const LIGHT = toLegacyTheme(lightColors);
+const DARK = toLegacyTheme(darkColors);
 export type Theme = typeof LIGHT;
 
 export function useTheme() {
@@ -991,25 +1022,9 @@ export function makeStyles(t: Theme) {
       justifyContent: "space-between",
     },
     salTxt: tx(14, F.reg, "#111"),
-    main: {
-      backgroundColor: t.acc,
-      borderRadius: 24,
-      paddingTop: 20,
-      paddingHorizontal: 20,
-      paddingBottom: 72,
-      overflow: "hidden",
-    },
+    // Mantidos para a marcação antiga desativada durante a migração do cartão.
     mainL: { ...tx(12, F.reg, "#fff"), opacity: 0.85 },
     big: { ...tx(33, F.med, "#fff"), lineHeight: 44, letterSpacing: -0.6 },
-    notch: {
-      position: "absolute",
-      right: 0,
-      bottom: 0,
-      width: 128,
-      height: 56,
-      backgroundColor: t.bg,
-      borderTopLeftRadius: 24,
-    },
     add: {
       position: "absolute",
       right: 0,
