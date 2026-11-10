@@ -35,9 +35,9 @@ export default function TabsLayout() {
       <Tabs.Screen name="settings" options={{ title: "Ajustes" }} />
       {/* Secundárias: alcançáveis pelo menu Mais, mas fora da barra
           personalizada (que só desenha as quatro abas principais). */}
-      <Tabs.Screen name="goals" options={{ title: "Metas" }} />
-      <Tabs.Screen name="debts" options={{ title: "Dívidas" }} />
-      <Tabs.Screen name="projects" options={{ title: "Projetos" }} />
+      <Tabs.Screen name="goals" options={{ title: "Metas", href: null }} />
+      <Tabs.Screen name="debts" options={{ title: "Dívidas", href: null }} />
+      <Tabs.Screen name="projects" options={{ title: "Projetos", href: null }} />
     </Tabs>
   );
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -14,26 +14,41 @@ import { useNotificationSetup } from '../src/features/notifications/useNotificat
 import { useIntelligenceBoot } from '../src/features/intelligence/useIntelligence';
 import { useLockState } from '../src/features/security/useLockState';
 import { LockScreen } from './lock';
+import { useAppPreferences } from '../src/features/settings/useAppPreferences';
+import Onboarding from './onboarding';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const { ready: dbReady, error: dbError } = useDatabase();
   const { colors, dark } = useTheme();
+  const { onboardingComplete: onboarded } = useAppPreferences();
   const styles = makeStyles(colors);
   const [fontsLoaded, fontsError] = useFonts(fontAssets);
-  const { ready: dbReady, error: dbError } = useDatabase();
   const { hasPin, enabled } = useLockState();
   const [unlocked, setUnlocked] = useState(() => !(hasPin && enabled));
+
+  useEffect(() => {
+    if (!hasPin || !enabled) return;
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        setUnlocked(false);
+      }
+    });
+
+    return () => subscription.remove();
+  }, [enabled, hasPin]);
 
   useAutoSalary();
   useNotificationSetup(dbReady);
   useIntelligenceBoot(dbReady);
 
   useEffect(() => {
-    if (fontsLoaded || fontsError) {
+    if ((fontsLoaded || fontsError) && (dbReady || dbError)) {
       void SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontsError]);
+  }, [dbError, dbReady, fontsError, fontsLoaded]);
 
   const handleUnlocked = useCallback(() => setUnlocked(true), []);
 
@@ -65,6 +80,15 @@ export default function RootLayout() {
     );
   }
 
+  if (!onboarded) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style={dark ? 'light' : 'dark'} />
+        <Onboarding />
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <ToastProvider>
       <SafeAreaProvider>
@@ -73,8 +97,7 @@ export default function RootLayout() {
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: colors.bg },
-            animation: 'fade',
-            animationDuration: 180,
+            animation: 'default',
           }}
         >
           <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />

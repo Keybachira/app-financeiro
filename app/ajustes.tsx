@@ -10,8 +10,10 @@ import {
   Text,
   TextInput,
   View,
+  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -24,6 +26,7 @@ import { useMonthSummary } from "../src/features/movements/useMonthSummary";
 import { useLockState } from "../src/features/security/useLockState";
 import {
   useMonthlyLimit,
+  useUserAvatar,
   useUserName,
 } from "../src/features/settings/useSettings";
 import {
@@ -105,6 +108,7 @@ export default function Ajustes() {
   const { t, s, st } = useTheme();
   const ins = useSafeAreaInsets();
   const { name, setName } = useUserName();
+  const { avatar, setAvatar } = useUserAvatar();
   const { profile, modules, isEnabled, setEnabled, setProfile, save } =
     useModuleConfig();
   const { limit, setLimit } = useMonthlyLimit();
@@ -127,6 +131,7 @@ export default function Ajustes() {
   const [pin2, setPinConfirm] = useState("");
   const [pinError, setPinError] = useState("");
   const [pinBusy, setPinBusy] = useState(false);
+  const [avatarOpen, setAvatarOpen] = useState(false);
 
   useEffect(() => {
     setNome(name);
@@ -182,6 +187,26 @@ export default function Ajustes() {
   const closePin = () => {
     if (!pinBusy) {
       setPinOpen(false);
+    }
+  };
+
+  const chooseAvatar = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permissão necessária", "Permite o acesso às fotografias para escolher um avatar.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (!result.canceled && result.assets[0]?.uri) {
+      setAvatar(result.assets[0].uri);
+      setAvatarOpen(false);
     }
   };
 
@@ -256,11 +281,21 @@ export default function Ajustes() {
           { flexDirection: "row", alignItems: "center", gap: 16 },
         ]}
       >
-        <View style={[s.av, s.avBig]}>
-          <Text style={[s.avTxt, { fontSize: 26 }]}>
-            {(nome.trim().charAt(0) || "A").toUpperCase()}
-          </Text>
-        </View>
+        <Pressable
+          style={[s.av, s.avBig]}
+          onPress={() => setAvatarOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Adicionar avatar"
+        >
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={{ width: "100%", height: "100%", borderRadius: 36 }} />
+          ) : (
+            <Text style={s.avTxt}>{(nome.trim().charAt(0) || "A").toUpperCase()}</Text>
+          )}
+          <View style={{ position: "absolute", right: -2, bottom: -2, width: 24, height: 24, borderRadius: 12, backgroundColor: t.acc, alignItems: "center", justifyContent: "center" }}>
+            <Feather name="plus" size={15} color="#fff" />
+          </View>
+        </Pressable>
         <View style={{ flex: 1 }}>
           <TextInput
             style={{
@@ -514,6 +549,34 @@ export default function Ajustes() {
       <Pressable style={[s.go, s.goGhost]} onPress={() => go("/onboarding")}>
         <Text style={[s.goTxt, { color: t.text }]}>Rever introdução</Text>
       </Pressable>
+
+      <Modal
+        visible={avatarOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAvatarOpen(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,.55)", alignItems: "center", justifyContent: "center", padding: 22 }}
+          onPress={() => setAvatarOpen(false)}
+        >
+          <Pressable
+            style={{ width: "100%", maxWidth: 420, backgroundColor: t.panel, borderRadius: 24, padding: 20 }}
+            onPress={(event) => event.stopPropagation()}
+          >
+            <Text style={{ fontSize: 20, fontWeight: "600", color: t.text }}>Adicionar avatar</Text>
+            <Text style={{ fontSize: 13, color: t.muted, marginTop: 4 }}>Escolhe uma imagem da galeria para aparecer no teu perfil.</Text>
+            <Pressable onPress={() => void chooseAvatar()} style={{ height: 48, borderRadius: 24, backgroundColor: t.acc, alignItems: "center", justifyContent: "center", marginTop: 20 }}>
+              <Text style={{ color: "#fff", fontSize: 14, fontWeight: "600" }}>Escolher da galeria</Text>
+            </Pressable>
+            {avatar ? (
+              <Pressable onPress={() => { setAvatar(null); setAvatarOpen(false); }} style={{ alignItems: "center", marginTop: 16 }}>
+                <Text style={{ color: t.neg, fontSize: 13 }}>Remover avatar</Text>
+              </Pressable>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal
         visible={pinOpen}

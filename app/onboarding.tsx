@@ -12,12 +12,19 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { A, ICON, num, useTheme } from "../data";
+import { ICON, num, useTheme } from "../data";
+import { createMovement } from "../src/repos/movements";
+import { todayISO } from "../src/domain/dates";
+import { useModuleConfig } from "../src/features/modules/useModuleConfig";
+import { useUserName } from "../src/features/settings/useSettings";
+import { useAppPreferences } from "../src/features/settings/useAppPreferences";
 import { useLockState } from "../src/features/security/useLockState";
+import { setSetting } from "../src/repos/settings";
+import { AmountKeypad } from "../src/ui/components/AmountKeypad";
 
 // Passos: 0 boas-vindas · 1 nome · 2 situação · 3 dados · 4 PIN · 5 pronto
 export default function Onboarding() {
-  const { t, s, st } = useTheme();
+  const { t, s } = useTheme();
   const ins = useSafeAreaInsets();
   const [step, setStep] = useState(0);
   const [nome, setNome] = useState("");
@@ -28,8 +35,12 @@ export default function Onboarding() {
   const [pinEnabled, setPinEnabled] = useState<boolean | null>(null);
   const [erro, setErro] = useState("");
   const [digits, setDigits] = useState("");
+  const [pinBusy, setPinBusy] = useState(false);
 
   const { setPin, removePin, hasPin, enabled } = useLockState();
+  const { setName } = useUserName();
+  const { setProfile } = useModuleConfig();
+  const { completeOnboarding } = useAppPreferences();
   const est = perfil === "e";
 
   const label =
@@ -50,20 +61,44 @@ export default function Onboarding() {
     setPinEnabled(false);
   }, [removePin]);
 
-  const avancar = () => {
+  const avancar = async () => {
     setErro("");
     if (step === 1 && !nome.trim()) return setErro("Indica o teu nome");
     if (step === 2 && !perfil) return setErro("Escolhe uma opção");
     if (step === 3 && renda && !(num(valor) > 0))
       return setErro("Indica o valor");
+    if (step === 4) {
+      if (pinEnabled === null) return setErro("Escolhe uma opÃ§Ã£o");
+      if (pinEnabled && digits.length !== 4)
+        return setErro("Define um PIN de 4 dÃ­gitos");
+      if (pinEnabled) {
+        setPinBusy(true);
+        try {
+          await setPinHandler(digits);
+        } catch {
+          setPinBusy(false);
+          return setErro("NÃ£o foi possÃ­vel guardar o PIN");
+        }
+        setPinBusy(false);
+      }
+    }
     if (step === 5) {
-      A.finishOnboarding({
-        name: nome,
-        estudante: est,
-        temRenda: renda,
-        valor,
-        pin: pinEnabled === true,
-      });
+      setName(nome);
+      setProfile(est ? "student" : "worker");
+      if (idade.trim()) {
+        setSetting("user_age", idade.trim());
+      }
+      const amount = num(valor);
+      if (renda && amount > 0) {
+        createMovement({
+          type: "income",
+          amount,
+          category: est ? "Extra" : "Salário",
+          date: todayISO(),
+          note: est ? "Mesada" : "Salário",
+        });
+      }
+      completeOnboarding();
       return sair();
     }
     setStep(step + 1);
@@ -265,7 +300,10 @@ export default function Onboarding() {
                 icon="lock"
                 titulo="Sim, criar PIN"
                 sub="4 dígitos para abrir a app"
-                onPress={() => setDigits("")}
+                onPress={() => {
+                  setPinEnabled(true);
+                  setDigits("");
+                }}
               />
               <Opcao
                 on={pinEnabled === false}
@@ -273,14 +311,33 @@ export default function Onboarding() {
                 titulo="Agora não"
                 sub="Podes ativar depois em Ajustes"
                 onPress={() => {
-                  removePinHandler();
-                  setStep(5);
+                  void removePinHandler();
+                  setPinEnabled(false);
+                  setDigits("");
                 }}
               />
               {pinEnabled && (
                 <>
-                  <Text style={s.fl}>PIN definido com sucesso!</Text>
-                  <Text style={s.sub}>Agora podes usar o PIN para abrir a app.</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 20 }}>
+              {[0, 1, 2, 3].map((index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.pinDot,
+                    index < digits.length && {
+                      backgroundColor: t.acc,
+                      borderColor: t.acc,
+                    },
+                  ]}
+                />
+                    ))}
+                  </View>
+                  <View style={{ marginTop: 18 }}>
+                    <AmountKeypad
+                      onDigit={(key) => setDigits((current) => (current + key).slice(0, 4))}
+                      onBackspace={() => setDigits((current) => current.slice(0, -1))}
+                    />
+                  </View>
                 </>
               )}
             </>
@@ -292,7 +349,7 @@ export default function Onboarding() {
                 <Feather name={ICON.ok} size={44} color="#fff" />
               </View>
               <Text style={[s.h1, { marginTop: 0, textAlign: "center" }]}>
-                Tudo pronto, {nome.trim() || st.name}!
+                Tudo pronto, {nome.trim() || "amigo"}!
               </Text>
               <Text style={[s.sub, { textAlign: "center" }]}>
                 Perfil {est ? "Estudante" : "Profissional"} configurado. Já podes organizar o teu dinheiro.
@@ -314,7 +371,11 @@ export default function Onboarding() {
           </Text>
         )}
 
-        <Pressable style={s.go} onPress={avancar}>
+        <Pressable
+          style={[s.go, pinBusy && { opacity: 0.6 }]}
+          disabled={pinBusy}
+          onPress={() => void avancar()}
+        >
           <Text style={s.goTxt}>{label}</Text>
         </Pressable>
       </View>

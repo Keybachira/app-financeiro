@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,9 +10,10 @@ import { useAllMovements } from "../../src/features/movements/useMovements";
 import { useMonthSummary } from "../../src/features/movements/useMonthSummary";
 import { useModuleConfig } from "../../src/features/modules/useModuleConfig";
 import { useNotificationCenter } from "../../src/features/notifications/useNotificationCenter";
-import { useUserName } from "../../src/features/settings/useSettings";
+import { useUserAvatar, useUserName } from "../../src/features/settings/useSettings";
 import { billView, listBills } from "../../src/repos/bills";
 import { categoryVisual } from "../../src/ui/categoryVisuals";
+import { BalanceCard } from "../../src/ui/components/BalanceCard";
 
 function billSnapshot() {
   const today = todayISO();
@@ -34,6 +35,7 @@ export default function Inicio() {
   const { modules } = useModuleConfig();
   const { unreadCount, refresh: refreshNotifications } = useNotificationCenter();
   const { name } = useUserName();
+  const { avatar } = useUserAvatar();
   const [bills, setBills] = useState(billSnapshot);
 
   useFocusEffect(
@@ -82,6 +84,8 @@ export default function Inicio() {
       style={s.screen}
       contentContainerStyle={[s.content, { paddingTop: ins.top + 20 }]}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
     >
       {/* topo */}
       <View style={s.top}>
@@ -110,7 +114,11 @@ export default function Inicio() {
             onPress={() => go("/ajustes")}
             accessibilityLabel="Perfil"
           >
-            <Text style={s.avTxt}>{avatarLetter}</Text>
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={{ width: "100%", height: "100%", borderRadius: 23 }} />
+            ) : (
+              <Text style={s.avTxt}>{avatarLetter}</Text>
+            )}
           </Pressable>
         </View>
       </View>
@@ -163,7 +171,17 @@ export default function Inicio() {
             </Text>
           </Pressable>
         )}
-        <View style={[s.main, showSalary && { marginTop: -47 }]}>
+        <BalanceCard
+          balance={summary.balance}
+          income={summary.income}
+          expenses={summary.expenses}
+          hidden={hidden}
+          overlapsSalary={showSalary}
+          onToggleHidden={A.toggleHid}
+          onRegister={() => go("/movement/new?type=expense")}
+        />
+        {false && (
+          <View>
           <Text style={s.mainL}>Saldo disponível</Text>
           <Pressable onPress={A.toggleHid}>
             <Text style={s.big}>
@@ -184,25 +202,8 @@ export default function Inicio() {
               </Text>
             </View>
           </View>
-          {/* recorte do botão */}
-          <View style={s.notch} pointerEvents="none">
-            <View style={[s.fillet, { left: -24, bottom: 0 }]}>
-              <View style={s.filletDisc} />
-            </View>
-            <View style={[s.fillet, { right: 0, top: -24 }]}>
-              <View style={s.filletDisc} />
-            </View>
-          </View>
-        </View>
-        <Pressable
-          style={s.add}
-          onPress={() => go("/movement/new?type=expense")}
-        >
-          <View style={s.addPlus}>
-            <Feather name="plus" size={20} color={t.addp} />
-          </View>
-          <Text style={s.addTxt}>Registar</Text>
-        </Pressable>
+          {/* recortes circulares iguais à referência visual */}
+        </View>)}
       </View>
 
       {/* ações rápidas */}
