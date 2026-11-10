@@ -5,29 +5,29 @@ import { ArrowLeftRight, Pencil, Trash, X } from 'lucide-react-native';
 
 import { formatKz } from '../../src/domain/money';
 import { formatDayMonthPt } from '../../src/domain/dates';
-import { AmountSheet } from '../../src/ui/components/AmountSheet';
-import { ConfirmSheet } from '../../src/ui/components/ConfirmSheet';
-import { GlassCard } from '../../src/ui/components/GlassCard';
-import { IconButton } from '../../src/ui/components/IconButton';
-import { MoneyText } from '../../src/ui/components/MoneyText';
-import { Panel } from '../../src/ui/components/Panel';
-import { ProgressBar } from '../../src/ui/components/ProgressBar';
-import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
-import { StatusChip } from '../../src/ui/components/StatusChip';
-import { useToast } from '../../src/ui/components/Toast';
-import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../../src/ui/theme';
+import { FolhaValor } from '../../src/ui/componentes/FolhaValor';
+import { FolhaConfirmacao } from '../../src/ui/componentes/FolhaConfirmacao';
+import { CartaoDestaque } from '../../src/ui/componentes/CartaoDestaque';
+import { BotaoIcone } from '../../src/ui/componentes/BotaoIcone';
+import { TextoValor } from '../../src/ui/componentes/TextoValor';
+import { Painel } from '../../src/ui/componentes/Painel';
+import { BarraProgresso } from '../../src/ui/componentes/BarraProgresso';
+import { FundoEcra } from '../../src/ui/componentes/FundoEcra';
+import { ChipEstado } from '../../src/ui/componentes/ChipEstado';
+import { useAvisoRapido } from '../../src/ui/componentes/AvisoRapido';
+import { fonts, spacing, useTema, useEstilosTema, type Cores } from '../../src/ui/tema';
 import { debtView, getDebt } from '../../src/repos/debts';
-import { debtStatusLabel, useDebts } from '../../src/features/debts/useDebts';
-import { guardedCallback, runGuardedAction } from '../../src/ui/actionGuard';
+import { rotuloEstadoDivida, useDividas } from '../../src/features/dividas/useDividas';
+import { callbackProtegido, executarAcaoProtegida } from '../../src/ui/protecaoAcoes';
 
 export default function DebtDetailScreen() {
-  const { colors, gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors, gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const router = useRouter();
-  const toast = useToast();
+  const toast = useAvisoRapido();
   const { id } = useLocalSearchParams<{ id: string }>();
   const debtId = typeof id === 'string' ? id : null;
-  const { today, pay, payments, updatePayment, removePayment, remove } = useDebts();
+  const { today, pay, payments, updatePayment, removePayment, remove } = useDividas();
 
   const [payOpen, setPayOpen] = useState(false);
   const [editPaymentId, setEditPaymentId] = useState<string | null>(null);
@@ -40,10 +40,10 @@ export default function DebtDetailScreen() {
   if (!debtId || !debt || !view) {
     return (
       <View style={styles.root}>
-        <ScreenBackground />
+        <FundoEcra />
         <View style={styles.header}>
           <Text style={styles.title}>Dívida</Text>
-          <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
+          <BotaoIcone icon={X} label="Fechar" onPress={() => router.back()} />
         </View>
         <View style={styles.body}>
           <Text style={styles.muted}>Esta dívida já não existe.</Text>
@@ -58,7 +58,7 @@ export default function DebtDetailScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground />
+      <FundoEcra />
       <ScrollView
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
@@ -69,26 +69,26 @@ export default function DebtDetailScreen() {
             {debt.party}
           </Text>
           <View style={styles.headerActions}>
-            <IconButton
+            <BotaoIcone
               icon={Pencil}
               label="Editar dívida"
-              onPress={guardedCallback(() => router.push({ pathname: '/debt/new', params: { id: debtId } }))}
+              onPress={callbackProtegido(() => router.push({ pathname: '/debt/new', params: { id: debtId } }))}
             />
-            <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
+            <BotaoIcone icon={X} label="Fechar" onPress={() => router.back()} />
           </View>
         </View>
 
-        <GlassCard>
+        <CartaoDestaque>
           <View style={styles.summaryRow}>
             <View style={styles.summaryInfo}>
               <Text style={styles.summaryLabel}>{debt.kind === 'owe' ? 'Falta pagar' : 'Falta receber'}</Text>
-              <MoneyText value={view.remaining} size="balance" />
+              <TextoValor value={view.remaining} size="balance" />
             </View>
-            <StatusChip label={debtStatusLabel(view)} tone={tone} />
+            <ChipEstado label={rotuloEstadoDivida(view)} tone={tone} />
           </View>
 
           <View style={styles.progressBlock}>
-            <ProgressBar value={view.progress} tone="white" />
+            <BarraProgresso value={view.progress} tone="white" />
             <View style={styles.progressMeta}>
               <Text style={styles.summaryLabel}>
                 Pago {formatKz(view.paid)} de {formatKz(debt.total)}
@@ -98,17 +98,17 @@ export default function DebtDetailScreen() {
               </Text>
             </View>
           </View>
-        </GlassCard>
+        </CartaoDestaque>
 
         {view.status !== 'paid' ? (
-          <Panel style={styles.payCard} padded={false}>
-            <Pressable accessibilityRole="button" onPress={guardedCallback(() => setPayOpen(true))} style={styles.payButton}>
+          <Painel style={styles.payCard} padded={false}>
+            <Pressable accessibilityRole="button" onPress={callbackProtegido(() => setPayOpen(true))} style={styles.payButton}>
               <Text style={styles.payLabel}>Registar pagamento</Text>
               <Text style={styles.payHint}>
                 {debt.kind === 'owe' ? 'Cria uma despesa em Dívidas' : 'Cria uma receita em Dívidas'}
               </Text>
             </Pressable>
-          </Panel>
+          </Painel>
         ) : null}
 
         <View style={styles.section}>
@@ -125,18 +125,18 @@ export default function DebtDetailScreen() {
                     {payment.movement_id ? 'Movimento ligado' : 'Sem movimento ligado'}
                   </Text>
                 </View>
-                <MoneyText value={payment.amount} size="md" />
+                <TextoValor value={payment.amount} size="md" />
                 <Pressable
                   accessibilityLabel="Editar pagamento"
                   hitSlop={8}
-                  onPress={guardedCallback(() => setEditPaymentId(payment.id))}
+                  onPress={callbackProtegido(() => setEditPaymentId(payment.id))}
                 >
                   <Pencil color={colors.textMuted} size={16} strokeWidth={2} />
                 </Pressable>
                 <Pressable
                   accessibilityLabel="Apagar pagamento"
                   hitSlop={8}
-                  onPress={() => runGuardedAction(() => {
+                  onPress={() => executarAcaoProtegida(() => {
                     try { removePayment(payment.id); toast({ message: 'Pagamento apagado' }); } catch (e) { toast({ message: e instanceof Error ? e.message : 'Falhou.', tone: 'error' }); }
                   })}
                 >
@@ -155,7 +155,7 @@ export default function DebtDetailScreen() {
           </Pressable>
       </ScrollView>
 
-      <AmountSheet
+      <FolhaValor
         visible={payOpen}
         title={`Pagamento · ${debt.party}`}
         confirmLabel="Registar"
@@ -174,7 +174,7 @@ export default function DebtDetailScreen() {
         }}
       />
 
-      <AmountSheet
+      <FolhaValor
         visible={editing !== null}
         title="Editar pagamento"
         confirmLabel="Guardar"
@@ -192,7 +192,7 @@ export default function DebtDetailScreen() {
         }}
       />
 
-      <ConfirmSheet
+      <FolhaConfirmacao
         visible={confirmDelete}
         title="Apagar dívida"
         message="Os pagamentos registados vão ser apagados. Os movimentos ligados deixam de estar associados a eles."
@@ -214,7 +214,7 @@ export default function DebtDetailScreen() {
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
   root: {
     flex: 1,

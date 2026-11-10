@@ -4,24 +4,25 @@ import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ICON, go, goBack, useTheme } from "../data";
+import { ICON, go, goBack, useTemaBase } from "../data";
 import { addDays, formatDayMonthPt, todayISO } from "../src/domain/dates";
+import { EntradaAnimada } from "../src/ui/componentes/EntradaAnimada";
 import {
   getBillNotificationsStatus,
   type BillNotificationStatus,
 } from "../src/repos/bills";
 import { isExpoGo } from "../src/repos/notificationRuntime";
-import { sendTestNotification } from "../src/features/notifications/notificationActions";
+import { enviarNotificacaoTeste } from "../src/features/notificacoes/acoesNotificacao";
 import {
-  useNotificationCenter,
-  type AppNotification,
-  type AppNotificationKind,
-} from "../src/features/notifications/useNotificationCenter";
-import { useNotificationPermission } from "../src/features/notifications/useNotificationPermission";
+  useCentroNotificacoes,
+  type NotificacaoApp,
+  type TipoNotificacaoApp,
+} from "../src/features/notificacoes/useCentroNotificacoes";
+import { usePermissaoNotificacoes } from "../src/features/notificacoes/usePermissaoNotificacoes";
 
 type FeatherName = ComponentProps<typeof Feather>["name"];
 
-const KIND_ICON: Record<AppNotificationKind, FeatherName> = {
+const KIND_ICON: Record<TipoNotificacaoApp, FeatherName> = {
   bill: ICON.fix,
   debt: ICON.debt,
   project: ICON.proj,
@@ -65,10 +66,10 @@ function NotificationRow({
   item,
   onPress,
 }: {
-  item: AppNotification;
+  item: NotificacaoApp;
   onPress: () => void;
 }) {
-  const { t, s } = useTheme();
+  const { t, s } = useTemaBase();
   const color =
     item.kind === "debt" ? t.neg : item.kind === "bill" ? t.amb : t.acc;
 
@@ -124,15 +125,15 @@ function NotificationRow({
 }
 
 export default function Notificacoes() {
-  const { t, s } = useTheme();
+  const { t, s } = useTemaBase();
   const ins = useSafeAreaInsets();
   const { items, unreadCount, markRead, markAllRead, refresh } =
-    useNotificationCenter();
+    useCentroNotificacoes();
   const {
     state: permission,
     refresh: refreshPermission,
     request,
-  } = useNotificationPermission();
+  } = usePermissaoNotificacoes();
   const [billStatus, setBillStatus] = useState(getBillNotificationsStatus);
   const [testBusy, setTestBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -161,7 +162,7 @@ export default function Notificacoes() {
   const handleTest = async () => {
     setTestBusy(true);
     setFeedback(null);
-    const result = await sendTestNotification();
+    const result = await enviarNotificacaoTeste();
     setTestBusy(false);
     setBillStatus(getBillNotificationsStatus());
     setFeedback(result.message);
@@ -290,15 +291,21 @@ export default function Notificacoes() {
           </View>
         )}
 
-        {items.map((item) => (
-          <NotificationRow
+        {items.map((item, i) => (
+          <EntradaAnimada
             key={item.id}
-            item={item}
-            onPress={() => {
-              markRead(item.id);
-              go(item.href);
-            }}
-          />
+            variante="revelacao"
+            indice={i}
+            gatilho={items.length}
+          >
+            <NotificationRow
+              item={item}
+              onPress={() => {
+                markRead(item.id);
+                go(item.href);
+              }}
+            />
+          </EntradaAnimada>
         ))}
       </View>
     </ScrollView>

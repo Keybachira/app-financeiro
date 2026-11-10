@@ -17,15 +17,15 @@ import {
   X,
 } from "lucide-react-native";
 
-import { IconButton } from "../src/ui/components/IconButton";
-import { Panel } from "../src/ui/components/Panel";
-import { ScreenBackground } from "../src/ui/components/ScreenBackground";
-import { ConfirmSheet } from "../src/ui/components/ConfirmSheet";
-import { IconTile } from "../src/ui/components/IconTile";
-import { useBackup } from "../src/features/backup/useBackup";
+import { BotaoIcone } from "../src/ui/componentes/BotaoIcone";
+import { Painel } from "../src/ui/componentes/Painel";
+import { FundoEcra } from "../src/ui/componentes/FundoEcra";
+import { FolhaConfirmacao } from "../src/ui/componentes/FolhaConfirmacao";
+import { IconeCirculo } from "../src/ui/componentes/IconeCirculo";
+import { useCopiaSeguranca } from "../src/features/copias/useCopiaSeguranca";
 import { buildBackup } from "../src/repos/backup";
 import type { LucideIcon } from "lucide-react-native";
-import { fonts, radius, spacing, useTheme, useThemedStyles, type Colors } from "../src/ui/theme";
+import { fonts, radius, spacing, useTema, useEstilosTema, type Cores } from "../src/ui/tema";
 
 type Counts = {
   movements: number;
@@ -36,11 +36,11 @@ type Counts = {
 };
 
 export default function BackupScreen() {
-  const { colors, gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors, gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const router = useRouter();
   const { busy, error, exportJson, exportCsv, importJson, clearError } =
-    useBackup();
+    useCopiaSeguranca();
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [countsKey, setCountsKey] = useState(0);
 
@@ -75,7 +75,7 @@ export default function BackupScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground />
+      <FundoEcra />
       <ScrollView
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
@@ -83,12 +83,12 @@ export default function BackupScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.title}>Backup</Text>
-          <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
+          <BotaoIcone icon={X} label="Fechar" onPress={() => router.back()} />
         </View>
 
-        <Panel>
+        <Painel>
           <View style={styles.cardHeader}>
-            <IconTile icon={Warehouse} />
+            <IconeCirculo icon={Warehouse} />
             <View style={styles.cardHeaderText}>
               <Text style={styles.cardTitle}>Cópia local</Text>
               <Text style={styles.cardMeta}>
@@ -105,18 +105,18 @@ export default function BackupScreen() {
             <CountChip label="Projetos" value={current.projects} />
             <CountChip label="Contas" value={current.bills} />
           </View>
-        </Panel>
+        </Painel>
 
         {error ? (
-          <Panel style={styles.errorPanel}>
+          <Painel style={styles.errorPanel}>
             <Text style={styles.errorTitle}>Ação recusada</Text>
             <Text style={styles.errorMessage}>{error}</Text>
-          </Panel>
+          </Painel>
         ) : null}
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <IconTile icon={Download} />
+            <IconeCirculo icon={Download} />
             <View style={styles.cardHeaderText}>
               <Text style={styles.cardTitle}>Exportar</Text>
               <Text style={styles.cardMeta}>
@@ -147,7 +147,7 @@ export default function BackupScreen() {
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <IconTile icon={RotateCcw} />
+            <IconeCirculo icon={RotateCcw} />
             <View style={styles.cardHeaderText}>
               <Text style={styles.cardTitle}>Importar</Text>
               <Text style={styles.cardMeta}>
@@ -186,7 +186,7 @@ export default function BackupScreen() {
         ) : null}
       </ScrollView>
 
-      <ConfirmSheet
+      <FolhaConfirmacao
         visible={confirmReplace}
         title="Substituir todos os dados"
         message="Os dados atuais vão ser apagados e substituídos pelo backup escolhido. Esta ação é irreversível."
@@ -202,7 +202,7 @@ export default function BackupScreen() {
 }
 
 function CountChip({ label, value }: { label: string; value: number }) {
-  const styles = useThemedStyles(makeStyles);
+  const styles = useEstilosTema(makeStyles);
 
   return (
     <View style={styles.chip}>
@@ -223,11 +223,11 @@ function ActionTile({
   disabled: boolean;
   onPress: () => void;
 }) {
-  const { colors } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTema();
+  const styles = useEstilosTema(makeStyles);
 
   return (
-    <Panel style={styles.actionTile} padded={false}>
+    <Painel style={styles.actionTile} padded={false}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
@@ -253,10 +253,10 @@ function ActionTile({
           {label}
         </Text>
       </Pressable>
-    </Panel>
+    </Painel>
   );
 }
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
   root: {
     flex: 1,

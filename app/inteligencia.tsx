@@ -10,16 +10,16 @@ import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ICON, go, goBack, kz, useTheme } from "../data";
+import { ICON, go, goBack, kz, useTemaBase } from "../data";
 import { formatDayMonthPt } from "../src/domain/dates";
-import { useIntelligence } from "../src/features/intelligence/useIntelligence";
+import { useInteligencia } from "../src/features/inteligencia/useInteligencia";
 import { isExpoGo } from "../src/repos/notificationRuntime";
 
 export default function Inteligencia() {
-  const { t, s } = useTheme();
+  const { t, s } = useTemaBase();
   const ins = useSafeAreaInsets();
   const { result, loading, error, refresh, feedback, busyKey } =
-    useIntelligence();
+    useInteligencia();
 
   useFocusEffect(
     useCallback(() => {

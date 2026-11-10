@@ -17,18 +17,18 @@ import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { A, ICON, ThemePref, go, goBack, kz, pct, useTheme } from "../data";
+import { A, ICON, ThemePref, go, goBack, kz, pct, useTemaBase } from "../data";
 import { todayISO } from "../src/domain/dates";
 import type { ModuleId, ModuleProfileId } from "../src/domain/modules";
-import { useBillsSummary } from "../src/features/bills/useBills";
-import { useModuleConfig } from "../src/features/modules/useModuleConfig";
-import { useMonthSummary } from "../src/features/movements/useMonthSummary";
-import { useLockState } from "../src/features/security/useLockState";
+import { useResumoContas } from "../src/features/contas/useContas";
+import { useConfigModulos } from "../src/features/modulos/useConfigModulos";
+import { useResumoMes } from "../src/features/movimentos/useResumoMes";
+import { useEstadoBloqueio } from "../src/features/seguranca/useEstadoBloqueio";
 import {
-  useMonthlyLimit,
-  useUserAvatar,
-  useUserName,
-} from "../src/features/settings/useSettings";
+  useLimiteMensal,
+  useAvatarUtilizador,
+  useNomeUtilizador,
+} from "../src/features/definicoes/useDefinicoes";
 import {
   getBillNotificationsStatus,
   type BillNotificationStatus,
@@ -105,22 +105,22 @@ function notificationLabel(status: BillNotificationStatus | null): string {
 }
 
 export default function Ajustes() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
-  const { name, setName } = useUserName();
-  const { avatar, setAvatar } = useUserAvatar();
+  const { name, setName } = useNomeUtilizador();
+  const { avatar, setAvatar } = useAvatarUtilizador();
   const { profile, modules, isEnabled, setEnabled, setProfile, save } =
-    useModuleConfig();
-  const { limit, setLimit } = useMonthlyLimit();
-  const { summary, refresh: refreshSummary } = useMonthSummary(todayISO());
-  const { openCount, refresh: refreshBills } = useBillsSummary();
+    useConfigModulos();
+  const { limit, setLimit } = useLimiteMensal();
+  const { summary, refresh: refreshSummary } = useResumoMes(todayISO());
+  const { openCount, refresh: refreshBills } = useResumoContas();
   const {
     hasPin,
     enabled: pinEnabled,
     setEnabled: setPinEnabled,
     setPin,
     removePin,
-  } = useLockState();
+  } = useEstadoBloqueio();
 
   const [nome, setNome] = useState(name);
   const [notif, setNotif] = useState<BillNotificationStatus | null>(() =>

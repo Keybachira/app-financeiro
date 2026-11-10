@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+﻿import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
@@ -15,12 +15,13 @@ import {
   kz,
   nz,
   parseISO,
-  useTheme,
+  useTemaBase,
 } from "../../data";
 import { monthKey, todayISO } from "../../src/domain/dates";
-import { useAllMovements } from "../../src/features/movements/useMovements";
+import { useTodosMovimentos } from "../../src/features/movimentos/useMovimentos";
 import type { MovementRow } from "../../src/repos/movements";
-import { categoryVisual } from "../../src/ui/categoryVisuals";
+import { visualCategoria } from "../../src/ui/visuaisCategoria";
+import { EntradaAnimada } from "../../src/ui/componentes/EntradaAnimada";
 
 const PERIODOS = [
   { k: "", l: "Tudo" },
@@ -30,9 +31,9 @@ const PERIODOS = [
 ];
 
 export default function Movimentos() {
-  const { t, s } = useTheme();
+  const { t, s } = useTemaBase();
   const ins = useSafeAreaInsets();
-  const { movements, refresh } = useAllMovements();
+  const { movements, refresh } = useTodosMovimentos();
   const [q, setQ] = useState("");
   const [pr, setPr] = useState("");
   const [dt, setDt] = useState("");
@@ -371,14 +372,20 @@ export default function Movimentos() {
             </View>
           )}
 
-          {grupos.map((g) => {
+          {grupos.map((g, gi) => {
             const isC = gr === "c";
             const cn = `${g.itens.length} ${g.itens.length === 1 ? "movimento" : "movimentos"}`;
             const sub = isC ? cn : `${DIA[parseISO(g.k).getDay()]} · ${cn}`;
             const share = isC && des > 0 ? Math.round((g.desp / des) * 100) : 0;
-            const gc = categoryVisual(g.k);
+            const gc = visualCategoria(g.k);
             return (
-              <View key={g.k} style={s.panel}>
+              <EntradaAnimada
+                key={g.k}
+                variante="revelacao"
+                indice={gi}
+                gatilho={grupos.length}
+              >
+                <View style={s.panel}>
                 <View style={s.eh}>
                   <View
                     style={{
@@ -419,13 +426,18 @@ export default function Movimentos() {
                     </Text>
                   </>
                 )}
-                {g.itens.map((mv) => {
-                  const c = categoryVisual(mv.category);
+                {g.itens.map((mv, mi) => {
+                  const c = visualCategoria(mv.category);
                   const income = mv.type === "income";
                   return (
-                    <Pressable
+                    <EntradaAnimada
                       key={mv.id}
-                      style={s.it}
+                      variante="linha"
+                      indice={mi}
+                      gatilho={g.itens.length}
+                    >
+                      <Pressable
+                        style={s.it}
                       onPress={() => go(`/movement/${mv.id}`)}
                     >
                       <View
@@ -446,9 +458,11 @@ export default function Movimentos() {
                         {kz(mv.amount)}
                       </Text>
                     </Pressable>
+                    </EntradaAnimada>
                   );
                 })}
               </View>
+                </EntradaAnimada>
             );
           })}
         </>
@@ -456,3 +470,4 @@ export default function Movimentos() {
     </ScrollView>
   );
 }
+

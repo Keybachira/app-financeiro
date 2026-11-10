@@ -6,26 +6,26 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 
-import { fontAssets, fonts, radius, spacing, useTheme } from '../src/ui/theme';
+import { fontAssets, fonts, radius, spacing, useTema } from '../src/ui/tema';
 import { useDatabase } from '../src/db/useDatabase';
-import { ToastProvider } from '../src/ui/components/Toast';
-import { useAutoSalary } from '../src/features/salary/useSalary';
-import { useNotificationSetup } from '../src/features/notifications/useNotificationSetup';
-import { useIntelligenceBoot } from '../src/features/intelligence/useIntelligence';
-import { useLockState } from '../src/features/security/useLockState';
+import { ProvedorAvisosRapidos } from '../src/ui/componentes/AvisoRapido';
+import { useSalarioAutomatico } from '../src/features/salario/useSalario';
+import { useConfiguracaoNotificacoes } from '../src/features/notificacoes/useConfiguracaoNotificacoes';
+import { useArranqueInteligencia } from '../src/features/inteligencia/useInteligencia';
+import { useEstadoBloqueio } from '../src/features/seguranca/useEstadoBloqueio';
 import { LockScreen } from './lock';
-import { useAppPreferences } from '../src/features/settings/useAppPreferences';
+import { usePreferenciasApp } from '../src/features/definicoes/usePreferenciasApp';
 import Onboarding from './onboarding';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { ready: dbReady, error: dbError } = useDatabase();
-  const { colors, dark } = useTheme();
-  const { onboardingComplete: onboarded } = useAppPreferences();
+  const { colors, dark } = useTema();
+  const { onboardingComplete: onboarded } = usePreferenciasApp();
   const styles = makeStyles(colors);
   const [fontsLoaded, fontsError] = useFonts(fontAssets);
-  const { hasPin, enabled } = useLockState();
+  const { hasPin, enabled } = useEstadoBloqueio();
   const [unlocked, setUnlocked] = useState(() => !(hasPin && enabled));
 
   useEffect(() => {
@@ -40,9 +40,9 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, [enabled, hasPin]);
 
-  useAutoSalary();
-  useNotificationSetup(dbReady);
-  useIntelligenceBoot(dbReady);
+  useSalarioAutomatico();
+  useConfiguracaoNotificacoes(dbReady);
+  useArranqueInteligencia(dbReady);
 
   useEffect(() => {
     if ((fontsLoaded || fontsError) && (dbReady || dbError)) {
@@ -90,7 +90,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ToastProvider>
+    <ProvedorAvisosRapidos>
       <SafeAreaProvider>
         <StatusBar style={dark ? 'light' : 'dark'} />
         <Stack
@@ -113,16 +113,16 @@ export default function RootLayout() {
           <Stack.Screen name="project/[id]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="salary" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="bill" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="bill/new" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="bill/new" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="notificacoes" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="inteligencia" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         </Stack>
       </SafeAreaProvider>
-    </ToastProvider>
+    </ProvedorAvisosRapidos>
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(colors: ReturnType<typeof useTema>['colors']) {
   return StyleSheet.create({
   centered: {
     flex: 1,

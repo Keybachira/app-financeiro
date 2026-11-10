@@ -21,22 +21,22 @@ import {
   toISO,
   todayISO,
 } from "../../src/domain/dates";
-import { AmountKeypad } from "../../src/ui/components/AmountKeypad";
-import { IconButton } from "../../src/ui/components/IconButton";
-import { MoneyText } from "../../src/ui/components/MoneyText";
-import { Panel } from "../../src/ui/components/Panel";
-import { ScreenBackground } from "../../src/ui/components/ScreenBackground";
-import { useToast } from "../../src/ui/components/Toast";
-import { fonts, radius, spacing, useTheme, useThemedStyles, type Colors } from "../../src/ui/theme";
+import { TecladoValor } from "../../src/ui/componentes/TecladoValor";
+import { BotaoIcone } from "../../src/ui/componentes/BotaoIcone";
+import { TextoValor } from "../../src/ui/componentes/TextoValor";
+import { Painel } from "../../src/ui/componentes/Painel";
+import { FundoEcra } from "../../src/ui/componentes/FundoEcra";
+import { useAvisoRapido } from "../../src/ui/componentes/AvisoRapido";
+import { fonts, radius, spacing, useTema, useEstilosTema, type Cores } from "../../src/ui/tema";
 import { getGoal } from "../../src/repos/goals";
-import { useGoals } from "../../src/features/goals/useGoals";
+import { useMetas } from "../../src/features/metas/useMetas";
 
 export default function GoalFormScreen() {
-  const { colors, gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors, gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const router = useRouter();
-  const toast = useToast();
-  const { create, update } = useGoals();
+  const toast = useAvisoRapido();
+  const { create, update } = useMetas();
   const { id } = useLocalSearchParams<{ id?: string }>();
 
   const existing = typeof id === "string" ? getGoal(id) : null;
@@ -62,7 +62,7 @@ export default function GoalFormScreen() {
   const valid =
     nameValid && target > 0 && (deadline === null || isValidDate(deadline));
 
-  const handleSave = () => {
+  const guardar = () => {
     if (!valid) {
       toast({ message: "Dá um nome e um valor à meta" });
       return;
@@ -85,7 +85,7 @@ export default function GoalFormScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground />
+      <FundoEcra />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
@@ -98,10 +98,10 @@ export default function GoalFormScreen() {
             <Text style={styles.title}>
               {existing ? "Editar meta" : "Nova meta"}
             </Text>
-            <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
+            <BotaoIcone icon={X} label="Fechar" onPress={() => router.back()} />
           </View>
 
-          <Panel>
+          <Painel>
             <Text style={styles.label}>Nome</Text>
             <TextInput
               value={name}
@@ -111,14 +111,14 @@ export default function GoalFormScreen() {
               style={styles.input}
               returnKeyType="done"
             />
-          </Panel>
+          </Painel>
 
           <View style={styles.amountBlock}>
             <Text style={styles.labelCenter}>Valor da meta</Text>
-            <MoneyText value={target} size="hero" />
+            <TextoValor value={target} size="hero" />
           </View>
 
-          <AmountKeypad
+          <TecladoValor
             onDigit={(key) =>
               setDigits((current) =>
                 current === "0" ? key : (current + key).slice(0, 12),
@@ -148,7 +148,7 @@ export default function GoalFormScreen() {
             accessibilityLabel="Guardar meta"
             accessibilityState={{ disabled: !valid }}
             disabled={!valid}
-            onPress={handleSave}
+            onPress={guardar}
             style={[styles.saveWrap, !valid && styles.saveDisabled]}
           >
             <LinearGradient
@@ -190,8 +190,8 @@ function DayChip({
   active: boolean;
   onPress: () => void;
 }) {
-  const { colors, gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors, gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
 
   return (
     <Pressable
@@ -216,7 +216,7 @@ function DayChip({
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
   root: {
     flex: 1,

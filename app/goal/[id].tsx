@@ -5,31 +5,31 @@ import { ArrowLeftRight, Pencil, Trash, X } from "lucide-react-native";
 
 import { formatKz } from "../../src/domain/money";
 import { formatDayMonthPt, monthShort } from "../../src/domain/dates";
-import { AmountSheet } from "../../src/ui/components/AmountSheet";
-import { ConfirmSheet } from "../../src/ui/components/ConfirmSheet";
-import { IconButton } from "../../src/ui/components/IconButton";
-import { GlassCard } from "../../src/ui/components/GlassCard";
-import { MoneyText } from "../../src/ui/components/MoneyText";
-import { Panel } from "../../src/ui/components/Panel";
-import { ProgressRing } from "../../src/ui/components/ProgressRing";
-import { ScreenBackground } from "../../src/ui/components/ScreenBackground";
-import { StatusChip } from "../../src/ui/components/StatusChip";
-import { useToast } from "../../src/ui/components/Toast";
-import { fonts, radius, spacing, useTheme, useThemedStyles, type Colors } from "../../src/ui/theme";
-import { useGoals } from "../../src/features/goals/useGoals";
-import { guardedCallback, runGuardedAction } from "../../src/ui/actionGuard";
+import { FolhaValor } from "../../src/ui/componentes/FolhaValor";
+import { FolhaConfirmacao } from "../../src/ui/componentes/FolhaConfirmacao";
+import { BotaoIcone } from "../../src/ui/componentes/BotaoIcone";
+import { CartaoDestaque } from "../../src/ui/componentes/CartaoDestaque";
+import { TextoValor } from "../../src/ui/componentes/TextoValor";
+import { Painel } from "../../src/ui/componentes/Painel";
+import { AnelProgresso } from "../../src/ui/componentes/AnelProgresso";
+import { FundoEcra } from "../../src/ui/componentes/FundoEcra";
+import { ChipEstado } from "../../src/ui/componentes/ChipEstado";
+import { useAvisoRapido } from "../../src/ui/componentes/AvisoRapido";
+import { fonts, radius, spacing, useTema, useEstilosTema, type Cores } from "../../src/ui/tema";
+import { useMetas } from "../../src/features/metas/useMetas";
+import { callbackProtegido, executarAcaoProtegida } from "../../src/ui/protecaoAcoes";
 
 type SheetMode = "deposit" | "withdraw" | null;
 
 export default function GoalDetailScreen() {
-  const { colors, gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors, gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const router = useRouter();
-  const toast = useToast();
+  const toast = useAvisoRapido();
   const { id } = useLocalSearchParams<{ id: string }>();
   const goalId = typeof id === "string" ? id : null;
   const { detail, ops, deposit, withdraw, remove, archive, removeOp } =
-    useGoals();
+    useMetas();
 
   const [sheet, setSheet] = useState<SheetMode>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -39,10 +39,10 @@ export default function GoalDetailScreen() {
   if (!goalId || !view) {
     return (
       <View style={styles.root}>
-        <ScreenBackground />
+        <FundoEcra />
         <View style={styles.header}>
           <Text style={styles.title}>Meta</Text>
-          <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
+          <BotaoIcone icon={X} label="Fechar" onPress={() => router.back()} />
         </View>
         <View style={styles.body}>
           <Text style={styles.muted}>Esta meta já não existe.</Text>
@@ -93,7 +93,7 @@ export default function GoalDetailScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground />
+      <FundoEcra />
       <ScrollView
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
@@ -104,27 +104,27 @@ export default function GoalDetailScreen() {
             {view.goal.name}
           </Text>
           <View style={styles.headerActions}>
-            <IconButton
+            <BotaoIcone
               icon={Pencil}
               label="Editar meta"
-              onPress={guardedCallback(() =>
+              onPress={callbackProtegido(() =>
                 router.push({ pathname: "/goal/new", params: { id: goalId } }),
               )}
             />
-            <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
+            <BotaoIcone icon={X} label="Fechar" onPress={() => router.back()} />
           </View>
         </View>
 
-        <GlassCard>
+        <CartaoDestaque>
           <View style={styles.summaryRow}>
-            <ProgressRing value={view.progress} size={72} stroke={8} />
+            <AnelProgresso value={view.progress} size={72} stroke={8} />
             <View style={styles.summaryInfo}>
-              <MoneyText value={view.saved} size="lg" />
+              <TextoValor value={view.saved} size="lg" />
               <Text style={styles.summaryTarget}>
                 de {formatKz(view.goal.target)}
               </Text>
               <View style={styles.chip}>
-                <StatusChip label={chipLabel} tone={chipTone} />
+                <ChipEstado label={chipLabel} tone={chipTone} />
               </View>
             </View>
           </View>
@@ -135,23 +135,23 @@ export default function GoalDetailScreen() {
                 ? "Sem prazo definido"
                 : `Poupar ${formatKz(view.monthlyNeeded)}/mês · até ${monthShort(view.goal.deadline)}`}
           </Text>
-        </GlassCard>
+        </CartaoDestaque>
 
         <View style={styles.actionsRow}>
-          <Panel style={styles.actionCard} padded={false}>
+          <Painel style={styles.actionCard} padded={false}>
             <Pressable
               accessibilityRole="button"
-              onPress={guardedCallback(() => setSheet("deposit"))}
+              onPress={callbackProtegido(() => setSheet("deposit"))}
               style={styles.actionButton}
             >
               <Text style={styles.actionLabel}>Depositar</Text>
             </Pressable>
-          </Panel>
-          <Panel style={styles.actionCard} padded={false}>
+          </Painel>
+          <Painel style={styles.actionCard} padded={false}>
             <Pressable
               accessibilityRole="button"
               disabled={view.saved <= 0}
-              onPress={guardedCallback(() => setSheet("withdraw"))}
+              onPress={callbackProtegido(() => setSheet("withdraw"))}
               style={[
                 styles.actionButton,
                 view.saved <= 0 && styles.actionDisabled,
@@ -159,7 +159,7 @@ export default function GoalDetailScreen() {
             >
               <Text style={styles.actionLabel}>Levantar</Text>
             </Pressable>
-          </Panel>
+          </Painel>
         </View>
 
         <View style={styles.section}>
@@ -180,7 +180,7 @@ export default function GoalDetailScreen() {
                   </Text>
                   <Text style={styles.opMeta}>{formatDayMonthPt(op.date)}</Text>
                 </View>
-                <MoneyText
+                <TextoValor
                   value={op.amount}
                   size="sm"
                   tone={op.kind === "deposit" ? "default" : "muted"}
@@ -189,7 +189,7 @@ export default function GoalDetailScreen() {
                   accessibilityLabel="Apagar operação"
                   hitSlop={8}
                   onPress={() =>
-                    runGuardedAction(() => {
+                    executarAcaoProtegida(() => {
                       try {
                         removeOp(op.id);
                         toast({ message: "Operação apagada" });
@@ -243,7 +243,7 @@ export default function GoalDetailScreen() {
         </View>
       </ScrollView>
 
-      <AmountSheet
+      <FolhaValor
         visible={sheet !== null}
         title={sheet === "deposit" ? "Depositar na meta" : "Levantar da meta"}
         confirmLabel={sheet === "deposit" ? "Depositar" : "Levantar"}
@@ -257,7 +257,7 @@ export default function GoalDetailScreen() {
         onConfirm={handleConfirmAmount}
       />
 
-      <ConfirmSheet
+      <FolhaConfirmacao
         visible={confirmDelete}
         title="Apagar meta"
         message={`O reservado de ${formatKz(view.saved)} volta ao saldo do mês. Esta ação é irreversível.`}
@@ -275,7 +275,7 @@ export default function GoalDetailScreen() {
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
   root: {
     flex: 1,

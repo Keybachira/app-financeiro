@@ -6,25 +6,25 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 
 import { formatDayMonthPt, isValidDate, parseISO, toISO, todayISO } from '../../src/domain/dates';
-import { AmountKeypad } from '../../src/ui/components/AmountKeypad';
-import { IconButton } from '../../src/ui/components/IconButton';
-import { MoneyText } from '../../src/ui/components/MoneyText';
-import { Panel } from '../../src/ui/components/Panel';
-import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
-import { SegmentedControl } from '../../src/ui/components/SegmentedControl';
-import { useToast } from '../../src/ui/components/Toast';
-import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../../src/ui/theme';
+import { TecladoValor } from '../../src/ui/componentes/TecladoValor';
+import { BotaoIcone } from '../../src/ui/componentes/BotaoIcone';
+import { TextoValor } from '../../src/ui/componentes/TextoValor';
+import { Painel } from '../../src/ui/componentes/Painel';
+import { FundoEcra } from '../../src/ui/componentes/FundoEcra';
+import { ControloSegmentado } from '../../src/ui/componentes/ControloSegmentado';
+import { useAvisoRapido } from '../../src/ui/componentes/AvisoRapido';
+import { fonts, spacing, useTema, useEstilosTema, type Cores } from '../../src/ui/tema';
 import { getDebt } from '../../src/repos/debts';
-import { useDebts } from '../../src/features/debts/useDebts';
+import { useDividas } from '../../src/features/dividas/useDividas';
 
 type Kind = 'owe' | 'owed';
 
 export default function DebtFormScreen() {
-  const { colors, gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors, gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const router = useRouter();
-  const toast = useToast();
-  const { create, update } = useDebts();
+  const toast = useAvisoRapido();
+  const { create, update } = useDividas();
   const { id } = useLocalSearchParams<{ id?: string }>();
 
   const existing = typeof id === 'string' ? getDebt(id) : null;
@@ -41,7 +41,7 @@ export default function DebtFormScreen() {
   const total = digits.length > 0 ? Number(digits) : 0;
   const valid = party.trim().length > 0 && total > 0 && isValidDate(loanDate) && (dueDate === null || isValidDate(dueDate));
 
-  const handleSave = () => {
+  const guardar = () => {
     if (!valid) {
       toast({ message: 'Indica quem, o valor e as datas' });
       return;
@@ -70,15 +70,15 @@ export default function DebtFormScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground />
+      <FundoEcra />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <Text style={styles.title}>{existing ? 'Editar dívida' : 'Nova dívida'}</Text>
-            <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
+            <BotaoIcone icon={X} label="Fechar" onPress={() => router.back()} />
           </View>
 
-          <SegmentedControl
+          <ControloSegmentado
             options={[
               { value: 'owe', label: 'Devo' },
               { value: 'owed', label: 'Devem-me' },
@@ -88,15 +88,15 @@ export default function DebtFormScreen() {
           />
 
           <View style={styles.amountWrap}>
-            <MoneyText value={total} size="hero" />
+            <TextoValor value={total} size="hero" />
           </View>
 
-          <AmountKeypad
+          <TecladoValor
             onDigit={(key) => setDigits((current) => (current === '0' ? key : (current + key).slice(0, 12)))}
             onBackspace={() => setDigits((current) => current.slice(0, -1))}
           />
 
-          <Panel>
+          <Painel>
             <Text style={styles.label}>Pessoa ou entidade</Text>
             <TextInput
               value={party}
@@ -106,7 +106,7 @@ export default function DebtFormScreen() {
               style={styles.input}
               returnKeyType="done"
             />
-          </Panel>
+          </Painel>
 
           <View style={styles.section}>
             <Text style={styles.label}>Datas</Text>
@@ -120,7 +120,7 @@ export default function DebtFormScreen() {
             </View>
           </View>
 
-          <Panel>
+          <Painel>
             <Text style={styles.label}>Nota</Text>
             <TextInput
               value={note}
@@ -130,14 +130,14 @@ export default function DebtFormScreen() {
               style={styles.input}
               returnKeyType="done"
             />
-          </Panel>
+          </Painel>
 
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Guardar dívida"
             accessibilityState={{ disabled: !valid }}
             disabled={!valid}
-            onPress={handleSave}
+            onPress={guardar}
             style={[styles.saveWrap, !valid && styles.saveDisabled]}
           >
             <LinearGradient
@@ -173,8 +173,8 @@ export default function DebtFormScreen() {
 }
 
 function DateChip({ label, onPress }: { label: string; onPress: () => void }) {
-  const { gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
 
   return (
     <Pressable accessibilityRole="button" onPress={onPress}>
@@ -190,7 +190,7 @@ function DateChip({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
   root: {
     flex: 1,

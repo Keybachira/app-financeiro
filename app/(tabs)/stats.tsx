@@ -13,16 +13,16 @@ import {
   parseISO,
   pct,
   stLbl,
-  useTheme,
+  useTemaBase,
 } from "../../data";
-import { useAllMovements } from "../../src/features/movements/useMovements";
+import { useTodosMovimentos } from "../../src/features/movimentos/useMovimentos";
 import type { MovementRow } from "../../src/repos/movements";
-import { categoryVisual } from "../../src/ui/categoryVisuals";
+import { visualCategoria } from "../../src/ui/visuaisCategoria";
 
 export default function Estatisticas() {
-  const { t, s } = useTheme();
+  const { t, s } = useTemaBase();
   const ins = useSafeAreaInsets();
-  const { movements, refresh } = useAllMovements();
+  const { movements, refresh } = useTodosMovimentos();
   const [n, setN] = useState<7 | 30>(7);
   const [k, setK] = useState<"e" | "g">("e");
   const [sel, setSel] = useState<number | null>(null);
@@ -282,7 +282,7 @@ export default function Estatisticas() {
         <Text style={s.ehTxt}>Despesas por categoria</Text>
         {d.te > 0 ? (
           d.cats.map((c) => {
-            const x = categoryVisual(c);
+            const x = visualCategoria(c);
             return (
               <View
                 key={c}

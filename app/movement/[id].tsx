@@ -4,13 +4,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 
 import { getMovement, type MovementRow } from '../../src/repos/movements';
-import { MovementEditor } from '../../src/features/movements/MovementEditor';
-import { IconButton } from '../../src/ui/components/IconButton';
-import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
-import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../../src/ui/theme';
+import { EditorMovimento } from '../../src/features/movimentos/EditorMovimento';
+import { BotaoIcone } from '../../src/ui/componentes/BotaoIcone';
+import { FundoEcra } from '../../src/ui/componentes/FundoEcra';
+import { fonts, spacing, useTema, useEstilosTema, type Cores } from '../../src/ui/tema';
 
 export default function EditMovementScreen() {
-  const styles = useThemedStyles(makeStyles);
+  const styles = useEstilosTema(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const movementId = typeof id === 'string' ? id : null;
@@ -21,10 +21,10 @@ export default function EditMovementScreen() {
   if (movementId === null || movement === null) {
     return (
       <View style={styles.root}>
-        <ScreenBackground />
+        <FundoEcra />
         <View style={styles.header}>
           <Text style={styles.title}>Movimento</Text>
-          <IconButton icon={ArrowLeft} label="Voltar" onPress={() => router.back()} />
+          <BotaoIcone icon={ArrowLeft} label="Voltar" onPress={() => router.back()} />
         </View>
         <View style={styles.body}>
           <Text style={styles.message}>Este movimento já não existe.</Text>
@@ -33,10 +33,10 @@ export default function EditMovementScreen() {
     );
   }
 
-  return <MovementEditor movement={movement} />;
+  return <EditorMovimento movement={movement} />;
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
   root: {
     flex: 1,

@@ -4,27 +4,27 @@ import { useCallback } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { formatKz } from "../../src/domain/money";
-import { Fab } from "../../src/ui/components/Fab";
-import { GlassCard } from "../../src/ui/components/GlassCard";
-import { Screen } from "../../src/ui/components/Screen";
+import { BotaoFlutuante } from "../../src/ui/componentes/BotaoFlutuante";
+import { CartaoDestaque } from "../../src/ui/componentes/CartaoDestaque";
+import { Ecra } from "../../src/ui/componentes/Ecra";
 import {
   fonts,
   spacing,
-  useThemedStyles,
-  type Colors,
-} from "../../src/ui/theme";
-import { useProjects } from "../../src/features/projects/useProjects";
+  useEstilosTema,
+  type Cores,
+} from "../../src/ui/tema";
+import { useProjetos } from "../../src/features/projetos/useProjetos";
 import {
-  ProjectCard,
-  ProjectsEmptyState,
-} from "../../src/features/projects/ProjectCard";
-import { useGuardedAction } from "../../src/ui/useGuardedAction";
+  CartaoProjeto,
+  EstadoVazioProjetos,
+} from "../../src/features/projetos/CartaoProjeto";
+import { useAcaoProtegida } from "../../src/ui/useAcaoProtegida";
 
 export default function ProjectsScreen() {
-  const styles = useThemedStyles(makeStyles);
+  const styles = useEstilosTema(makeStyles);
   const router = useRouter();
-  const { active, settled, outstanding, refresh } = useProjects();
-  const openNewProject = useGuardedAction(() => router.push("/project/new"));
+  const { active, settled, outstanding, refresh } = useProjetos();
+  const openNewProject = useAcaoProtegida(() => router.push("/project/new"));
 
   useFocusEffect(
     useCallback(() => {
@@ -39,28 +39,28 @@ export default function ProjectsScreen() {
       : `${active.length} ${active.length === 1 ? "projeto ativo" : "projetos ativos"}`;
 
   return (
-    <Screen
+    <Ecra
       title="Projetos"
       subtitle={subtitle}
       floating={
-        <Fab icon={Plus} label="Novo projeto" onPress={openNewProject} />
+        <BotaoFlutuante icon={Plus} label="Novo projeto" onPress={openNewProject} />
       }
     >
-      <GlassCard>
+      <CartaoDestaque>
         <Text style={styles.cardLabel}>Por receber</Text>
         <Text style={styles.totalValue}>{formatKz(outstanding)}</Text>
         <View style={styles.contractedRow}>
           <Text style={styles.cardLabel}>Contratado nos ativos</Text>
           <Text style={styles.contractedValue}>{formatKz(contracted)}</Text>
         </View>
-      </GlassCard>
+      </CartaoDestaque>
 
       {active.length === 0 && settled.length === 0 ? (
-        <ProjectsEmptyState onCreate={openNewProject} />
+        <EstadoVazioProjetos onCreate={openNewProject} />
       ) : null}
 
       {active.map((view) => (
-        <ProjectCard
+        <CartaoProjeto
           key={view.project.id}
           view={view}
           onPress={() => router.push(`/project/${view.project.id}`)}
@@ -73,7 +73,7 @@ export default function ProjectsScreen() {
             Liquidados ({settled.length})
           </Text>
           {settled.map((view) => (
-            <ProjectCard
+            <CartaoProjeto
               key={view.project.id}
               view={view}
               onPress={() => router.push(`/project/${view.project.id}`)}
@@ -81,11 +81,11 @@ export default function ProjectsScreen() {
           ))}
         </>
       ) : null}
-    </Screen>
+    </Ecra>
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
     cardLabel: {
       fontFamily: fonts.regular,

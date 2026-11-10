@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Easing,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Delete, Lock } from "lucide-react-native";
 
-// [2026-11-10] Substituído pelo teclado circular abaixo (mantido para referência):
-// import { AmountKeypad } from '../src/ui/components/AmountKeypad';
-import { IconTile } from "../src/ui/components/IconTile";
-import { ScreenBackground } from "../src/ui/components/ScreenBackground";
-import { fonts, spacing, useThemedStyles, type Colors } from "../src/ui/theme";
-import { useLockState } from "../src/features/security/useLockState";
-import { useUserAvatar } from "../src/features/settings/useSettings";
-
-// [2026-11-10] Chave local onde o avatar configurado é guardado (ajusta se for outra)
+import { IconeCirculo } from "../src/ui/componentes/IconeCirculo";
+import { FundoEcra } from "../src/ui/componentes/FundoEcra";
+import { fonts, spacing, useEstilosTema, type Cores } from "../src/ui/tema";
+import { useEstadoBloqueio } from "../src/features/seguranca/useEstadoBloqueio";
+import { useAvatarUtilizador } from "../src/features/definicoes/useDefinicoes";
 
 const DIAS = [
   "Domingo",
@@ -42,7 +46,6 @@ const KEYS = [
   ["7", "8", "9"],
 ] as const;
 
-// [2026-11-10] Relógio + data ("08:05" / "Terça, 10 Nov"), atualiza a cada 15s
 function useNow() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -57,8 +60,6 @@ function useNow() {
   };
 }
 
-// [2026-11-10] Deteta tema escuro pela luminância do fundo (fallback: escuro).
-// Não depende de nenhum hook extra do tema.
 function isDarkColor(hex: string | undefined): boolean {
   if (!hex || typeof hex !== "string" || hex[0] !== "#") return true;
   let h = hex.slice(1);
@@ -77,10 +78,14 @@ function isDarkColor(hex: string | undefined): boolean {
 
 type LockScreenProps = {
   onUnlocked?: () => void;
-  avatarUri?: string | null; // [2026-11-10] avatar vindo do perfil (tem prioridade)
-  title?: string; // [2026-11-10]
-  subtitle?: string; // [2026-11-10]
-  onCancel?: () => void; // [2026-11-10] botão "Cancelar"
+  avatarUri?: string | null;
+  title?: string;
+  subtitle?: string;
+  onCancel?: () => void;
+  /** 'setup' cria um PIN novo (pede duas vezes) em vez de desbloquear. */
+  mode?: "unlock" | "setup";
+  /** Fim da criação do PIN, depois da animação de sucesso. */
+  onCreated?: () => void;
 };
 
 export function LockScreen({
@@ -89,106 +94,258 @@ export function LockScreen({
   title = "Introduz o PIN",
   subtitle = "Digita os 4 dígitos",
   onCancel,
+  mode = "unlock",
+  onCreated,
 }: LockScreenProps) {
-  const styles = useThemedStyles(makeStyles);
-  const { unlock } = useLockState();
-  const { avatar: configuredAvatar } = useUserAvatar();
+  const styles = useEstilosTema(makeStyles);
+  const { unlock, setPin, tentativasRestantes, bloqueadoAte } =
+    useEstadoBloqueio();
+  const { avatar: configuredAvatar } = useAvatarUtilizador();
   const [digits, setDigits] = useState("");
   const [error, setError] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  // Criação do PIN: escolhe 4 dígitos e depois repete para confirmar.
+  const [step, setStep] = useState<"primeiro" | "confirmar">("primeiro");
+  const [primeiro, setPrimeiro] = useState("");
   const { time, date } = useNow();
 
-  // [2026-11-10] Avatar: prop > guardado localmente > ícone de cadeado (fallback)
+  // Bloqueio temporário depois de várias tentativas erradas: conta os segundos
+  // que faltam e desliga o teclado até ao fim.
+  const [restante, setRestante] = useState(0);
+
+  useEffect(() => {
+    if (bloqueadoAte === null) {
+      setRestante(0);
+      return undefined;
+    }
+
+    const segundos = () =>
+      Math.max(0, Math.ceil((bloqueadoAte - Date.now()) / 1000));
+
+    let id: ReturnType<typeof setInterval>;
+    id = setInterval(() => {
+      const falta = segundos();
+      setRestante(falta);
+      if (falta === 0) {
+        clearInterval(id);
+      }
+    }, 1000);
+
+    setRestante(segundos());
+    return () => clearInterval(id);
+  }, [bloqueadoAte]);
+
+  const bloqueado = restante > 0;
+
+  // [2026-11-10] Animações de desbloqueio
+  const pop = useRef(new Animated.Value(1)).current; // pontos: "pop"
+  const out = useRef(new Animated.Value(0)).current; // ecrã: saída
+  const busy = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      pop.stopAnimation();
+      out.stopAnimation();
+    };
+  }, [pop, out]);
+
   const avatar = avatarUri || configuredAvatar || null;
 
-  // [2026-11-10] Cor do ícone de apagar vem do estilo do tema (igual à dos números)
   const deleteColor =
     (StyleSheet.flatten(styles.keyTxt) as { color?: string }).color ?? "#fff";
 
+  // No desbloqueio avisa o layout; na criação do PIN devolve o controlo ao
+  // ecrã que a abriu (o onboarding).
+  const finish = mode === "setup" ? onCreated : onUnlocked;
+
+  // [2026-11-10] Pontos ficam verdes + pop, depois o ecrã faz zoom e desvanece
+  const playUnlock = useCallback(() => {
+    setUnlocking(true);
+    Animated.sequence([
+      Animated.timing(pop, {
+        toValue: 1.6,
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(pop, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      Animated.timing(out, {
+        toValue: 1,
+        duration: 850,
+        easing: Easing.bezier(0.4, 0, 0.2, 1),
+        useNativeDriver: true,
+      }).start(() => finish?.());
+    });
+  }, [pop, out, finish]);
+
   const attempt = useCallback(
     async (pin: string) => {
+      if (busy.current) return;
+      busy.current = true;
+
       const ok = await unlock(pin);
 
       if (ok) {
-        onUnlocked?.();
+        playUnlock();
         return;
       }
 
+      busy.current = false;
       setError(true);
       setDigits("");
     },
-    [unlock, onUnlocked],
+    [unlock, playUnlock],
+  );
+
+  // Só guarda o PIN quando a segunda introdução coincide com a primeira.
+  const criar = useCallback(
+    async (pin: string) => {
+      if (busy.current) return;
+      busy.current = true;
+
+      try {
+        await setPin(pin);
+        playUnlock();
+      } catch {
+        busy.current = false;
+        setError(true);
+        setDigits("");
+        setPrimeiro("");
+        setStep("primeiro");
+      }
+    },
+    [playUnlock, setPin],
   );
 
   useEffect(() => {
-    if (digits.length === 4) {
+    if (mode !== "setup" || digits.length !== 4) return;
+
+    if (step === "primeiro") {
+      setPrimeiro(digits);
+      setDigits("");
+      setStep("confirmar");
+      return;
+    }
+
+    if (digits === primeiro) {
+      void criar(digits);
+      return;
+    }
+
+    setError(true);
+    setDigits("");
+    setPrimeiro("");
+    setStep("primeiro");
+  }, [criar, digits, mode, primeiro, step]);
+
+  useEffect(() => {
+    if (mode === "unlock" && digits.length === 4 && !bloqueado) {
       void attempt(digits);
     }
-  }, [digits, attempt]);
+  }, [attempt, bloqueado, digits, mode]);
 
-  // [2026-11-10] Handlers do teclado
   const onDigit = (key: string) => {
-    // `slice` é obrigatório para nunca passar de 4 dígitos
+    if (unlocking || bloqueado) return;
     setError(false);
     setDigits((current) => (current + key).slice(0, 4));
   };
   const onBackspace = () => {
+    if (unlocking || bloqueado) return;
     setError(false);
     setDigits((current) => current.slice(0, -1));
   };
   const handleCancel = () => {
+    if (unlocking) return;
     setError(false);
     setDigits("");
     onCancel?.();
   };
 
   return (
-    <View style={styles.root}>
-      <ScreenBackground />
+    <Animated.View
+      pointerEvents={unlocking ? "none" : "auto"}
+      style={[
+        styles.root,
+        {
+          opacity: out.interpolate({
+            inputRange: [0, 0.4, 1],
+            outputRange: [1, 1, 0],
+          }),
+          transform: [
+            {
+              scale: out.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 1.2],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <FundoEcra />
       <View style={styles.body}>
-        {/* [2026-11-10] Relógio e data */}
         <View style={styles.clockWrap}>
           <Text style={styles.clock}>{time}</Text>
           <Text style={styles.date}>{date}</Text>
         </View>
 
         <View style={styles.header}>
-          {/* [2026-11-10] Avatar com anéis */}
           <View style={styles.ringOuter}>
             <View style={styles.ringInner}>
               {avatar ? (
                 <Image source={{ uri: avatar }} style={styles.avatar} />
               ) : (
-                <IconTile icon={Lock} size={64} iconSize={28} />
+                <IconeCirculo icon={Lock} size={64} iconSize={28} />
               )}
             </View>
           </View>
-          {/* [2026-11-10] Antes:
-          <IconTile icon={Lock} size={64} iconSize={28} />
-          <Text style={styles.title}>Aplicação bloqueada</Text>
-          <Text style={styles.subtitle}>Introduz o PIN de 4 dígitos para continuar.</Text>
-          */}
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <Text style={styles.subtitle}>
+            {mode === "setup"
+              ? step === "primeiro"
+                ? "Escolhe 4 dígitos"
+                : "Repete o PIN para confirmar"
+              : subtitle}
+          </Text>
         </View>
 
         <View style={styles.pinWrap}>
           {[0, 1, 2, 3].map((index) => (
-            <View
+            <Animated.View
               key={index}
               style={[
                 styles.pinDot,
                 index < digits.length && styles.pinDotFilled,
+                unlocking && styles.pinDotOk,
+                { transform: [{ scale: pop }] },
               ]}
             />
           ))}
         </View>
 
-        {error ? (
-          <Text style={styles.error}>PIN incorreto. Tenta outra vez.</Text>
+        {mode === "unlock" && bloqueado ? (
+          <Text style={styles.error}>
+            Demasiadas tentativas. Tenta outra vez dentro de {restante}s.
+          </Text>
+        ) : error ? (
+          <Text style={styles.error}>
+            {mode === "setup"
+              ? "Os PIN não coincidem. Tenta outra vez."
+              : tentativasRestantes <= 2
+                ? tentativasRestantes === 1
+                  ? "PIN incorreto · resta 1 tentativa"
+                  : `PIN incorreto · restam ${tentativasRestantes} tentativas`
+                : "PIN incorreto. Tenta outra vez."}
+          </Text>
         ) : null}
 
-        {/* [2026-11-10] Teclado circular (substitui o AmountKeypad) */}
-        <View style={styles.keypad}>
+        <View style={[styles.keypad, bloqueado && styles.keypadBlocked]}>
           {KEYS.map((row, i) => (
             <View key={i} style={styles.row}>
               {row.map((k) => (
@@ -233,25 +390,21 @@ export function LockScreen({
               onPress={onBackspace}
               accessibilityLabel="Apagar"
             >
-              {/* [2026-11-10] antes: color={colors_text} (branco fixo) */}
               <Delete size={24} color={deleteColor} />
             </Pressable>
           </View>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
 export default LockScreen;
 
-// [2026-11-10] Cor do ícone de apagar (branco fixo) — substituída por deleteColor, que segue o tema:
-// const colors_text = "#fff";
-
 const KEY = 68;
+const POS = "#1f9d57"; // verde de sucesso (igual ao --pos do protótipo)
 
-const makeStyles = (colors: Colors) => {
-  // [2026-11-10] Paleta dependente do tema
+const makeStyles = (colors: Cores) => {
   const dark = isDarkColor(colors.bg);
   const keyBg = dark ? "#ffffff14" : "#ffffff";
   const keyAltBg = dark ? "#ffffff0d" : "#ffffffcc";
@@ -269,13 +422,11 @@ const makeStyles = (colors: Colors) => {
       gap: spacing.lg,
       alignItems: "center",
     },
-    // [2026-11-10] novos
     clockWrap: { alignItems: "center", marginTop: spacing.lg },
     clock: {
       fontFamily: fonts.bold,
       fontSize: 56,
       lineHeight: 64,
-      // [2026-11-10] antes: color: "#fff",
       color: colors.text,
       letterSpacing: -1,
     },
@@ -340,6 +491,11 @@ const makeStyles = (colors: Colors) => {
       backgroundColor: colors.accent,
       borderColor: colors.accent,
     },
+    // [2026-11-10] pontos verdes no desbloqueio
+    pinDotOk: {
+      backgroundColor: POS,
+      borderColor: POS,
+    },
     error: {
       fontFamily: fonts.medium,
       fontSize: 14,
@@ -350,19 +506,17 @@ const makeStyles = (colors: Colors) => {
       marginTop: spacing.md,
       gap: 14,
     },
+    keypadBlocked: { opacity: 0.4 },
     row: { flexDirection: "row", gap: 14, justifyContent: "center" },
     key: {
       width: KEY,
       height: KEY,
       borderRadius: KEY / 2,
-      // [2026-11-10] antes: backgroundColor: "#ffffff14",
       backgroundColor: keyBg,
       alignItems: "center",
       justifyContent: "center",
     },
-    // [2026-11-10] antes: keyAlt: { backgroundColor: "#ffffff0d" },
     keyAlt: { backgroundColor: keyAltBg },
-    // [2026-11-10] antes: keyPressed: { backgroundColor: "#ffffff2e" },
     keyPressed: { backgroundColor: keyPressedBg },
     keyGhost: {
       width: KEY,
@@ -370,7 +524,6 @@ const makeStyles = (colors: Colors) => {
       alignItems: "center",
       justifyContent: "center",
     },
-    // [2026-11-10] antes: color: "#fff"
     keyTxt: { fontFamily: fonts.medium, fontSize: 24, color: colors.text },
     cancelTxt: {
       fontFamily: fonts.regular,

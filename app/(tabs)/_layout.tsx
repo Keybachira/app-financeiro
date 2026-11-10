@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import { FONT, ICON } from "../../data";
-import { useTheme, useThemedStyles, type Colors } from "../../src/ui/theme";
+import { useTema, useEstilosTema, type Cores } from "../../src/ui/tema";
 
 type IconName = ComponentProps<typeof Feather>["name"];
 
@@ -58,8 +58,8 @@ function TabItem({
   focused: boolean;
   onPress: () => void;
 }) {
-  const { colors } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTema();
+  const styles = useEstilosTema(makeStyles);
   // 0 = botão circular escuro, 1 = pílula branca com rótulo.
   const focus = useRef(new Animated.Value(focused ? 1 : 0)).current;
   const [labelWidth, setLabelWidth] = useState(0);
@@ -146,7 +146,7 @@ function TabItem({
 }
 
 function PillTabBar({ state, navigation, insets }: PillTabBarProps) {
-  const styles = useThemedStyles(makeStyles);
+  const styles = useEstilosTema(makeStyles);
 
   return (
     <View
@@ -167,7 +167,7 @@ function PillTabBar({ state, navigation, insets }: PillTabBarProps) {
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
     host: {
       position: "absolute",

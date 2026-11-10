@@ -5,19 +5,19 @@ import { StyleSheet, Text } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { formatKz } from "../../src/domain/money";
-import { Fab } from "../../src/ui/components/Fab";
-import { Screen } from "../../src/ui/components/Screen";
-import { fonts, radius, spacing, useTheme, useThemedStyles, type Colors } from "../../src/ui/theme";
-import { useGoals } from "../../src/features/goals/useGoals";
-import { GoalCard, GoalsEmptyState } from "../../src/features/goals/GoalCard";
+import { BotaoFlutuante } from "../../src/ui/componentes/BotaoFlutuante";
+import { Ecra } from "../../src/ui/componentes/Ecra";
+import { fonts, radius, spacing, useTema, useEstilosTema, type Cores } from "../../src/ui/tema";
+import { useMetas } from "../../src/features/metas/useMetas";
+import { CartaoMeta, EstadoVazioMetas } from "../../src/features/metas/CartaoMeta";
 
-import { useGuardedAction } from "../../src/ui/useGuardedAction";
+import { useAcaoProtegida } from "../../src/ui/useAcaoProtegida";
 
 export default function GoalsScreen() {
-  const styles = useThemedStyles(makeStyles);
+  const styles = useEstilosTema(makeStyles);
   const router = useRouter();
-  const { active, completed, reserved, refresh } = useGoals();
-  const openNewGoal = useGuardedAction(() => router.push("/goal/new"));
+  const { active, completed, reserved, refresh } = useMetas();
+  const openNewGoal = useAcaoProtegida(() => router.push("/goal/new"));
 
   useFocusEffect(
     useCallback(() => {
@@ -26,13 +26,13 @@ export default function GoalsScreen() {
   );
 
   return (
-    <Screen
+    <Ecra
       title="Metas"
       right={<ReservedBadge value={reserved} />}
-      floating={<Fab icon={Plus} label="Nova meta" onPress={openNewGoal} />}
+      floating={<BotaoFlutuante icon={Plus} label="Nova meta" onPress={openNewGoal} />}
     >
       {active.map((view) => (
-        <GoalCard
+        <CartaoMeta
           key={view.goal.id}
           view={view}
           onPress={() => router.push(`/goal/${view.goal.id}`)}
@@ -40,7 +40,7 @@ export default function GoalsScreen() {
       ))}
 
       {active.length === 0 && completed.length === 0 ? (
-        <GoalsEmptyState onCreate={openNewGoal} />
+        <EstadoVazioMetas onCreate={openNewGoal} />
       ) : null}
 
       {completed.length > 0 ? (
@@ -49,7 +49,7 @@ export default function GoalsScreen() {
             Concluídas ({completed.length})
           </Text>
           {completed.map((view) => (
-            <GoalCard
+            <CartaoMeta
               key={view.goal.id}
               view={view}
               onPress={() => router.push(`/goal/${view.goal.id}`)}
@@ -57,13 +57,13 @@ export default function GoalsScreen() {
           ))}
         </>
       ) : null}
-    </Screen>
+    </Ecra>
   );
 }
 
 function ReservedBadge({ value }: { value: number }) {
-  const { gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
 
   return (
     <LinearGradient
@@ -77,7 +77,7 @@ function ReservedBadge({ value }: { value: number }) {
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
   sectionTitle: {
     marginTop: spacing.sm,

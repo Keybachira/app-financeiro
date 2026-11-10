@@ -4,24 +4,24 @@ import { useCallback } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { formatKz } from "../../src/domain/money";
-import { Fab } from "../../src/ui/components/Fab";
-import { GlassCard } from "../../src/ui/components/GlassCard";
-import { Screen } from "../../src/ui/components/Screen";
+import { BotaoFlutuante } from "../../src/ui/componentes/BotaoFlutuante";
+import { CartaoDestaque } from "../../src/ui/componentes/CartaoDestaque";
+import { Ecra } from "../../src/ui/componentes/Ecra";
 import {
   fonts,
   spacing,
-  useThemedStyles,
-  type Colors,
-} from "../../src/ui/theme";
-import { useDebts } from "../../src/features/debts/useDebts";
-import { DebtCard, DebtEmptyState } from "../../src/features/debts/DebtCard";
-import { useGuardedAction } from "../../src/ui/useGuardedAction";
+  useEstilosTema,
+  type Cores,
+} from "../../src/ui/tema";
+import { useDividas } from "../../src/features/dividas/useDividas";
+import { CartaoDivida, EstadoVazioDividas } from "../../src/features/dividas/CartaoDivida";
+import { useAcaoProtegida } from "../../src/ui/useAcaoProtegida";
 
 export default function DebtsScreen() {
-  const styles = useThemedStyles(makeStyles);
+  const styles = useEstilosTema(makeStyles);
   const router = useRouter();
-  const { views, totals, refresh } = useDebts();
-  const openNewDebt = useGuardedAction(() => router.push("/debt/new"));
+  const { views, totals, refresh } = useDividas();
+  const openNewDebt = useAcaoProtegida(() => router.push("/debt/new"));
 
   useFocusEffect(
     useCallback(() => {
@@ -37,12 +37,12 @@ export default function DebtsScreen() {
       : `${open.length} ${open.length === 1 ? "dívida em aberto" : "dívidas em aberto"}`;
 
   return (
-    <Screen
+    <Ecra
       title="Dívidas"
       subtitle={subtitle}
-      floating={<Fab icon={Plus} label="Nova dívida" onPress={openNewDebt} />}
+      floating={<BotaoFlutuante icon={Plus} label="Nova dívida" onPress={openNewDebt} />}
     >
-      <GlassCard>
+      <CartaoDestaque>
         <Text style={styles.cardLabel}>Em aberto</Text>
         <View style={styles.totalsRow}>
           <View style={styles.totalBlock}>
@@ -54,12 +54,12 @@ export default function DebtsScreen() {
             <Text style={styles.totalValue}>{formatKz(totals.owed)}</Text>
           </View>
         </View>
-      </GlassCard>
+      </CartaoDestaque>
 
-      {views.length === 0 ? <DebtEmptyState onCreate={openNewDebt} /> : null}
+      {views.length === 0 ? <EstadoVazioDividas onCreate={openNewDebt} /> : null}
 
       {open.map((view) => (
-        <DebtCard
+        <CartaoDivida
           key={view.debt.id}
           view={view}
           onPress={() => router.push(`/debt/${view.debt.id}`)}
@@ -70,7 +70,7 @@ export default function DebtsScreen() {
         <>
           <Text style={styles.sectionTitle}>Liquidadas ({paid.length})</Text>
           {paid.map((view) => (
-            <DebtCard
+            <CartaoDivida
               key={view.debt.id}
               view={view}
               onPress={() => router.push(`/debt/${view.debt.id}`)}
@@ -78,11 +78,11 @@ export default function DebtsScreen() {
           ))}
         </>
       ) : null}
-    </Screen>
+    </Ecra>
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
     cardLabel: {
       fontFamily: fonts.regular,

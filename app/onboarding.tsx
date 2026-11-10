@@ -1,5 +1,7 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
+  Animated,
+  Easing,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -12,19 +14,17 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ICON, num, useTheme } from "../data";
-import { createMovement } from "../src/repos/movements";
-import { todayISO } from "../src/domain/dates";
-import { useModuleConfig } from "../src/features/modules/useModuleConfig";
-import { useUserName } from "../src/features/settings/useSettings";
-import { useAppPreferences } from "../src/features/settings/useAppPreferences";
-import { useLockState } from "../src/features/security/useLockState";
+import { ICON, num, useTemaBase } from "../data";
+import { useConfigModulos } from "../src/features/modulos/useConfigModulos";
+import { useNomeUtilizador } from "../src/features/definicoes/useDefinicoes";
+import { usePreferenciasApp } from "../src/features/definicoes/usePreferenciasApp";
+import { useEstadoBloqueio } from "../src/features/seguranca/useEstadoBloqueio";
 import { setSetting } from "../src/repos/settings";
-import { AmountKeypad } from "../src/ui/components/AmountKeypad";
+import { LockScreen } from "./lock";
 
 // Passos: 0 boas-vindas · 1 nome · 2 situação · 3 dados · 4 PIN · 5 pronto
 export default function Onboarding() {
-  const { t, s } = useTheme();
+  const { t, s } = useTemaBase();
   const ins = useSafeAreaInsets();
   const [step, setStep] = useState(0);
   const [nome, setNome] = useState("");
@@ -34,14 +34,26 @@ export default function Onboarding() {
   const [valor, setValor] = useState("");
   const [pinEnabled, setPinEnabled] = useState<boolean | null>(null);
   const [erro, setErro] = useState("");
-  const [digits, setDigits] = useState("");
-  const [pinBusy, setPinBusy] = useState(false);
+  // O PIN é definido no ecrã de bloqueio, aberto por cima do onboarding.
+  const [pinSetup, setPinSetup] = useState(false);
 
-  const { setPin, removePin, hasPin, enabled } = useLockState();
-  const { setName } = useUserName();
-  const { setProfile } = useModuleConfig();
-  const { completeOnboarding } = useAppPreferences();
+  const { removePin, hasPin } = useEstadoBloqueio();
+  const { setName } = useNomeUtilizador();
+  const { setProfile } = useConfigModulos();
+  const { completeOnboarding } = usePreferenciasApp();
   const est = perfil === "e";
+
+  // Animação de entrada de cada passo (fade + deslize, como no protótipo)
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    anim.setValue(0);
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 300,
+      easing: Easing.bezier(0.2, 0.8, 0.2, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [step, anim]);
 
   const label =
     step === 0 ? "Começar" : step === 5 ? "Entrar na app" : "Continuar";
@@ -49,13 +61,6 @@ export default function Onboarding() {
   const sair = () =>
     router.canGoBack() ? router.back() : router.replace("/" as never);
 
-  // Set PIN - stores hash in SQLite via useLockState
-  const setPinHandler = useCallback(async (pin: string) => {
-    await setPin(pin);
-    setPinEnabled(true);
-  }, [setPin]);
-
-  // Remove PIN - clears from SQLite
   const removePinHandler = useCallback(async () => {
     await removePin();
     setPinEnabled(false);
@@ -68,19 +73,9 @@ export default function Onboarding() {
     if (step === 3 && renda && !(num(valor) > 0))
       return setErro("Indica o valor");
     if (step === 4) {
-      if (pinEnabled === null) return setErro("Escolhe uma opÃ§Ã£o");
-      if (pinEnabled && digits.length !== 4)
-        return setErro("Define um PIN de 4 dÃ­gitos");
-      if (pinEnabled) {
-        setPinBusy(true);
-        try {
-          await setPinHandler(digits);
-        } catch {
-          setPinBusy(false);
-          return setErro("NÃ£o foi possÃ­vel guardar o PIN");
-        }
-        setPinBusy(false);
-      }
+      if (pinEnabled === null) return setErro("Escolhe uma opção");
+      // O PIN já foi criado no ecrã de bloqueio; aqui só se confirma que existe.
+      if (pinEnabled && !hasPin) return setErro("Define um PIN de 4 dígitos");
     }
     if (step === 5) {
       setName(nome);
@@ -88,15 +83,13 @@ export default function Onboarding() {
       if (idade.trim()) {
         setSetting("user_age", idade.trim());
       }
+      // A mesada/salário fica só como configuração (pré-enche o ecrã do
+      // salário). Não se cria nenhuma receita: o dinheiro só deve entrar no
+      // saldo quando o utilizador o registar, ou quando ativar o lançamento
+      // automático no ecrã do salário.
       const amount = num(valor);
       if (renda && amount > 0) {
-        createMovement({
-          type: "income",
-          amount,
-          category: est ? "Extra" : "Salário",
-          date: todayISO(),
-          note: est ? "Mesada" : "Salário",
-        });
+        setSetting("salary_amount", String(amount));
       }
       completeOnboarding();
       return sair();
@@ -117,11 +110,11 @@ export default function Onboarding() {
     sub: string;
     onPress: () => void;
   }) => (
-    <Pressable style={[s.oc, on && s.ocOn]} onPress={onPress} >
-      <View style={[s.circQ, { width: 46, height: 46, borderRadius: 23 }]} >
+    <Pressable style={[s.oc, on && s.ocOn]} onPress={onPress}>
+      <View style={[s.circQ, { width: 46, height: 46, borderRadius: 23 }]}>
         <Feather name={ICON[icon]} size={20} color={t.text} />
       </View>
-      <View style={{ flex: 1 }} >
+      <View style={{ flex: 1 }}>
         <Text style={s.itTxt}>{titulo}</Text>
         <Text style={s.itSub}>{sub}</Text>
       </View>
@@ -142,14 +135,7 @@ export default function Onboarding() {
         }}
       >
         {/* progresso */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-            minHeight: 46,
-          }}
-        >
+        <View style={styles.top}>
           {step > 0 && (
             <Pressable
               style={s.circ}
@@ -159,16 +145,14 @@ export default function Onboarding() {
               <Feather name={ICON.back} size={20} color={t.text} />
             </Pressable>
           )}
-          <View style={{ flex: 1, flexDirection: "row", gap: 6 }}>
+          <View style={styles.progress}>
             {[1, 2, 3, 4].map((i) => (
               <View
                 key={i}
-                style={{
-                  flex: 1,
-                  height: 4,
-                  borderRadius: 4,
-                  backgroundColor: i <= step ? t.acc : t.ring,
-                }}
+                style={[
+                  styles.bar,
+                  { backgroundColor: i <= step ? t.acc : t.ring },
+                ]}
               />
             ))}
           </View>
@@ -180,243 +164,228 @@ export default function Onboarding() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {step === 0 && (
-            <View style={{ alignItems: "center", paddingTop: 50 }} >
-              <View style={s.okc}>
-                <Feather name={ICON.debt} size={44} color="#fff" />
-              </View>
-              <Text style={[s.h1, { marginTop: 0, textAlign: "center" }]}>
-                Bem-vindo ao Meu Kumbo
-              </Text>
-              <Text style={[s.sub, { textAlign: "center" }]}>
-                Vamos configurar a tua conta em menos de um minuto.
-              </Text>
-            </View>
-          )}
-
-          {step === 1 && (
-            <>
-              <Text style={[s.h1, { marginTop: 0 }]}>Como te chamas?</Text>
-              <Text style={s.sub}>Vamos personalizar a tua experiência.</Text>
-              <View
-                style={{ alignItems: "center", marginTop: 26, marginBottom: 8 }}
-              >
-                <View style={[s.av, s.avBig]} >
-                  <Text style={[s.avTxt, { fontSize: 26 }]} >
-                    {(nome.trim().charAt(0) || "+").toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-              <TextInput
-                style={s.inputBox}
-                value={nome}
-                onChangeText={setNome}
-                placeholder="O teu nome"
-                placeholderTextColor={t.muted}
-                maxLength={24}
-              />
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <Text style={[s.h1, { marginTop: 0 }]} >
-                O que descreve melhor a tua situação?
-              </Text>
-              <Text style={s.sub}>Adaptamos a app ao teu dia a dia.</Text>
-              <Opcao
-                on={perfil === "e"}
-                icon="goal"
-                titulo="Estudante"
-                sub="Mesada, poupanças e gastos do dia a dia"
-                onPress={() => {
-                  setPerfil("e");
-                  setRenda(null);
-                }}
-              />
-              <Opcao
-                on={perfil === "p"}
-                icon="debt"
-                titulo="Profissional"
-                sub="Salário, contas fixas e metas"
-                onPress={() => {
-                  setPerfil("p");
-                  setRenda(null);
-                }}
-              />
-            </>
-          )}
-
-          {step === 3 && (
-            <>
-              <Text style={[s.h1, { marginTop: 0 }]}>Fala-nos de ti</Text>
-              <Text style={s.fl}>Idade</Text>
-              <TextInput
-                style={s.inputBox}
-                value={idade}
-                onChangeText={(v) => setIdade(v.replace(/\D/g, ""))}
-                keyboardType="number-pad"
-                maxLength={2}
-                placeholder="Ex.: 21"
-                placeholderTextColor={t.muted}
-              />
-              <Text style={[s.fl, { marginTop: 20 }]} >
-                {est ? "Recebes mesada?" : "Trabalhas atualmente?"}
-              </Text>
-              <View style={[s.seg, { backgroundColor: t.panel, marginTop: 8 }]}>
-                {[true, false].map((v, i) => (
-                  <Pressable
-                    key={i}
-                    style={s.segBtn}
-                    onPress={() => setRenda(v)}
-                  >
-                    <Text style={[s.segTxt, renda === v && s.segTxtOn]}>{v ? "Sim" : "Não"}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              {renda && (
-                <TextInput
-                  style={s.inputBox}
-                  value={valor}
-                  onChangeText={setValor}
-                  keyboardType="decimal-pad"
-                  placeholder={
-                    est
-                      ? "Valor da mesada por mês (Kz)"
-                      : "Salário mensal (Kz)"
-                  }
-                  placeholderTextColor={t.muted}
-                />
-              )}
-            </>
-          )}
-
-          {step === 4 && (
-            <>
-              <Text style={[s.h1, { marginTop: 0 }]}>Protege os teus dados</Text>
-              <Text style={s.sub}>Queres pedir um PIN ao abrir a app?</Text>
-              <Opcao
-                on={pinEnabled === true}
-                icon="lock"
-                titulo="Sim, criar PIN"
-                sub="4 dígitos para abrir a app"
-                onPress={() => {
-                  setPinEnabled(true);
-                  setDigits("");
-                }}
-              />
-              <Opcao
-                on={pinEnabled === false}
-                icon="set"
-                titulo="Agora não"
-                sub="Podes ativar depois em Ajustes"
-                onPress={() => {
-                  void removePinHandler();
-                  setPinEnabled(false);
-                  setDigits("");
-                }}
-              />
-              {pinEnabled && (
-                <>
-                  <View style={{ flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 20 }}>
-              {[0, 1, 2, 3].map((index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.pinDot,
-                    index < digits.length && {
-                      backgroundColor: t.acc,
-                      borderColor: t.acc,
-                    },
-                  ]}
-                />
-                    ))}
-                  </View>
-                  <View style={{ marginTop: 18 }}>
-                    <AmountKeypad
-                      onDigit={(key) => setDigits((current) => (current + key).slice(0, 4))}
-                      onBackspace={() => setDigits((current) => current.slice(0, -1))}
-                    />
-                  </View>
-                </>
-              )}
-            </>
-          )}
-
-          {step === 5 && (
-            <View style={{ alignItems: "center", paddingTop: 50 }} >
-              <View style={[s.okc, { borderRadius: 48 }]} >
-                <Feather name={ICON.ok} size={44} color="#fff" />
-              </View>
-              <Text style={[s.h1, { marginTop: 0, textAlign: "center" }]}>
-                Tudo pronto, {nome.trim() || "amigo"}!
-              </Text>
-              <Text style={[s.sub, { textAlign: "center" }]}>
-                Perfil {est ? "Estudante" : "Profissional"} configurado. Já podes organizar o teu dinheiro.
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-
-        {!!erro && (
-          <Text
+          <Animated.View
             style={{
-              color: t.neg,
-              fontSize: 12,
-              textAlign: "center",
-              marginTop: 8,
+              opacity: anim,
+              transform: [
+                {
+                  translateX: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [14, 0],
+                  }),
+                },
+              ],
             }}
           >
-            {erro}
-          </Text>
-        )}
+            {step === 0 && (
+              <View style={{ alignItems: "center", paddingTop: 50 }}>
+                <View style={[s.okc, { borderRadius: 30 }]}>
+                  <Feather name={ICON.debt} size={44} color="#fff" />
+                </View>
+                <Text style={[s.h1, { marginTop: 0, textAlign: "center" }]}>
+                  Bem-vindo ao Meu Kumbo
+                </Text>
+                <Text style={[s.sub, { textAlign: "center" }]}>
+                  Vamos configurar a tua conta em menos de um minuto.
+                </Text>
+              </View>
+            )}
+
+            {step === 1 && (
+              <>
+                <Text style={[s.h1, { marginTop: 0 }]}>Como te chamas?</Text>
+                <Text style={s.sub}>Vamos personalizar a tua experiência.</Text>
+                <View
+                  style={{
+                    alignItems: "center",
+                    marginTop: 26,
+                    marginBottom: 8,
+                  }}
+                >
+                  <View style={[s.av, s.avBig]}>
+                    <Text style={[s.avTxt, { fontSize: 26 }]}>
+                      {(nome.trim().charAt(0) || "+").toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+                <TextInput
+                  style={s.inputBox}
+                  value={nome}
+                  onChangeText={setNome}
+                  placeholder="O teu nome"
+                  placeholderTextColor={t.muted}
+                  maxLength={24}
+                />
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <Text style={[s.h1, { marginTop: 0 }]}>
+                  O que descreve melhor a tua situação?
+                </Text>
+                <Text style={s.sub}>Adaptamos a app ao teu dia a dia.</Text>
+                <Opcao
+                  on={perfil === "e"}
+                  icon="goal"
+                  titulo="Estudante"
+                  sub="Mesada, poupanças e gastos do dia a dia"
+                  onPress={() => {
+                    setPerfil("e");
+                    setRenda(null);
+                  }}
+                />
+                <Opcao
+                  on={perfil === "p"}
+                  icon="debt"
+                  titulo="Profissional"
+                  sub="Salário, contas fixas e metas"
+                  onPress={() => {
+                    setPerfil("p");
+                    setRenda(null);
+                  }}
+                />
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <Text style={[s.h1, { marginTop: 0 }]}>Fala-nos de ti</Text>
+                <Text style={[s.fl, { marginTop: 16 }]}>Idade</Text>
+                <TextInput
+                  style={s.inputBox}
+                  value={idade}
+                  onChangeText={(v) => setIdade(v.replace(/\D/g, ""))}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  placeholder="Ex.: 21"
+                  placeholderTextColor={t.muted}
+                />
+                <Text style={[s.fl, { marginTop: 20 }]}>
+                  {est ? "Recebes mesada?" : "Trabalhas atualmente?"}
+                </Text>
+                <View
+                  style={[s.seg, { backgroundColor: t.panel, marginTop: 8 }]}
+                >
+                  {[true, false].map((v, i) => (
+                    <Pressable
+                      key={i}
+                      style={[
+                        s.segBtn,
+                        renda === v && { backgroundColor: t.acc },
+                      ]}
+                      onPress={() => setRenda(v)}
+                    >
+                      <Text style={[s.segTxt, renda === v && s.segTxtOn]}>
+                        {v ? "Sim" : "Não"}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {renda && (
+                  <TextInput
+                    style={s.inputBox}
+                    value={valor}
+                    onChangeText={setValor}
+                    keyboardType="decimal-pad"
+                    placeholder={
+                      est
+                        ? "Valor da mesada por mês (Kz)"
+                        : "Salário mensal (Kz)"
+                    }
+                    placeholderTextColor={t.muted}
+                  />
+                )}
+              </>
+            )}
+
+            {step === 4 && (
+              <>
+                <Text style={[s.h1, { marginTop: 0 }]}>
+                  Protege os teus dados
+                </Text>
+                <Text style={s.sub}>Queres pedir um PIN ao abrir a app?</Text>
+                <Opcao
+                  on={pinEnabled === true}
+                  icon="lock"
+                  titulo="Sim, criar PIN"
+                  sub={
+                    pinEnabled === true && hasPin
+                      ? "PIN definido · toca para alterar"
+                      : "4 dígitos para abrir a app"
+                  }
+                  onPress={() => {
+                    setPinEnabled(true);
+                    setPinSetup(true);
+                  }}
+                />
+                <Opcao
+                  on={pinEnabled === false}
+                  icon="set"
+                  titulo="Agora não"
+                  sub="Podes ativar depois em Ajustes"
+                  onPress={() => {
+                    void removePinHandler();
+                    setPinEnabled(false);
+                  }}
+                />
+              </>
+            )}
+
+            {step === 5 && (
+              <View style={{ alignItems: "center", paddingTop: 50 }}>
+                <View style={[s.okc, { borderRadius: 48 }]}>
+                  <Feather name={ICON.ok} size={44} color="#fff" />
+                </View>
+                <Text style={[s.h1, { marginTop: 0, textAlign: "center" }]}>
+                  Tudo pronto, {nome.trim() || "amigo"}!
+                </Text>
+                <Text style={[s.sub, { textAlign: "center" }]}>
+                  Perfil {est ? "Estudante" : "Profissional"} configurado. Já
+                  podes organizar o teu dinheiro.
+                </Text>
+              </View>
+            )}
+          </Animated.View>
+        </ScrollView>
+
+        {!!erro && <Text style={[styles.erro, { color: t.neg }]}>{erro}</Text>}
 
         <Pressable
-          style={[s.go, pinBusy && { opacity: 0.6 }]}
-          disabled={pinBusy}
+          style={[s.go, { marginTop: 18 }]}
           onPress={() => void avancar()}
         >
           <Text style={s.goTxt}>{label}</Text>
         </Pressable>
       </View>
+
+      {/* O ecrã de bloqueio real, em modo de criação, por cima do onboarding. */}
+      {pinSetup ? (
+        <View style={StyleSheet.absoluteFill}>
+          <LockScreen
+            mode="setup"
+            title="Cria o teu PIN"
+            onCreated={() => setPinSetup(false)}
+            onCancel={() => {
+              // Cancelar não apaga um PIN que já exista: só desfaz a escolha.
+              setPinEnabled(hasPin);
+              setPinSetup(false);
+            }}
+          />
+        </View>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  pinDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-  },
-  pinDotFilled: {
-    backgroundColor: "#9C32D7",
-    borderColor: "#9C32D7",
-  },
-  key: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: "#F0DDF8",
+  top: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    margin: 2,
+    gap: 12,
+    minHeight: 46,
   },
-  keyTxt: { fontSize: 24, color: "#8123B9" },
-  back: {
-    marginTop: 20,
-    backgroundColor: "#F0DDF8",
-    borderRadius: 20,
-    padding: 8,
-  },
-  backTxt: { color: "#8123B9", fontWeight: "bold" },
-  confirm: {
-    marginTop: 20,
-    backgroundColor: "#9C32D7",
-    borderRadius: 20,
-    padding: 8,
-  },
-  confirmTxt: { color: "#fff", fontWeight: "bold" },
+  progress: { flex: 1, flexDirection: "row", gap: 6 },
+  bar: { flex: 1, height: 4, borderRadius: 4 },
+  erro: { fontSize: 12, textAlign: "center", marginTop: 8 },
 });

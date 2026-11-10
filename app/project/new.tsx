@@ -6,22 +6,22 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 
 import { formatDayMonthPt, isValidDate, parseISO, toISO, todayISO } from '../../src/domain/dates';
-import { AmountKeypad } from '../../src/ui/components/AmountKeypad';
-import { IconButton } from '../../src/ui/components/IconButton';
-import { MoneyText } from '../../src/ui/components/MoneyText';
-import { Panel } from '../../src/ui/components/Panel';
-import { ScreenBackground } from '../../src/ui/components/ScreenBackground';
-import { useToast } from '../../src/ui/components/Toast';
-import { fonts, spacing, useTheme, useThemedStyles, type Colors } from '../../src/ui/theme';
+import { TecladoValor } from '../../src/ui/componentes/TecladoValor';
+import { BotaoIcone } from '../../src/ui/componentes/BotaoIcone';
+import { TextoValor } from '../../src/ui/componentes/TextoValor';
+import { Painel } from '../../src/ui/componentes/Painel';
+import { FundoEcra } from '../../src/ui/componentes/FundoEcra';
+import { useAvisoRapido } from '../../src/ui/componentes/AvisoRapido';
+import { fonts, spacing, useTema, useEstilosTema, type Cores } from '../../src/ui/tema';
 import { getProject } from '../../src/repos/projects';
-import { useProjects } from '../../src/features/projects/useProjects';
+import { useProjetos } from '../../src/features/projetos/useProjetos';
 
 export default function ProjectFormScreen() {
-  const { colors, gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { colors, gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const router = useRouter();
-  const toast = useToast();
-  const { create, update } = useProjects();
+  const toast = useAvisoRapido();
+  const { create, update } = useProjetos();
   const { id } = useLocalSearchParams<{ id?: string }>();
 
   const existing = typeof id === 'string' ? getProject(id) : null;
@@ -37,7 +37,7 @@ export default function ProjectFormScreen() {
   const total = digits.length > 0 ? Number(digits) : 0;
   const valid = name.trim().length > 0 && total > 0 && (dueDate === null || isValidDate(dueDate));
 
-  const handleSave = () => {
+  const guardar = () => {
     if (!valid) {
       toast({ message: 'Dá um nome e um valor ao projeto' });
       return;
@@ -64,24 +64,24 @@ export default function ProjectFormScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground />
+      <FundoEcra />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <Text style={styles.title}>{existing ? 'Editar projeto' : 'Novo projeto'}</Text>
-            <IconButton icon={X} label="Fechar" onPress={() => router.back()} />
+            <BotaoIcone icon={X} label="Fechar" onPress={() => router.back()} />
           </View>
 
           <View style={styles.amountWrap}>
-            <MoneyText value={total} size="hero" />
+            <TextoValor value={total} size="hero" />
           </View>
 
-          <AmountKeypad
+          <TecladoValor
             onDigit={(key) => setDigits((current) => (current === '0' ? key : (current + key).slice(0, 12)))}
             onBackspace={() => setDigits((current) => current.slice(0, -1))}
           />
 
-          <Panel>
+          <Painel>
             <Text style={styles.label}>Nome do projeto</Text>
             <TextInput
               value={name}
@@ -91,9 +91,9 @@ export default function ProjectFormScreen() {
               style={styles.input}
               returnKeyType="done"
             />
-          </Panel>
+          </Painel>
 
-          <Panel>
+          <Painel>
             <Text style={styles.label}>Cliente</Text>
             <TextInput
               value={client}
@@ -103,7 +103,7 @@ export default function ProjectFormScreen() {
               style={styles.input}
               returnKeyType="done"
             />
-          </Panel>
+          </Painel>
 
           <View style={styles.section}>
             <Text style={styles.label}>Entrega</Text>
@@ -117,7 +117,7 @@ export default function ProjectFormScreen() {
             </View>
           </View>
 
-          <Panel>
+          <Painel>
             <Text style={styles.label}>Nota</Text>
             <TextInput
               value={note}
@@ -127,14 +127,14 @@ export default function ProjectFormScreen() {
               style={styles.input}
               returnKeyType="done"
             />
-          </Panel>
+          </Painel>
 
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Guardar projeto"
             accessibilityState={{ disabled: !valid }}
             disabled={!valid}
-            onPress={handleSave}
+            onPress={guardar}
             style={[styles.saveWrap, !valid && styles.saveDisabled]}
           >
             <LinearGradient
@@ -167,8 +167,8 @@ export default function ProjectFormScreen() {
 }
 
 function DayChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  const { gradients } = useTheme();
-  const styles = useThemedStyles(makeStyles);
+  const { gradients } = useTema();
+  const styles = useEstilosTema(makeStyles);
 
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: active }} onPress={onPress}>
@@ -184,7 +184,7 @@ function DayChip({ label, active, onPress }: { label: string; active: boolean; o
   );
 }
 
-const makeStyles = (colors: Colors) =>
+const makeStyles = (colors: Cores) =>
   StyleSheet.create({
   root: {
     flex: 1,

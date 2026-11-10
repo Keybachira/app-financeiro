@@ -2,9 +2,9 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ICON, go, goBack, useTheme } from "../data";
+import { ICON, go, goBack, useTemaBase } from "../data";
 import type { ModuleId } from "../src/domain/modules";
-import { useModuleConfig } from "../src/features/modules/useModuleConfig";
+import { useConfigModulos } from "../src/features/modulos/useConfigModulos";
 
 const ITENS: {
   id: ModuleId;
@@ -29,9 +29,9 @@ const ITENS: {
 ];
 
 export default function Mais() {
-  const { t, s } = useTheme();
+  const { t, s } = useTemaBase();
   const ins = useSafeAreaInsets();
-  const { isEnabled } = useModuleConfig();
+  const { isEnabled } = useConfigModulos();
   const lista = ITENS.filter((x) => isEnabled(x.id));
 
   return (
