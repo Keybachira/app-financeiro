@@ -92,10 +92,40 @@ function existingTableIds(sql: string): Set<string> {
   return idList(db.getAllSync<{ id: string }>(sql));
 }
 
+function duplicateId(rows: { id: string }[]): string | null {
+  const seen = new Set<string>();
+
+  for (const row of rows) {
+    if (seen.has(row.id)) return row.id;
+    seen.add(row.id);
+  }
+
+  return null;
+}
+
 export function validateReferences(
   payload: BackupPayload,
   mode: 'merge' | 'replace'
 ): string | null {
+  const duplicateCollections: [string, { id: string }[]][] = [
+    ['movimentos', payload.movements],
+    ['metas', payload.goals],
+    ['operações de metas', payload.goalOps],
+    ['dívidas', payload.debts],
+    ['pagamentos de dívidas', payload.debtPayments],
+    ['projetos', payload.projects],
+    ['pagamentos de projetos', payload.projectPayments],
+    ['contas fixas', payload.bills],
+    ['pagamentos de contas', payload.billPayments],
+  ];
+
+  for (const [label, rows] of duplicateCollections) {
+    const duplicate = duplicateId(rows);
+    if (duplicate !== null) {
+      return `${label}: identificador duplicado (${duplicate}).`;
+    }
+  }
+
   const goalIds = idList(payload.goals);
   const debtIds = idList(payload.debts);
   const projectIds = idList(payload.projects);

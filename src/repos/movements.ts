@@ -135,6 +135,22 @@ export function createMovement(input: MovementInput): MovementRow {
 
 export function updateMovement(id: string, input: MovementInput): void {
   db.withTransactionSync(() => {
+    const stored = db.getFirstSync<{ type: MovementType; origin: MovementOrigin }>(
+      'SELECT type, origin FROM movements WHERE id = ?',
+      [id]
+    );
+
+    if (!stored) {
+      throw new Error('Movimento não encontrado.');
+    }
+
+    // Pagamentos automáticos têm uma semântica financeira própria. Permitir
+    // trocar despesa por receita (ou vice-versa) deixava o saldo global
+    // diferente do saldo da dívida/projeto/conta que originou o movimento.
+    if (stored.origin !== 'manual' && stored.type !== input.type) {
+      throw new Error('Movimentos automáticos não podem mudar de tipo.');
+    }
+
     db.runSync('UPDATE movements SET type = ?, amount = ?, category = ?, date = ?, note = ? WHERE id = ?', [
       input.type,
       input.amount,
@@ -158,15 +174,23 @@ export function updateMovement(id: string, input: MovementInput): void {
     // Um movimento gerado pelo sistema mantém a nota automática que o originou
     // ("Pagamento · Carlos", "Projeto · Site X"): editar a data ou o valor não
     // pode transformá-lo numa sugestão de categoria para o utilizador.
-    const stored = db.getFirstSync<{ origin: string }>('SELECT origin FROM movements WHERE id = ?', [id]);
-
-    if (stored === null || stored.origin === 'manual') {
+    if (stored.origin === 'manual') {
       recordCategoryHint(input.note ?? null, input.category);
     }
   });
 }
 
 export function deleteMovement(id: string): void {
+  const movement = getMovement(id);
+
+  if (!movement) {
+    throw new Error('Movimento não encontrado.');
+  }
+
+  if (movement.origin !== 'manual') {
+    throw new Error('Apaga este pagamento no módulo que o criou.');
+  }
+
   db.runSync('DELETE FROM movements WHERE id = ?', [id]);
 }
 
