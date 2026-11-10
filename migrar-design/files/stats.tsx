@@ -13,11 +13,11 @@ import {
   pct,
   stLbl,
   DIA,
-  useTheme,
+  useTemaBase,
 } from "../data";
 
 export default function Estatisticas() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const [n, setN] = useState<7 | 30>(7);
   const [k, setK] = useState<"e" | "g">("e");

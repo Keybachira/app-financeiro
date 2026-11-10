@@ -680,7 +680,7 @@ const DARK = {
 };
 export type Theme = typeof LIGHT;
 
-export function useTheme() {
+export function useTemaLegado() {
   const st = useStore();
   const sys = useColorScheme();
   const dark = st.theme === "system" ? sys === "dark" : st.theme === "dark";

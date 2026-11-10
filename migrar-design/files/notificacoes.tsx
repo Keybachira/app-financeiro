@@ -2,10 +2,10 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { A, ICON, NK, go, goBack, ntT, unreadCount, useTheme } from "../data";
+import { A, ICON, NK, go, goBack, ntT, unreadCount, useTemaBase } from "../data";
 
 export default function Notificacoes() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const u = unreadCount(st);
   const lista = [...st.notifs].sort((a, b) => b.ts - a.ts);

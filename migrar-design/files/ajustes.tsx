@@ -21,7 +21,7 @@ import {
   kz,
   pct,
   spentToday,
-  useTheme,
+  useTemaBase,
 } from "../data";
 
 const PERFIS_UI: Perfil[] = [
@@ -32,7 +32,7 @@ const PERFIS_UI: Perfil[] = [
 ];
 
 export default function Ajustes() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const [nome, setNome] = useState(st.name);
 

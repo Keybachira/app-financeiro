@@ -2,10 +2,10 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ICON, ITEM_FORMS, go, goBack, kz, nextDue, useTheme } from "../data";
+import { ICON, ITEM_FORMS, go, goBack, kz, nextDue, useTemaBase } from "../data";
 
 export default function Fixas() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const total = st.fixas.reduce((a, f) => a + f.valor, 0);
   const due = nextDue(st);

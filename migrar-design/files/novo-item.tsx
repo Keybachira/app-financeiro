@@ -11,11 +11,11 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { A, ICON, ITEM_FORMS, ItemTipo, goBack, useTheme } from "../data";
+import { A, ICON, ITEM_FORMS, ItemTipo, goBack, useTemaBase } from "../data";
 
 // Param: ?tipo=metas|dividas|projetos|fixas
 export default function NovoItem() {
-  const { t, s } = useTheme();
+  const { t, s } = useTemaBase();
   const ins = useSafeAreaInsets();
   const { tipo } = useLocalSearchParams<{ tipo?: string }>();
   const key = (tipo && tipo in ITEM_FORMS ? tipo : "metas") as ItemTipo;

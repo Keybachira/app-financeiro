@@ -16,11 +16,11 @@ import {
   spentToday,
   sumMovs,
   unreadCount,
-  useTheme,
+  useTemaBase,
 } from "../data";
 
 export default function Inicio() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const m = st.mod;
   const due = m.fixas ? nextDue(st) : null;

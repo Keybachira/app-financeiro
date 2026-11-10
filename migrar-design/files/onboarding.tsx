@@ -11,11 +11,11 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { A, ICON, num, useTheme } from "../data";
+import { A, ICON, num, useTemaBase } from "../data";
 
 // Passos: 0 boas-vindas · 1 nome · 2 situação · 3 dados · 4 PIN · 5 pronto
 export default function Onboarding() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const [step, setStep] = useState(0);
   const [nome, setNome] = useState("");

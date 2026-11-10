@@ -15,7 +15,7 @@ import {
   kz,
   nz,
   parseISO,
-  useTheme,
+  useTemaBase,
 } from "../data";
 
 const PERIODOS = [
@@ -26,7 +26,7 @@ const PERIODOS = [
 ];
 
 export default function Movimentos() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const [q, setQ] = useState("");
   const [pr, setPr] = useState("");

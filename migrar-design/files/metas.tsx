@@ -2,10 +2,10 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ICON, ITEM_FORMS, go, goBack, kz, pct, useTheme } from "../data";
+import { ICON, ITEM_FORMS, go, goBack, kz, pct, useTemaBase } from "../data";
 
 export default function Metas() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const ativo = st.mod.metas;
 

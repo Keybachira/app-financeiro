@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ICON, ModKey, go, goBack, useTheme } from "../data";
+import { ICON, ModKey, go, goBack, useTemaBase } from "../data";
 
 const ITENS: {
   k: Exclude<ModKey, "salario" | "limite">;
@@ -16,7 +16,7 @@ const ITENS: {
 ];
 
 export default function Mais() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const lista = ITENS.filter((x) => st.mod[x.k]);
 

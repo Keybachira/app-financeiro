@@ -23,12 +23,12 @@ import {
   isoValid,
   kz,
   num,
-  useTheme,
+  useTemaBase,
 } from "../data";
 
 // Params: ?tipo=r|d  (novo)   ·   ?id=<id>  (editar / eliminar)
 export default function NovoMovimento() {
-  const { t, s, st } = useTheme();
+  const { t, s, st } = useTemaBase();
   const ins = useSafeAreaInsets();
   const { tipo, id } = useLocalSearchParams<{ tipo?: string; id?: string }>();
   const existente = useMemo(
