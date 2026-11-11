@@ -11,8 +11,6 @@ import { CartaoDestaque } from "../../src/ui/componentes/CartaoDestaque";
 import { BotaoIcone } from "../../src/ui/componentes/BotaoIcone";
 import { TextoValor } from "../../src/ui/componentes/TextoValor";
 import { Painel } from "../../src/ui/componentes/Painel";
-import { BarraProgresso } from "../../src/ui/componentes/BarraProgresso";
-import { AnelProgresso } from "../../src/ui/componentes/AnelProgresso";
 import { FundoEcra } from "../../src/ui/componentes/FundoEcra";
 import { ChipEstado } from "../../src/ui/componentes/ChipEstado";
 import { Interruptor } from "../../src/ui/componentes/Interruptor";
@@ -34,8 +32,10 @@ import {
   executarAcaoProtegida,
 } from "../../src/ui/protecaoAcoes";
 
+const AMBAR = "#ffd35b";
+
 export default function ProjectDetailScreen() {
-  const { colors, gradients } = useTema();
+  const { colors } = useTema();
   const styles = useEstilosTema(makeStyles);
   const router = useRouter();
   const toast = useAvisoRapido();
@@ -78,6 +78,8 @@ export default function ProjectDetailScreen() {
   const paymentList = payments(projectId);
   const editing =
     paymentList.find((payment) => payment.id === editPaymentId) ?? null;
+  const total = project.total > 0 ? project.total : 1;
+  const pct = Math.min(100, Math.round((view.received / total) * 100));
 
   return (
     <View style={styles.root}>
@@ -107,24 +109,35 @@ export default function ProjectDetailScreen() {
         </View>
 
         <CartaoDestaque>
-          <View style={styles.summaryRow}>
-            <AnelProgresso value={view.progress} size={72} stroke={8} />
-            <View style={styles.summaryInfo}>
-              <Text style={styles.summaryLabel}>
-                {view.settled ? "Recebido" : "Em falta"}
-              </Text>
-              <TextoValor
-                value={view.settled ? view.received : view.remaining}
-                size="lg"
-              />
-              <Text style={styles.summaryLabel}>
-                de {formatKz(project.total)}
-              </Text>
-            </View>
+          <View style={styles.summaryTop}>
+            <Text style={styles.summaryLabel}>
+              {view.settled ? "Recebido" : "Em falta"}
+            </Text>
             <ChipEstado label={rotuloChipProjeto(view)} tone="accent" />
           </View>
+          <TextoValor
+            value={view.settled ? view.received : view.remaining}
+            size="lg"
+          />
+
+          <View style={styles.io}>
+            <View style={styles.ioBox}>
+              <Text style={styles.ioLabel}>Recebido</Text>
+              <Text style={styles.ioValue}>{formatKz(view.received)}</Text>
+            </View>
+            <View style={styles.ioBox}>
+              <Text style={styles.ioLabel}>Total</Text>
+              <Text style={styles.ioValue}>{formatKz(project.total)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.heroTrack}>
+            <View style={[styles.heroFill, { width: `${pct}%` }]} />
+          </View>
           <Text style={styles.summaryFooter}>
-            {project.client ? `Cliente: ${project.client} · ` : ""}
+            {pct}% recebido
+            {project.client ? ` · ${project.client}` : ""}
+            {" · "}
             {project.due_date
               ? `entrega a ${formatDayMonthPt(project.due_date)}`
               : "sem data de entrega"}
@@ -132,44 +145,49 @@ export default function ProjectDetailScreen() {
         </CartaoDestaque>
 
         {!view.settled ? (
-          <Painel style={styles.payCard} padded={false}>
+          <View>
             <Pressable
               accessibilityRole="button"
               onPress={callbackProtegido(() => setPayOpen(true))}
-              style={styles.payButton}
+              style={({ pressed }) => [
+                styles.payButton,
+                pressed && styles.pressed,
+              ]}
             >
               <Text style={styles.payLabel}>Registar recebimento</Text>
-              <Text style={styles.payHint}>
-                {createIncomeDefault
-                  ? "Cria uma receita em Projetos"
-                  : "Sem receita automática"}
-              </Text>
             </Pressable>
-          </Painel>
-        ) : null}
-
-        <View style={styles.optionRow}>
-          <View style={styles.optionText}>
-            <Text style={styles.optionTitle}>Criar receita ao receber</Text>
-            <Text style={styles.optionMeta}>
-              Lança um movimento de receita na categoria Projetos.
+            <Text style={styles.payHint}>
+              {createIncomeDefault
+                ? "Cria uma receita em Projetos"
+                : "Sem receita automática"}
             </Text>
           </View>
-          <Interruptor
-            value={createIncomeDefault}
-            onValueChange={(value) => {
-              setCreateIncomeDefault(value);
-              toast({
-                message: value
-                  ? "Receita automática ativada"
-                  : "Receita automática desativada",
-              });
-            }}
-            label="Criar receita ao receber"
-          />
-        </View>
+        ) : null}
 
-        <View style={styles.section}>
+        <Painel>
+          <View style={styles.optionRow}>
+            <View style={styles.optionText}>
+              <Text style={styles.optionTitle}>Criar receita ao receber</Text>
+              <Text style={styles.optionMeta}>
+                Lança um movimento de receita na categoria Projetos.
+              </Text>
+            </View>
+            <Interruptor
+              value={createIncomeDefault}
+              onValueChange={(value) => {
+                setCreateIncomeDefault(value);
+                toast({
+                  message: value
+                    ? "Receita automática ativada"
+                    : "Receita automática desativada",
+                });
+              }}
+              label="Criar receita ao receber"
+            />
+          </View>
+        </Painel>
+
+        <Painel>
           <Text style={styles.sectionTitle}>Recebimentos</Text>
           {paymentList.length > 0 ? (
             paymentList.map((payment) => (
@@ -177,8 +195,8 @@ export default function ProjectDetailScreen() {
                 <View style={styles.paymentIcon}>
                   <ArrowLeftRight
                     color={colors.accent}
-                    size={18}
-                    strokeWidth={2}
+                    size={17}
+                    strokeWidth={1.6}
                   />
                 </View>
                 <View style={styles.paymentInfo}>
@@ -199,7 +217,7 @@ export default function ProjectDetailScreen() {
                     setEditPaymentId(payment.id),
                   )}
                 >
-                  <Pencil color={colors.textMuted} size={16} strokeWidth={2} />
+                  <Pencil color={colors.textMuted} size={16} strokeWidth={1.6} />
                 </Pressable>
                 <Pressable
                   accessibilityLabel="Apagar recebimento"
@@ -218,16 +236,16 @@ export default function ProjectDetailScreen() {
                     })
                   }
                 >
-                  <Trash color={colors.warn} size={16} strokeWidth={2} />
+                  <Trash color={colors.warn} size={16} strokeWidth={1.6} />
                 </Pressable>
               </View>
             ))
           ) : (
             <Text style={styles.muted}>Sem recebimentos registados.</Text>
           )}
-        </View>
+        </Painel>
 
-        <View style={styles.footerRow}>
+        <Painel>
           <Pressable
             accessibilityRole="button"
             onPress={() =>
@@ -262,10 +280,10 @@ export default function ProjectDetailScreen() {
             onPress={() => setConfirmDelete(true)}
             style={styles.textButton}
           >
-            <Trash color={colors.warn} size={16} strokeWidth={2} />
+            <Trash color={colors.warn} size={16} strokeWidth={1.6} />
             <Text style={styles.deleteLabel}>Apagar projeto</Text>
           </Pressable>
-        </View>
+        </Painel>
       </ScrollView>
 
       <FolhaValor
@@ -373,50 +391,87 @@ const makeStyles = (colors: Cores) =>
     },
     title: {
       flex: 1,
-      fontFamily: fonts.bold,
-      fontSize: 20,
+      fontFamily: fonts.medium,
+      fontSize: 22,
+      letterSpacing: -0.4,
       color: colors.text,
     },
-    summaryRow: {
+    pressed: {
+      opacity: 0.85,
+    },
+    summaryTop: {
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.md,
-    },
-    summaryInfo: {
-      flex: 1,
-      gap: 2,
+      justifyContent: "space-between",
+      gap: spacing.sm,
+      marginBottom: 2,
     },
     summaryLabel: {
       fontFamily: fonts.regular,
-      fontSize: 13,
+      fontSize: 12,
       color: colors.glassText,
+      opacity: 0.85,
     },
-    summaryFooter: {
-      marginTop: spacing.md,
-      paddingTop: spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: "rgba(255,255,255,.12)",
+    io: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 12,
+    },
+    ioBox: {
+      flex: 1,
+      backgroundColor: "rgba(255,255,255,.14)",
+      borderRadius: 16,
+      paddingVertical: 9,
+      paddingHorizontal: 12,
+    },
+    ioLabel: {
       fontFamily: fonts.regular,
-      fontSize: 13,
+      fontSize: 11,
       color: colors.glassText,
     },
-    payCard: {
+    ioValue: {
+      marginTop: 2,
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: colors.glassText,
+      fontVariant: ["tabular-nums"],
+    },
+    heroTrack: {
+      height: 6,
+      borderRadius: 6,
+      backgroundColor: "rgba(255,255,255,.2)",
+      marginTop: 14,
       overflow: "hidden",
     },
+    heroFill: {
+      height: "100%",
+      borderRadius: 6,
+      backgroundColor: AMBAR,
+    },
+    summaryFooter: {
+      marginTop: 8,
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: colors.glassText,
+      opacity: 0.85,
+    },
     payButton: {
-      minHeight: 60,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: colors.accent,
       alignItems: "center",
       justifyContent: "center",
-      gap: 2,
     },
     payLabel: {
-      fontFamily: fonts.bold,
-      fontSize: 15,
-      color: colors.text,
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: "#fff",
     },
     payHint: {
+      marginTop: 8,
+      textAlign: "center",
       fontFamily: fonts.regular,
-      fontSize: 12,
+      fontSize: 10,
       color: colors.textMuted,
     },
     optionRow: {
@@ -428,29 +483,29 @@ const makeStyles = (colors: Cores) =>
       flex: 1,
     },
     optionTitle: {
-      fontFamily: fonts.medium,
-      fontSize: 15,
+      fontFamily: fonts.regular,
+      fontSize: 13,
       color: colors.text,
     },
     optionMeta: {
       fontFamily: fonts.regular,
-      fontSize: 12,
+      fontSize: 10,
       color: colors.textMuted,
-    },
-    section: {
-      gap: spacing.sm,
+      marginTop: 2,
     },
     sectionTitle: {
-      fontFamily: fonts.bold,
-      fontSize: 16,
+      fontFamily: fonts.medium,
+      fontSize: 14,
       color: colors.text,
+      marginBottom: 6,
     },
     paymentRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.sm,
-      paddingVertical: spacing.sm,
-      minHeight: 48,
+      gap: 11,
+      paddingVertical: 6,
+      paddingHorizontal: 4,
+      minHeight: 54,
     },
     paymentIcon: {
       width: 36,
@@ -465,37 +520,34 @@ const makeStyles = (colors: Cores) =>
     },
     paymentDate: {
       fontFamily: fonts.medium,
-      fontSize: 15,
+      fontSize: 13,
       color: colors.text,
     },
     paymentMeta: {
       fontFamily: fonts.regular,
-      fontSize: 12,
+      fontSize: 10,
       color: colors.textMuted,
-    },
-    footerRow: {
-      gap: spacing.sm,
-      marginTop: spacing.sm,
     },
     textButton: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
       minHeight: 44,
+      paddingHorizontal: 4,
     },
     textButtonLabel: {
       fontFamily: fonts.medium,
-      fontSize: 15,
+      fontSize: 13,
       color: colors.text,
     },
     deleteLabel: {
       fontFamily: fonts.medium,
-      fontSize: 15,
+      fontSize: 13,
       color: colors.warn,
     },
     muted: {
       fontFamily: fonts.regular,
-      fontSize: 13,
+      fontSize: 12,
       color: colors.textMuted,
       paddingVertical: spacing.sm,
     },

@@ -1,6 +1,5 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
@@ -17,7 +16,7 @@ import { getProject } from '../../src/repos/projects';
 import { useProjetos } from '../../src/features/projetos/useProjetos';
 
 export default function ProjectFormScreen() {
-  const { colors, gradients } = useTema();
+  const { colors } = useTema();
   const styles = useEstilosTema(makeStyles);
   const router = useRouter();
   const toast = useAvisoRapido();
@@ -73,6 +72,7 @@ export default function ProjectFormScreen() {
           </View>
 
           <View style={styles.amountWrap}>
+            <Text style={styles.amountLabel}>Valor do projeto</Text>
             <TextoValor value={total} size="hero" />
           </View>
 
@@ -91,10 +91,8 @@ export default function ProjectFormScreen() {
               style={styles.input}
               returnKeyType="done"
             />
-          </Painel>
 
-          <Painel>
-            <Text style={styles.label}>Cliente</Text>
+            <Text style={[styles.label, styles.labelGap]}>Cliente</Text>
             <TextInput
               value={client}
               onChangeText={setClient}
@@ -103,22 +101,8 @@ export default function ProjectFormScreen() {
               style={styles.input}
               returnKeyType="done"
             />
-          </Painel>
 
-          <View style={styles.section}>
-            <Text style={styles.label}>Entrega</Text>
-            <View style={styles.chipRow}>
-              <DayChip
-                label={dueDate ? formatDayMonthPt(dueDate) : 'Sem data'}
-                active={dueDate !== null}
-                onPress={() => setShowPicker(true)}
-              />
-              {dueDate ? <DayChip label="Remover" active={false} onPress={() => setDueDate(null)} /> : null}
-            </View>
-          </View>
-
-          <Painel>
-            <Text style={styles.label}>Nota</Text>
+            <Text style={[styles.label, styles.labelGap]}>Nota</Text>
             <TextInput
               value={note}
               onChangeText={setNote}
@@ -129,22 +113,27 @@ export default function ProjectFormScreen() {
             />
           </Painel>
 
+          <Painel>
+            <Text style={styles.label}>Entrega</Text>
+            <View style={styles.chipRow}>
+              <DayChip
+                label={dueDate ? formatDayMonthPt(dueDate) : 'Sem data'}
+                active={dueDate !== null}
+                onPress={() => setShowPicker(true)}
+              />
+              {dueDate ? <DayChip label="Remover" active={false} onPress={() => setDueDate(null)} /> : null}
+            </View>
+          </Painel>
+
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Guardar projeto"
             accessibilityState={{ disabled: !valid }}
             disabled={!valid}
             onPress={guardar}
-            style={[styles.saveWrap, !valid && styles.saveDisabled]}
+            style={({ pressed }) => [styles.saveButton, !valid && styles.saveDisabled, pressed && styles.pressed]}
           >
-            <LinearGradient
-              colors={gradients.primary.colors}
-              start={gradients.primary.start}
-              end={gradients.primary.end}
-              style={styles.saveButton}
-            >
-              <Text style={styles.saveLabel}>Guardar</Text>
-            </LinearGradient>
+            <Text style={styles.saveLabel}>Guardar projeto</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -167,107 +156,116 @@ export default function ProjectFormScreen() {
 }
 
 function DayChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  const { gradients } = useTema();
   const styles = useEstilosTema(makeStyles);
 
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: active }} onPress={onPress}>
-      <LinearGradient
-        colors={active ? gradients.primary.colors : gradients.panel.colors}
-        start={active ? gradients.primary.start : gradients.panel.start}
-        end={active ? gradients.primary.end : gradients.panel.end}
-        style={[styles.chip, !active && styles.chipMuted]}
-      >
-        <Text style={[styles.chipText, !active && styles.chipTextMuted]}>{label}</Text>
-      </LinearGradient>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={[styles.chip, active && styles.chipActive]}
+    >
+      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
     </Pressable>
   );
 }
 
 const makeStyles = (colors: Cores) =>
   StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  flex: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: 48,
-    gap: spacing.md,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: 20,
-    color: colors.text,
-  },
-  amountWrap: {
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  label: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  input: {
-    fontFamily: fonts.regular,
-    fontSize: 16,
-    color: colors.text,
-    padding: 0,
-    marginTop: spacing.xs,
-  },
-  section: {
-    gap: 8,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  chip: {
-    height: 36,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipMuted: {
-    borderWidth: 1,
-    borderColor: colors.panelBorder,
-  },
-  chipText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.text,
-  },
-  chipTextMuted: {
-    fontFamily: fonts.regular,
-  },
-  saveWrap: {
-    borderRadius: 28,
-    marginTop: spacing.md,
-  },
-  saveDisabled: {
-    opacity: 0.5,
-  },
-  saveButton: {
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 16,
-    color: colors.text,
-  },
-});
+    root: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    flex: {
+      flex: 1,
+    },
+    content: {
+      padding: spacing.lg,
+      paddingTop: spacing.xl,
+      paddingBottom: 48,
+      gap: spacing.md,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    title: {
+      fontFamily: fonts.medium,
+      fontSize: 22,
+      letterSpacing: -0.4,
+      color: colors.text,
+    },
+    amountWrap: {
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+      gap: 4,
+    },
+    amountLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    label: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: colors.textMuted,
+    },
+    labelGap: {
+      marginTop: 16,
+    },
+    input: {
+      fontFamily: fonts.medium,
+      fontSize: 16,
+      color: colors.text,
+      paddingVertical: 10,
+      paddingHorizontal: 0,
+      borderBottomWidth: 1.5,
+      borderBottomColor: colors.panelBorder,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      gap: 6,
+      flexWrap: 'wrap',
+      marginTop: 10,
+    },
+    chip: {
+      height: 34,
+      borderRadius: 17,
+      paddingHorizontal: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.iconTileBg,
+    },
+    chipActive: {
+      backgroundColor: colors.accent,
+    },
+    chipText: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    chipTextActive: {
+      fontFamily: fonts.medium,
+      color: '#fff',
+    },
+    saveButton: {
+      height: 50,
+      borderRadius: 25,
+      marginTop: spacing.sm,
+      backgroundColor: colors.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    saveDisabled: {
+      opacity: 0.5,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+    saveLabel: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: '#fff',
+    },
+  });
