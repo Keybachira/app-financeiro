@@ -32,6 +32,8 @@ export const duracao = {
   anel: 2800,
   /** Pulsar do indicador de notificações (`bdgp`). */
   pulso: 2400,
+  /** Deslizar do botão de um interruptor (`.sw`, 0.2s). */
+  interruptor: 200,
   /** Confirmação de um item (`pop`). */
   pop: 450,
   /** Revelação de conteúdo por etapas (`rv`). */

@@ -1,15 +1,17 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { FONT, kz, useTemaBase, type Theme } from "../../../data";
+import { formatKzNumber } from "../../domain/money";
+import { fonts, useEstilosTema, useTema, type Cores } from "../tema";
 
-// [2026-11-10] Medidas partilhadas entre botão e recorte (ajusta aqui e tudo acompanha)
+// Medidas do recorte (`.notch` / `.add`) — iguais às do protótipo:
+// o recorte é 128×56 e o botão 120×50 encosta ao canto inferior direito,
+// deixando 8px à esquerda e 6px em cima.
+const NOTCH_W = 128;
+const NOTCH_H = 56;
 const BTN_W = 120;
 const BTN_H = 50;
-const GAP = 8; // espaço entre o botão e a borda do recorte
-const R = 24; // raio das curvas (igual ao dos fillets)
-const NOTCH_W = BTN_W + GAP * 2;
-const NOTCH_H = BTN_H + GAP * 2;
+const R = 24; // raio das curvas e do canto superior esquerdo do recorte
 
 type BalanceCardProps = {
   balance: number;
@@ -22,12 +24,12 @@ type BalanceCardProps = {
 };
 
 /**
- * Cartão principal do Início: saldo disponível, receitas, despesas e o botão
- * "Registar" encaixado num recorte do canto inferior direito.
+ * Cartão principal do Início (`.main` / `.notch` / `.add`).
  *
- * Usa o tema legado de 'data.ts' (não o de 'src/ui/tema.ts') porque o ecrã do
- * Início ainda vive nesse sistema. Os quatro cantos em "fillet" são desenhados
- * com círculos recortados sobre a cor do fundo — a alternativa seriam imagens.
+ * Saldo disponível em destaque, receitas e despesas lado a lado, e o botão
+ * "Registar" encaixado no recorte do canto inferior direito. As duas curvas
+ * invertidas do recorte são desenhadas com círculos recortados sobre a cor do
+ * fundo (`--bg`), tal como o protótipo faz com `::before` / `::after`.
  */
 export function CartaoSaldo({
   balance,
@@ -38,52 +40,46 @@ export function CartaoSaldo({
   onToggleHidden,
   onRegister,
 }: BalanceCardProps) {
-  const { t } = useTemaBase();
-  const styles = makeStyles(t);
-  const amount = (value: number, mask: string) => (hidden ? mask : kz(value));
+  const { colors } = useTema();
+  const styles = useEstilosTema(makeStyles);
+  const amount = (value: number, mask: string) =>
+    hidden ? mask : formatKzNumber(value);
 
   return (
-    <View style={[styles.main, overlapsSalary && { marginTop: -47 }]}>
-      <Text style={styles.mainL}>Saldo disponível</Text>
+    <View style={[styles.main, overlapsSalary && styles.overlap]}>
+      <Text style={styles.label}>Saldo disponível</Text>
       <Pressable
         onPress={onToggleHidden}
+        accessibilityRole="button"
         accessibilityLabel="Mostrar ou esconder saldo"
       >
-        <Text style={styles.big}>{amount(balance, "••••••")}</Text>
+        <Text style={styles.big}>
+          {amount(balance, "••••••")}
+          <Text style={styles.bigSuffix}> Kz</Text>
+        </Text>
       </Pressable>
+
       <View style={styles.io}>
         <View style={styles.ioBox}>
-          <Text style={styles.ioL}>Receitas</Text>
-          <Text style={styles.ioB}>{amount(income, "••••")}</Text>
+          <Text style={styles.ioLabel}>Receitas</Text>
+          <Text style={styles.ioValue}>{amount(income, "••••")}</Text>
         </View>
         <View style={styles.ioBox}>
-          <Text style={styles.ioL}>Despesas</Text>
-          <Text style={styles.ioB}>{amount(expenses, "••••")}</Text>
+          <Text style={styles.ioLabel}>Despesas</Text>
+          <Text style={styles.ioValue}>{amount(expenses, "••••")}</Text>
         </View>
       </View>
-      <View
-        style={[styles.fillet, { left: -24, bottom: 0 }]}
-        pointerEvents="none"
-      >
-        <View style={styles.filletDisc} />
-      </View>
-      <View
-        style={[styles.fillet, { right: 0, top: -24 }]}
-        pointerEvents="none"
-      >
-        <View style={styles.filletDisc} />
-      </View>
 
-      {/* [2026-11-10] Recorte no canto inferior direito (cor do fundo, ponta superior esquerda arredondada) */}
+      {/* recorte do canto inferior direito */}
       <View style={styles.notch} pointerEvents="none" />
-      {/* [2026-11-10] Curva do cartão no lado direito, logo acima do recorte */}
+      {/* curva do cartão no lado direito, logo acima do recorte */}
       <View
         style={[styles.fillet, { right: 0, bottom: NOTCH_H }]}
         pointerEvents="none"
       >
         <View style={styles.filletDisc} />
       </View>
-      {/* [2026-11-10] Curva do cartão na base, logo à esquerda do recorte */}
+      {/* curva do cartão na base, logo à esquerda do recorte */}
       <View
         style={[styles.fillet, { right: NOTCH_W, bottom: 0 }]}
         pointerEvents="none"
@@ -94,10 +90,11 @@ export function CartaoSaldo({
       <Pressable
         style={styles.add}
         onPress={onRegister}
+        accessibilityRole="button"
         accessibilityLabel="Registar despesa"
       >
-        <View style={styles.addPlus}>
-          <Feather name="plus" size={20} color={t.addp} />
+        <View style={styles.addCircle}>
+          <Feather name="plus" size={18} color={colors.addIcon} />
         </View>
         <Text style={styles.addTxt}>Registar</Text>
       </Pressable>
@@ -105,84 +102,109 @@ export function CartaoSaldo({
   );
 }
 
-function makeStyles(t: Theme) {
-  return StyleSheet.create({
+const makeStyles = (colors: Cores) =>
+  StyleSheet.create({
     main: {
-      backgroundColor: t.acc,
-      borderRadius: 24,
+      backgroundColor: colors.accent,
+      borderRadius: R,
       paddingTop: 20,
       paddingHorizontal: 20,
-      // [2026-11-10] antes: paddingBottom: 72,
-      // Agora garante espaço para o recorte + curva acima dele sem tocar nas caixas
-      paddingBottom: NOTCH_H + R + 4,
+      paddingBottom: 72,
       overflow: "hidden",
     },
-    mainL: { fontSize: 12, fontFamily: FONT.reg, color: "#fff", opacity: 0.85 },
+    overlap: {
+      marginTop: -47,
+    },
+    label: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.glassText,
+      opacity: 0.85,
+    },
     big: {
+      fontFamily: fonts.medium,
       fontSize: 33,
-      fontFamily: FONT.med,
-      color: "#fff",
       lineHeight: 44,
       letterSpacing: -0.6,
+      color: colors.glassText,
     },
-    io: { flexDirection: "row", gap: 8, marginTop: 12 },
+    bigSuffix: {
+      fontFamily: fonts.regular,
+      fontSize: 16,
+      opacity: 0.8,
+    },
+    io: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 12,
+    },
     ioBox: {
       flex: 1,
       backgroundColor: "#ffffff22",
       borderRadius: 16,
       paddingVertical: 9,
-      paddingHorizontal: 10,
+      paddingHorizontal: 12,
     },
-    ioL: { fontSize: 11, fontFamily: FONT.reg, color: "#fff", opacity: 0.8 },
-    ioB: { fontSize: 15, fontFamily: FONT.med, color: "#fff", marginTop: 3 },
-    fillet: {
-      position: "absolute",
-      width: 24,
-      height: 24,
-      overflow: "hidden",
-      backgroundColor: t.bg,
+    ioLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: colors.glassText,
     },
-    filletDisc: {
-      position: "absolute",
-      left: -24,
-      top: -24,
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: t.acc,
+    ioValue: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: colors.glassText,
+      marginTop: 2,
     },
-    // [2026-11-10] novo: bloco do recorte
     notch: {
       position: "absolute",
       right: 0,
       bottom: 0,
       width: NOTCH_W,
       height: NOTCH_H,
-      backgroundColor: t.bg,
+      backgroundColor: colors.bg,
       borderTopLeftRadius: R,
+    },
+    fillet: {
+      position: "absolute",
+      width: R,
+      height: R,
+      overflow: "hidden",
+      backgroundColor: colors.bg,
+    },
+    filletDisc: {
+      position: "absolute",
+      left: -R,
+      top: -R,
+      width: R * 2,
+      height: R * 2,
+      borderRadius: R,
+      backgroundColor: colors.accent,
     },
     add: {
       position: "absolute",
-      // [2026-11-10] antes: right: 0, bottom: 0, width: 120, height: 50,
-      right: GAP,
-      bottom: GAP,
+      right: 0,
+      bottom: 0,
       width: BTN_W,
       height: BTN_H,
-      borderRadius: 25,
-      backgroundColor: t.add,
+      borderRadius: BTN_H / 2,
+      backgroundColor: colors.addBg,
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
       paddingLeft: 9,
     },
-    addPlus: {
+    addCircle: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: t.addc,
+      backgroundColor: colors.addCircle,
       alignItems: "center",
       justifyContent: "center",
     },
-    addTxt: { fontSize: 13, fontFamily: FONT.med, color: "#fff" },
+    addTxt: {
+      fontFamily: fonts.medium,
+      fontSize: 13,
+      color: colors.glassText,
+    },
   });
-}

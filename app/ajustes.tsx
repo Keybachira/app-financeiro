@@ -1,38 +1,53 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
   ScrollView,
-  Switch,
+  StyleSheet,
   Text,
   TextInput,
   View,
-  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { A, ICON, ThemePref, go, goBack, kz, pct, useTemaBase } from "../data";
+import { ICON, go, goBack, kz, pct } from "../data";
 import { todayISO } from "../src/domain/dates";
 import type { ModuleId, ModuleProfileId } from "../src/domain/modules";
 import { useResumoContas } from "../src/features/contas/useContas";
+import {
+  useAvatarUtilizador,
+  useLimiteMensal,
+  useNomeUtilizador,
+} from "../src/features/definicoes/useDefinicoes";
+import {
+  usePreferenciasApp,
+  type PreferenciaTema,
+} from "../src/features/definicoes/usePreferenciasApp";
 import { useConfigModulos } from "../src/features/modulos/useConfigModulos";
 import { useResumoMes } from "../src/features/movimentos/useResumoMes";
 import { useEstadoBloqueio } from "../src/features/seguranca/useEstadoBloqueio";
 import {
-  useLimiteMensal,
-  useAvatarUtilizador,
-  useNomeUtilizador,
-} from "../src/features/definicoes/useDefinicoes";
-import {
   getBillNotificationsStatus,
   type BillNotificationStatus,
 } from "../src/repos/bills";
+import { CartaoDestaque } from "../src/ui/componentes/CartaoDestaque";
+import { FundoEcra } from "../src/ui/componentes/FundoEcra";
+import { Interruptor } from "../src/ui/componentes/Interruptor";
+import { Painel } from "../src/ui/componentes/Painel";
+import {
+  fonts,
+  layout,
+  useEstilosTema,
+  useTema,
+  type Cores,
+} from "../src/ui/tema";
 
 const PERFIS_UI: { id: ModuleProfileId; label: string }[] = [
   { id: "student", label: "Estudante" },
@@ -85,6 +100,12 @@ const MODULOS_UI: {
   },
 ];
 
+const TEMAS_UI: [PreferenciaTema, string][] = [
+  ["light", "Claro"],
+  ["dark", "Escuro"],
+  ["system", "Sistema"],
+];
+
 function notificationLabel(status: BillNotificationStatus | null): string {
   if (!status) {
     return "Ainda sem estado de lembretes";
@@ -105,8 +126,10 @@ function notificationLabel(status: BillNotificationStatus | null): string {
 }
 
 export default function Ajustes() {
-  const { t, s, st } = useTemaBase();
+  const { colors } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const ins = useSafeAreaInsets();
+  const { theme, setTheme } = usePreferenciasApp();
   const { name, setName } = useNomeUtilizador();
   const { avatar, setAvatar } = useAvatarUtilizador();
   const { profile, modules, isEnabled, setEnabled, setProfile, save } =
@@ -157,17 +180,6 @@ export default function Ajustes() {
           ? "Quase no limite"
           : "Dentro do limite";
 
-  const sw = (v: boolean, on: () => void, label: string, disabled = false) => (
-    <Switch
-      value={v}
-      onValueChange={on}
-      disabled={disabled}
-      accessibilityLabel={label}
-      trackColor={{ false: t.ring, true: t.acc }}
-      thumbColor="#fff"
-    />
-  );
-
   const adjustLimit = (delta: number) => {
     if (limit === null) {
       if (delta > 0) setLimit(2000);
@@ -193,7 +205,10 @@ export default function Ajustes() {
   const chooseAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permissão necessária", "Permite o acesso às fotografias para escolher um avatar.");
+      Alert.alert(
+        "Permissão necessária",
+        "Permite o acesso às fotografias para escolher um avatar.",
+      );
       return;
     }
 
@@ -260,295 +275,282 @@ export default function Ajustes() {
     );
   };
 
+  const inicial = (nome.trim().charAt(0) || "A").toUpperCase();
+
   return (
-    <ScrollView
-      style={s.screen}
-      contentContainerStyle={[s.content, { paddingTop: ins.top + 20 }]}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={s.back}>
-        <Pressable style={s.circ} onPress={goBack} accessibilityLabel="Voltar">
-          <Feather name={ICON.back} size={20} color={t.text} />
-        </Pressable>
-        <Text style={s.backTxt}>Ajustes</Text>
-      </View>
-
-      {/* perfil */}
-      <View
-        style={[
-          s.panel,
-          { flexDirection: "row", alignItems: "center", gap: 16 },
+    <View style={styles.root}>
+      <FundoEcra />
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: ins.top + 20 },
         ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Pressable
-          style={[s.av, s.avBig]}
-          onPress={() => setAvatarOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Adicionar avatar"
-        >
-          {avatar ? (
-            <Image source={{ uri: avatar }} style={{ width: "100%", height: "100%", borderRadius: 36 }} />
-          ) : (
-            <Text style={s.avTxt}>{(nome.trim().charAt(0) || "A").toUpperCase()}</Text>
-          )}
-          <View style={{ position: "absolute", right: -2, bottom: -2, width: 24, height: 24, borderRadius: 12, backgroundColor: t.acc, alignItems: "center", justifyContent: "center" }}>
-            <Feather name="plus" size={15} color="#fff" />
-          </View>
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <TextInput
-            style={{
-              fontSize: 20,
-              color: t.text,
-              paddingVertical: 4,
-              padding: 0,
-            }}
-            value={nome}
-            onChangeText={setNome}
-            onEndEditing={() => setName(nome)}
-            maxLength={24}
-            accessibilityLabel="O teu nome"
-            placeholder="O teu nome"
-            placeholderTextColor={t.muted}
-          />
+        {/* cabeçalho (`.back`) */}
+        <View style={styles.back}>
+          <Pressable
+            style={styles.backCirc}
+            onPress={goBack}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar"
+          >
+            <Feather name={ICON.back} size={20} color={colors.text} />
+          </Pressable>
+          <Text style={styles.backTxt}>Ajustes</Text>
         </View>
-      </View>
 
-      {/* perfil de utilização */}
-      <View style={s.panel}>
-        <Text style={s.ehTxt}>Perfil</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.chips}
-          style={{ marginTop: 10 }}
-        >
-          {PERFIS_UI.map((p) => (
-            <Pressable
-              key={p.id}
-              style={[s.chip, profile === p.id && s.chipOn]}
-              onPress={() => {
-                if (p.id === "custom") {
-                  save(modules, "custom");
-                } else {
-                  setProfile(p.id);
-                }
-              }}
-            >
-              <Text style={[s.chipTxt, profile === p.id && s.chipTxtOn]}>
-                {p.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* módulos */}
-      <View style={s.panel}>
-        <Text style={s.ehTxt}>Módulos</Text>
-        {MODULOS_UI.map((m) => {
-          const active = isEnabled(m.id);
-          return (
-            <View key={m.id} style={s.tg}>
-              <View style={{ flex: 1 }}>
-                <Text style={s.tgTxt}>{m.label}</Text>
-                <Text style={s.tgSub}>{m.description}</Text>
-              </View>
-              {sw(
-                active,
-                () => setEnabled(m.id, !active),
-                m.label,
-                m.essential,
-              )}
+        {/* perfil (`.pf`) */}
+        <Painel padded={false} style={[styles.panel, styles.pf]}>
+          <Pressable
+            style={styles.avBig}
+            onPress={() => setAvatarOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Adicionar avatar"
+          >
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={styles.avImg} />
+            ) : (
+              <Text style={styles.avTxt}>{inicial}</Text>
+            )}
+            <View style={styles.avAdd}>
+              <Feather name="plus" size={13} color={colors.glassText} />
             </View>
-          );
-        })}
-      </View>
-
-      {/* limite mensal */}
-      <View style={s.hs}>
-        <View
-          style={{
-            alignSelf: "flex-start",
-            backgroundColor: "#ffffff26",
-            borderRadius: 99,
-            paddingVertical: 3,
-            paddingHorizontal: 11,
-            marginBottom: 4,
-          }}
-        >
-          <Text style={{ fontSize: 10, fontWeight: "500", color: "#fff" }}>
-            {estado}
-          </Text>
-        </View>
-        <Text style={s.hsL}>Limite mensal de gastos</Text>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginVertical: 2,
-          }}
-        >
-          <Pressable
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 21,
-              backgroundColor: "#ffffff26",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onPress={() => adjustLimit(-1000)}
-            accessibilityLabel="Diminuir limite"
-          >
-            <Feather name="minus" size={20} color="#fff" />
           </Pressable>
-          <Text
-            style={{
-              fontSize: 34,
-              fontWeight: "500",
-              color: "#fff",
-              letterSpacing: -0.7,
-            }}
-          >
-            {kz(L).replace(" Kz", "")} {" "}
-            <Text style={{ fontSize: 15, opacity: 0.8 }}>Kz</Text>
-          </Text>
-          <Pressable
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 21,
-              backgroundColor: "#ffffff26",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onPress={() => adjustLimit(1000)}
-            accessibilityLabel="Aumentar limite"
-          >
-            <Feather name="plus" size={20} color="#fff" />
-          </Pressable>
-        </View>
-        <View style={s.hsPb}>
-          <View
-            style={[
-              s.hsPbI,
-              {
-                width: `${pct(sp, L)}%`,
-                backgroundColor: lv === "danger" ? "#ff7a72" : t.amb,
-              },
-            ]}
-          />
-        </View>
-        <Text style={[s.hsL, { marginTop: 6 }]}>
-          Gasto do mês {kz(sp)} ·{" "}
-          {L <= 0
-            ? "define um limite"
-            : sp > L
-              ? `passaste ${kz(sp - L)}`
-              : `restam ${kz(L - sp)}`}
-        </Text>
-        <Text style={[s.hsL, { marginTop: 2 }]}>
-          Hoje gastaste {kz(summary.todaySpent)}
-        </Text>
-      </View>
+          <View style={styles.pn}>
+            <TextInput
+              style={styles.nm}
+              value={nome}
+              onChangeText={setNome}
+              onEndEditing={() => setName(nome)}
+              maxLength={24}
+              accessibilityLabel="O teu nome"
+              placeholder="O teu nome"
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={styles.pnHint}>Toca na foto para a alterar</Text>
+          </View>
+        </Painel>
 
-      {/* lembretes de contas */}
-      <View style={s.panel}>
-        <Text style={s.ehTxt}>Lembretes de contas</Text>
-        <View style={s.tg}>
-          <View style={{ flex: 1 }}>
-            <Text style={s.tgTxt}>
-              {openCount} {openCount === 1 ? "conta por pagar" : "contas por pagar"}
+        {/* perfil de utilização */}
+        <Painel padded={false} style={styles.panel}>
+          <Text style={styles.eh}>Perfil</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cf}
+            style={styles.cfMt}
+          >
+            {PERFIS_UI.map((p) => {
+              const on = profile === p.id;
+              return (
+                <Pressable
+                  key={p.id}
+                  style={[styles.chip, on && styles.chipOn]}
+                  onPress={() => {
+                    if (p.id === "custom") {
+                      save(modules, "custom");
+                    } else {
+                      setProfile(p.id);
+                    }
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={p.label}
+                >
+                  <Text style={[styles.chipTxt, on && styles.chipTxtOn]}>
+                    {p.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </Painel>
+
+        {/* módulos */}
+        <Painel padded={false} style={styles.panel}>
+          <Text style={styles.eh}>Módulos</Text>
+          {MODULOS_UI.map((m) => (
+            <View key={m.id} style={styles.tg}>
+              <View style={styles.tgBody}>
+                <Text style={styles.tgTxt}>{m.label}</Text>
+                <Text style={styles.tgSub}>{m.description}</Text>
+              </View>
+              <Interruptor
+                value={isEnabled(m.id)}
+                onValueChange={(v) => setEnabled(m.id, v)}
+                label={m.label}
+                disabled={m.essential}
+              />
+            </View>
+          ))}
+        </Painel>
+
+        {/* limite mensal (`.hs`) */}
+        <CartaoDestaque>
+          <Text style={styles.nst}>{estado}</Text>
+          <Text style={styles.hsL}>Limite mensal de gastos</Text>
+          <View style={styles.ns}>
+            <Pressable
+              style={styles.nsb}
+              onPress={() => adjustLimit(-1000)}
+              accessibilityRole="button"
+              accessibilityLabel="Diminuir limite"
+            >
+              <Feather name="minus" size={20} color={colors.glassText} />
+            </Pressable>
+            <Text style={styles.nv}>
+              {kz(L).replace(" Kz", "")}{" "}
+              <Text style={styles.nvSmall}>Kz</Text>
             </Text>
-            <Text style={s.tgSub}>{notificationLabel(notif)}</Text>
-          </View>
-          <View style={{ flexDirection: "row", gap: 14 }}>
             <Pressable
-              onPress={() => go("/notificacoes")}
-              hitSlop={8}
-              accessibilityLabel="Abrir centro de notificações"
+              style={styles.nsb}
+              onPress={() => adjustLimit(1000)}
+              accessibilityRole="button"
+              accessibilityLabel="Aumentar limite"
             >
-              <Text style={[s.link, { color: t.acc }]}>Centro</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => go("/bill")}
-              hitSlop={8}
-              accessibilityLabel="Ver contas fixas"
-            >
-              <Text style={[s.link, { color: t.acc }]}>Ver</Text>
+              <Feather name="plus" size={20} color={colors.glassText} />
             </Pressable>
           </View>
-        </View>
-      </View>
+          <View style={styles.pb}>
+            <View
+              style={[
+                styles.pbFill,
+                {
+                  width: `${pct(sp, L)}%`,
+                  backgroundColor: lv === "danger" ? "#FF7A72" : colors.amber,
+                },
+              ]}
+            />
+          </View>
+          <Text style={[styles.hsL, styles.mt6]}>
+            Gasto do mês {kz(sp)} ·{" "}
+            {L <= 0
+              ? "define um limite"
+              : sp > L
+                ? `passaste ${kz(sp - L)}`
+                : `restam ${kz(L - sp)}`}
+          </Text>
+          <Text style={[styles.hsL, styles.mt2]}>
+            Hoje gastaste {kz(summary.todaySpent)}
+          </Text>
+        </CartaoDestaque>
 
-      {/* aparência */}
-      <View style={s.panel}>
-        <Text style={[s.ehTxt, { marginBottom: 10 }]}>Aparência</Text>
-        <View style={s.seg}>
-          {(
-            [
-              ["light", "Claro"],
-              ["dark", "Escuro"],
-              ["system", "Sistema"],
-            ] as [ThemePref, string][]
-          ).map(([k, l]) => {
-            const on = st.theme === k;
-            return (
+        {/* lembretes de contas */}
+        <Painel padded={false} style={styles.panel}>
+          <Text style={styles.eh}>Lembretes de contas</Text>
+          <View style={styles.tg}>
+            <View style={styles.tgBody}>
+              <Text style={styles.tgTxt}>
+                {openCount}{" "}
+                {openCount === 1 ? "conta por pagar" : "contas por pagar"}
+              </Text>
+              <Text style={styles.tgSub}>{notificationLabel(notif)}</Text>
+            </View>
+            <View style={styles.links}>
               <Pressable
-                key={k}
-                style={[s.segBtn, on && s.segBtnOn]}
-                onPress={() => A.setTheme(k)}
+                onPress={() => go("/notificacoes")}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Abrir centro de notificações"
               >
-                <Text style={[s.segTxt, on && s.segTxtOn]}>{l}</Text>
+                <Text style={styles.link}>Centro</Text>
               </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* segurança */}
-      <View style={s.panel}>
-        <Text style={s.ehTxt}>Segurança</Text>
-        <View style={s.tg}>
-          <View style={{ flex: 1 }}>
-            <Text style={s.tgTxt}>PIN de acesso</Text>
-            <Text style={s.tgSub}>
-              {pinEnabled
-                ? "Pede o PIN ao abrir a app"
-                : hasPin
-                  ? "PIN definido, bloqueio desligado"
-                  : "Sem PIN definido"}
-            </Text>
+              <Pressable
+                onPress={() => go("/bill")}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Ver contas fixas"
+              >
+                <Text style={styles.link}>Ver</Text>
+              </Pressable>
+            </View>
           </View>
-          {sw(pinEnabled, () => togglePin(!pinEnabled), "PIN de acesso")}
-        </View>
-      </View>
+        </Painel>
 
-      {/* dados e ferramentas */}
-      <View style={s.panel}>
-        <Text style={s.ehTxt}>Dados</Text>
-        <Pressable style={s.it} onPress={() => go("/salary")}>
-          <View style={[s.circSm, { backgroundColor: t.circ }]}>
-            <Feather name={ICON.wallet} size={17} color={t.text} />
+        {/* aparência */}
+        <Painel padded={false} style={styles.panel}>
+          <Text style={styles.eh}>Aparência</Text>
+          <View style={styles.seg}>
+            {TEMAS_UI.map(([k, l]) => {
+              const on = theme === k;
+              return (
+                <Pressable
+                  key={k}
+                  style={[styles.segBtn, on && styles.segBtnOn]}
+                  onPress={() => setTheme(k)}
+                  accessibilityRole="button"
+                  accessibilityLabel={l}
+                >
+                  <Text style={[styles.segTxt, on && styles.segTxtOn]}>
+                    {l}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
-          <Text style={[s.itTxt, s.itBody]}>Salário</Text>
-          <Feather name={ICON.chev} size={16} color={t.muted} />
+        </Painel>
+
+        {/* segurança */}
+        <Painel padded={false} style={styles.panel}>
+          <Text style={styles.eh}>Segurança</Text>
+          <View style={styles.tg}>
+            <View style={styles.tgBody}>
+              <Text style={styles.tgTxt}>PIN de acesso</Text>
+              <Text style={styles.tgSub}>
+                {pinEnabled
+                  ? "Pede o PIN ao abrir a app"
+                  : hasPin
+                    ? "PIN definido, bloqueio desligado"
+                    : "Sem PIN definido"}
+              </Text>
+            </View>
+            <Interruptor
+              value={pinEnabled}
+              onValueChange={togglePin}
+              label="PIN de acesso"
+            />
+          </View>
+        </Painel>
+
+        {/* dados e ferramentas */}
+        <Painel padded={false} style={styles.panel}>
+          <Text style={styles.eh}>Dados</Text>
+          <Pressable
+            style={styles.it}
+            onPress={() => go("/salary")}
+            accessibilityRole="button"
+            accessibilityLabel="Salário"
+          >
+            <View style={styles.itCirc}>
+              <Feather name={ICON.wallet} size={17} color={colors.text} />
+            </View>
+            <Text style={styles.itTxt}>Salário</Text>
+            <Feather name={ICON.chev} size={16} color={colors.textMuted} />
+          </Pressable>
+          <Pressable
+            style={styles.it}
+            onPress={() => go("/backup")}
+            accessibilityRole="button"
+            accessibilityLabel="Backup e recuperação"
+          >
+            <View style={styles.itCirc}>
+              <Feather name="download" size={17} color={colors.text} />
+            </View>
+            <Text style={styles.itTxt}>Backup e recuperação</Text>
+            <Feather name={ICON.chev} size={16} color={colors.textMuted} />
+          </Pressable>
+        </Painel>
+
+        <Pressable
+          style={styles.goGhost}
+          onPress={() => go("/onboarding")}
+          accessibilityRole="button"
+          accessibilityLabel="Rever introdução"
+        >
+          <Text style={styles.goGhostTxt}>Rever introdução</Text>
         </Pressable>
-        <Pressable style={s.it} onPress={() => go("/backup")}>
-          <View style={[s.circSm, { backgroundColor: t.circ }]}>
-            <Feather name="download" size={17} color={t.text} />
-          </View>
-          <Text style={[s.itTxt, s.itBody]}>Backup e recuperação</Text>
-          <Feather name={ICON.chev} size={16} color={t.muted} />
-        </Pressable>
-      </View>
-
-      <Pressable style={[s.go, s.goGhost]} onPress={() => go("/onboarding")}>
-        <Text style={[s.goTxt, { color: t.text }]}>Rever introdução</Text>
-      </Pressable>
+      </ScrollView>
 
       <Modal
         visible={avatarOpen}
@@ -557,21 +559,36 @@ export default function Ajustes() {
         onRequestClose={() => setAvatarOpen(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,.55)", alignItems: "center", justifyContent: "center", padding: 22 }}
+          style={styles.backdrop}
           onPress={() => setAvatarOpen(false)}
         >
           <Pressable
-            style={{ width: "100%", maxWidth: 420, backgroundColor: t.panel, borderRadius: 24, padding: 20 }}
+            style={styles.modal}
             onPress={(event) => event.stopPropagation()}
           >
-            <Text style={{ fontSize: 20, fontWeight: "600", color: t.text }}>Adicionar avatar</Text>
-            <Text style={{ fontSize: 13, color: t.muted, marginTop: 4 }}>Escolhe uma imagem da galeria para aparecer no teu perfil.</Text>
-            <Pressable onPress={() => void chooseAvatar()} style={{ height: 48, borderRadius: 24, backgroundColor: t.acc, alignItems: "center", justifyContent: "center", marginTop: 20 }}>
-              <Text style={{ color: "#fff", fontSize: 14, fontWeight: "600" }}>Escolher da galeria</Text>
+            <Text style={styles.modalTitle}>Adicionar avatar</Text>
+            <Text style={styles.modalBody}>
+              Escolhe uma imagem da galeria para aparecer no teu perfil.
+            </Text>
+            <Pressable
+              onPress={() => void chooseAvatar()}
+              style={styles.modalPrimary}
+              accessibilityRole="button"
+              accessibilityLabel="Escolher da galeria"
+            >
+              <Text style={styles.modalPrimaryTxt}>Escolher da galeria</Text>
             </Pressable>
             {avatar ? (
-              <Pressable onPress={() => { setAvatar(null); setAvatarOpen(false); }} style={{ alignItems: "center", marginTop: 16 }}>
-                <Text style={{ color: t.neg, fontSize: 13 }}>Remover avatar</Text>
+              <Pressable
+                onPress={() => {
+                  setAvatar(null);
+                  setAvatarOpen(false);
+                }}
+                style={styles.modalDanger}
+                accessibilityRole="button"
+                accessibilityLabel="Remover avatar"
+              >
+                <Text style={styles.modalDangerTxt}>Remover avatar</Text>
               </Pressable>
             ) : null}
           </Pressable>
@@ -586,28 +603,11 @@ export default function Ajustes() {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,.55)",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 22,
-          }}
+          style={styles.backdrop}
         >
-          <View
-            style={{
-              width: "100%",
-              maxWidth: 420,
-              backgroundColor: t.panel,
-              borderRadius: 24,
-              padding: 20,
-              gap: 10,
-            }}
-          >
-            <Text style={{ fontSize: 20, fontWeight: "600", color: t.text }}>
-              Criar PIN
-            </Text>
-            <Text style={{ fontSize: 13, color: t.muted }}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Criar PIN</Text>
+            <Text style={styles.modalBody}>
               Escolhe 4 dígitos. Vão ser pedidos sempre que abrires a app.
             </Text>
             <TextInput
@@ -619,19 +619,9 @@ export default function Ajustes() {
               secureTextEntry
               maxLength={4}
               placeholder="PIN"
-              placeholderTextColor={t.muted}
+              placeholderTextColor={colors.textMuted}
               accessibilityLabel="PIN de 4 dígitos"
-              style={{
-                backgroundColor: t.circ,
-                color: t.text,
-                borderRadius: 14,
-                height: 50,
-                paddingHorizontal: 14,
-                fontSize: 18,
-                letterSpacing: 8,
-                textAlign: "center",
-                marginTop: 4,
-              }}
+              style={styles.pinInput}
             />
             <TextInput
               value={pin2}
@@ -642,39 +632,18 @@ export default function Ajustes() {
               secureTextEntry
               maxLength={4}
               placeholder="Repete o PIN"
-              placeholderTextColor={t.muted}
+              placeholderTextColor={colors.textMuted}
               accessibilityLabel="Repete o PIN"
-              style={{
-                backgroundColor: t.circ,
-                color: t.text,
-                borderRadius: 14,
-                height: 50,
-                paddingHorizontal: 14,
-                fontSize: 18,
-                letterSpacing: 8,
-                textAlign: "center",
-              }}
+              style={styles.pinInput}
             />
-            {pinError ? (
-              <Text style={{ fontSize: 12.5, color: t.neg }}>
-                {pinError}
-              </Text>
-            ) : null}
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
+            {pinError ? <Text style={styles.pinError}>{pinError}</Text> : null}
+            <View style={styles.modalRow}>
               <Pressable
                 onPress={closePin}
                 accessibilityRole="button"
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: 24,
-                  borderWidth: 1,
-                  borderColor: t.ring,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                style={styles.modalGhost}
               >
-                <Text style={{ fontSize: 14, color: t.text }}>Cancelar</Text>
+                <Text style={styles.modalGhostTxt}>Cancelar</Text>
               </Pressable>
               <Pressable
                 onPress={() => {
@@ -682,26 +651,408 @@ export default function Ajustes() {
                 }}
                 disabled={pinBusy}
                 accessibilityRole="button"
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: t.acc,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: pinBusy ? 0.6 : 1,
-                }}
+                style={[
+                  styles.modalPrimary,
+                  styles.modalPrimaryRow,
+                  pinBusy && styles.busy,
+                ]}
               >
-                <Text
-                  style={{ fontSize: 14, fontWeight: "500", color: "#fff" }}
-                >
-                  Guardar
-                </Text>
+                <Text style={styles.modalPrimaryTxt}>Guardar</Text>
               </Pressable>
             </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }
+
+const makeStyles = (colors: Cores) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    content: {
+      paddingHorizontal: layout.screenPadding,
+      paddingBottom: layout.screenBottom,
+    },
+
+    // `.back`
+    back: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 4,
+    },
+    backCirc: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.bgMid,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    backTxt: {
+      fontFamily: fonts.medium,
+      fontSize: 20,
+      color: colors.text,
+    },
+
+    // `.panel`
+    panel: {
+      marginTop: 16,
+      paddingVertical: 18,
+      paddingHorizontal: 14,
+    },
+
+    // `.pf` + `.av.big` + `.pn`
+    pf: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 16,
+    },
+    avBig: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: colors.avatarBg,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    avImg: {
+      width: "100%",
+      height: "100%",
+      borderRadius: 36,
+    },
+    avTxt: {
+      fontFamily: fonts.bold,
+      fontSize: 26,
+      color: colors.avatarText,
+    },
+    avAdd: {
+      position: "absolute",
+      right: 0,
+      bottom: 0,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: colors.bgMid,
+    },
+    pn: {
+      flex: 1,
+      minWidth: 0,
+    },
+    nm: {
+      fontFamily: fonts.regular,
+      fontSize: 20,
+      color: colors.text,
+      paddingVertical: 4,
+      paddingHorizontal: 0,
+    },
+    pnHint: {
+      fontFamily: fonts.regular,
+      fontSize: 10,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+
+    // `.eh`
+    eh: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: colors.text,
+      marginBottom: 6,
+    },
+
+    // `.cf`
+    cf: {
+      flexDirection: "row",
+      gap: 6,
+    },
+    cfMt: {
+      marginTop: 10,
+    },
+    chip: {
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+      borderRadius: 99,
+      backgroundColor: colors.chipNeutralBg,
+    },
+    chipOn: {
+      backgroundColor: colors.accent,
+    },
+    chipTxt: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: colors.textMuted,
+    },
+    chipTxtOn: {
+      color: colors.glassText,
+    },
+
+    // `.tg`
+    tg: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 4,
+    },
+    tgBody: {
+      flex: 1,
+      minWidth: 0,
+    },
+    tgTxt: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.text,
+    },
+    tgSub: {
+      fontFamily: fonts.regular,
+      fontSize: 10,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+
+    // `.hs`
+    nst: {
+      alignSelf: "flex-start",
+      fontFamily: fonts.medium,
+      fontSize: 10,
+      color: colors.glassText,
+      backgroundColor: "#ffffff26",
+      borderRadius: 99,
+      paddingVertical: 3,
+      paddingHorizontal: 11,
+      marginBottom: 4,
+      overflow: "hidden",
+    },
+    hsL: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: colors.glassText,
+      opacity: 0.85,
+    },
+    mt6: {
+      marginTop: 6,
+    },
+    mt2: {
+      marginTop: 2,
+    },
+    ns: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginVertical: 2,
+    },
+    nsb: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: "#ffffff26",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    nv: {
+      fontFamily: fonts.medium,
+      fontSize: 34,
+      lineHeight: 44,
+      letterSpacing: -0.7,
+      color: colors.glassText,
+    },
+    nvSmall: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      opacity: 0.8,
+    },
+    pb: {
+      height: 6,
+      borderRadius: 6,
+      backgroundColor: "#ffffff33",
+      marginTop: 2,
+      overflow: "hidden",
+    },
+    pbFill: {
+      height: "100%",
+      borderRadius: 6,
+    },
+
+    // links e atalhos
+    links: {
+      flexDirection: "row",
+      gap: 14,
+    },
+    link: {
+      fontFamily: fonts.medium,
+      fontSize: 12,
+      color: colors.accent,
+      paddingVertical: 4,
+    },
+
+    // `.seg`
+    seg: {
+      flexDirection: "row",
+      backgroundColor: colors.chipNeutralBg,
+      borderRadius: 99,
+      padding: 3,
+      gap: 3,
+    },
+    segBtn: {
+      flex: 1,
+      paddingVertical: 8,
+      borderRadius: 99,
+      alignItems: "center",
+    },
+    segBtnOn: {
+      backgroundColor: colors.accent,
+    },
+    segTxt: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    segTxtOn: {
+      color: colors.glassText,
+    },
+
+    // `.it`
+    it: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 11,
+      minHeight: 54,
+      paddingVertical: 6,
+      paddingHorizontal: 4,
+      borderRadius: 14,
+    },
+    itCirc: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.chipNeutralBg,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    itTxt: {
+      flex: 1,
+      fontFamily: fonts.medium,
+      fontSize: 13,
+      color: colors.text,
+    },
+
+    // rodapé
+    goGhost: {
+      height: 48,
+      borderRadius: 99,
+      borderWidth: 1,
+      borderColor: colors.hairline,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 16,
+    },
+    goGhostTxt: {
+      fontFamily: fonts.medium,
+      fontSize: 13,
+      color: colors.text,
+    },
+
+    // modais
+    backdrop: {
+      flex: 1,
+      backgroundColor: colors.backdrop,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 22,
+    },
+    modal: {
+      width: "100%",
+      maxWidth: 420,
+      backgroundColor: colors.bgMid,
+      borderRadius: 24,
+      padding: 20,
+      gap: 10,
+    },
+    modalTitle: {
+      fontFamily: fonts.medium,
+      fontSize: 20,
+      color: colors.text,
+    },
+    modalBody: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.textMuted,
+    },
+    modalPrimary: {
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 10,
+    },
+    modalPrimaryRow: {
+      flex: 1,
+      marginTop: 0,
+    },
+    modalPrimaryTxt: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: colors.glassText,
+    },
+    modalDanger: {
+      alignItems: "center",
+      paddingVertical: 10,
+    },
+    modalDangerTxt: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.danger,
+    },
+    modalRow: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 6,
+    },
+    modalGhost: {
+      flex: 1,
+      height: 48,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.hairline,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalGhostTxt: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.text,
+    },
+    pinInput: {
+      height: 50,
+      borderRadius: 14,
+      backgroundColor: colors.chipNeutralBg,
+      paddingHorizontal: 14,
+      fontFamily: fonts.regular,
+      fontSize: 18,
+      letterSpacing: 8,
+      textAlign: "center",
+      color: colors.text,
+    },
+    pinError: {
+      fontFamily: fonts.regular,
+      fontSize: 12.5,
+      color: colors.danger,
+    },
+    busy: {
+      opacity: 0.6,
+    },
+  });

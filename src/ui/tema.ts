@@ -73,6 +73,8 @@ export const coresEscuras: Cores = {
   panelBorder: "#2C2C2C",
   accent: "#C77DFF",
   accentSoft: "#C77DFF",
+  // `--amb` não muda no modo escuro do protótipo.
+  amber: "#FFD35B",
   warn: "#F0C14B",
   text: "#F5F5F5",
   textMuted: "#A0A0A0",
@@ -93,6 +95,9 @@ export const coresEscuras: Cores = {
   track: "#2A2A2A",
   trackSoft: "#1F1F1F",
   avatarBg: "#262626",
+  addBg: "#1D1D1D",
+  addCircle: "#333333",
+  addIcon: "#FFFFFF",
   backdrop: "rgba(0,0,0,.82)",
   success: "#34C759",
   danger: "#FF5A52",

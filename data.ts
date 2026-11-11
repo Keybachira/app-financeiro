@@ -30,7 +30,7 @@ export type Fixa = { id: string; nome: string; valor: number; dia: number };
 export type ModKey =
   "salario" | "metas" | "dividas" | "projetos" | "fixas" | "limite";
 export type Perfil =
-  "Estudante" | "Trabalhador" | "Freelancer" | "Empresario" |"Personalizado";
+  "Estudante" | "Trabalhador" | "Freelancer" | "Empresario" | "Personalizado";
 export type NotifKind = "danger" | "warn" | "info" | "ok";
 export type Notif = {
   id: string;
@@ -712,14 +712,14 @@ const toLegacyTheme = (colors: Cores) => ({
   muted: colors.textMuted,
   circ: colors.chipNeutralBg,
   acc: colors.accent,
-  amb: colors.warn,
+  amb: colors.amber,
   hbtn: colors.bgMid,
   ring: colors.hairline,
   neg: colors.danger,
   pos: colors.success,
-  add: colors.avatarBg,
-  addc: colors.avatarText,
-  addp: colors.avatarBg,
+  add: colors.addBg,
+  addc: colors.addCircle,
+  addp: colors.addIcon,
   av: colors.avatarBg,
   avTxt: colors.avatarText,
 });

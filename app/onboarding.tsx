@@ -1,12 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useState } from "react";
 import {
-  Animated,
-  Easing,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -14,17 +12,26 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ICON, num, useTemaBase } from "../data";
+
+import { ICON, num } from "../data";
 import { useConfigModulos } from "../src/features/modulos/useConfigModulos";
 import { useNomeUtilizador } from "../src/features/definicoes/useDefinicoes";
 import { usePreferenciasApp } from "../src/features/definicoes/usePreferenciasApp";
 import { useEstadoBloqueio } from "../src/features/seguranca/useEstadoBloqueio";
 import { setSetting } from "../src/repos/settings";
+import { EntradaAnimada } from "../src/ui/componentes/EntradaAnimada";
+import {
+  fonts,
+  useEstilosTema,
+  useTema,
+  type Cores,
+} from "../src/ui/tema";
 import { LockScreen } from "./lock";
 
 // Passos: 0 boas-vindas · 1 nome · 2 situação · 3 dados · 4 PIN · 5 pronto
 export default function Onboarding() {
-  const { t, s } = useTemaBase();
+  const { colors } = useTema();
+  const styles = useEstilosTema(makeStyles);
   const ins = useSafeAreaInsets();
   const [step, setStep] = useState(0);
   const [nome, setNome] = useState("");
@@ -42,18 +49,6 @@ export default function Onboarding() {
   const { setProfile } = useConfigModulos();
   const { completeOnboarding } = usePreferenciasApp();
   const est = perfil === "e";
-
-  // Animação de entrada de cada passo (fade + deslize, como no protótipo)
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    anim.setValue(0);
-    Animated.timing(anim, {
-      toValue: 1,
-      duration: 300,
-      easing: Easing.bezier(0.2, 0.8, 0.2, 1),
-      useNativeDriver: true,
-    }).start();
-  }, [step, anim]);
 
   const label =
     step === 0 ? "Começar" : step === 5 ? "Entrar na app" : "Continuar";
@@ -110,48 +105,56 @@ export default function Onboarding() {
     sub: string;
     onPress: () => void;
   }) => (
-    <Pressable style={[s.oc, on && s.ocOn]} onPress={onPress}>
-      <View style={[s.circQ, { width: 46, height: 46, borderRadius: 23 }]}>
-        <Feather name={ICON[icon]} size={20} color={t.text} />
+    <Pressable
+      style={[styles.oc, on && styles.ocOn]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      accessibilityLabel={`${titulo}. ${sub}`}
+    >
+      <View style={styles.ocCirc}>
+        <Feather name={ICON[icon]} size={20} color={colors.text} />
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={s.itTxt}>{titulo}</Text>
-        <Text style={s.itSub}>{sub}</Text>
+      <View style={styles.ocBody}>
+        <Text style={styles.ocTitle}>{titulo}</Text>
+        <Text style={styles.ocSub}>{sub}</Text>
       </View>
     </Pressable>
   );
 
   return (
     <KeyboardAvoidingView
-      style={s.screen}
+      style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View
-        style={{
-          flex: 1,
-          paddingTop: ins.top + 22,
-          paddingHorizontal: 22,
-          paddingBottom: ins.bottom + 24,
-        }}
+        style={[
+          styles.screen,
+          {
+            paddingTop: ins.top + 22,
+            paddingBottom: ins.bottom + 24,
+          },
+        ]}
       >
-        {/* progresso */}
+        {/* progresso (`.ob-top` / `.ob-p`) */}
         <View style={styles.top}>
-          {step > 0 && (
+          {step > 0 ? (
             <Pressable
-              style={s.circ}
+              style={styles.backCirc}
               onPress={() => setStep(step - 1)}
+              accessibilityRole="button"
               accessibilityLabel="Voltar"
             >
-              <Feather name={ICON.back} size={20} color={t.text} />
+              <Feather name={ICON.back} size={20} color={colors.text} />
             </Pressable>
-          )}
+          ) : null}
           <View style={styles.progress}>
             {[1, 2, 3, 4].map((i) => (
               <View
                 key={i}
                 style={[
                   styles.bar,
-                  { backgroundColor: i <= step ? t.acc : t.ring },
+                  { backgroundColor: i <= step ? colors.accent : colors.hairline },
                 ]}
               />
             ))}
@@ -159,72 +162,61 @@ export default function Onboarding() {
         </View>
 
         <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingTop: 22 }}
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View
-            style={{
-              opacity: anim,
-              transform: [
-                {
-                  translateX: anim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [14, 0],
-                  }),
-                },
-              ],
-            }}
-          >
-            {step === 0 && (
-              <View style={{ alignItems: "center", paddingTop: 50 }}>
-                <View style={[s.okc, { borderRadius: 30 }]}>
-                  <Feather name={ICON.debt} size={44} color="#fff" />
+          <EntradaAnimada variante="vista" gatilho={step}>
+            {step === 0 ? (
+              <View style={styles.centerBlock}>
+                <View style={styles.okcWelcome}>
+                  <Feather
+                    name={ICON.debt}
+                    size={44}
+                    color={colors.glassText}
+                  />
                 </View>
-                <Text style={[s.h1, { marginTop: 0, textAlign: "center" }]}>
+                <Text style={[styles.h1, styles.center]}>
                   Bem-vindo ao Meu Kumbo
                 </Text>
-                <Text style={[s.sub, { textAlign: "center" }]}>
+                <Text style={[styles.sub, styles.center]}>
                   Vamos configurar a tua conta em menos de um minuto.
                 </Text>
               </View>
-            )}
+            ) : null}
 
-            {step === 1 && (
+            {step === 1 ? (
               <>
-                <Text style={[s.h1, { marginTop: 0 }]}>Como te chamas?</Text>
-                <Text style={s.sub}>Vamos personalizar a tua experiência.</Text>
-                <View
-                  style={{
-                    alignItems: "center",
-                    marginTop: 26,
-                    marginBottom: 8,
-                  }}
-                >
-                  <View style={[s.av, s.avBig]}>
-                    <Text style={[s.avTxt, { fontSize: 26 }]}>
+                <Text style={styles.h1}>Como te chamas?</Text>
+                <Text style={styles.sub}>
+                  Vamos personalizar a tua experiência.
+                </Text>
+                <View style={styles.avatarWrap}>
+                  <View style={styles.avatarBig}>
+                    <Text style={styles.avatarTxt}>
                       {(nome.trim().charAt(0) || "+").toUpperCase()}
                     </Text>
                   </View>
                 </View>
                 <TextInput
-                  style={s.inputBox}
+                  style={styles.input}
                   value={nome}
                   onChangeText={setNome}
                   placeholder="O teu nome"
-                  placeholderTextColor={t.muted}
+                  placeholderTextColor={colors.textMuted}
                   maxLength={24}
+                  accessibilityLabel="O teu nome"
                 />
               </>
-            )}
+            ) : null}
 
-            {step === 2 && (
+            {step === 2 ? (
               <>
-                <Text style={[s.h1, { marginTop: 0 }]}>
+                <Text style={styles.h1}>
                   O que descreve melhor a tua situação?
                 </Text>
-                <Text style={s.sub}>Adaptamos a app ao teu dia a dia.</Text>
+                <Text style={styles.sub}>Adaptamos a app ao teu dia a dia.</Text>
                 <Opcao
                   on={perfil === "e"}
                   icon="goal"
@@ -246,45 +238,46 @@ export default function Onboarding() {
                   }}
                 />
               </>
-            )}
+            ) : null}
 
-            {step === 3 && (
+            {step === 3 ? (
               <>
-                <Text style={[s.h1, { marginTop: 0 }]}>Fala-nos de ti</Text>
-                <Text style={[s.fl, { marginTop: 16 }]}>Idade</Text>
+                <Text style={styles.h1}>Fala-nos de ti</Text>
+                <Text style={styles.fl}>Idade</Text>
                 <TextInput
-                  style={s.inputBox}
+                  style={styles.input}
                   value={idade}
                   onChangeText={(v) => setIdade(v.replace(/\D/g, ""))}
                   keyboardType="number-pad"
                   maxLength={2}
                   placeholder="Ex.: 21"
-                  placeholderTextColor={t.muted}
+                  placeholderTextColor={colors.textMuted}
+                  accessibilityLabel="Idade"
                 />
-                <Text style={[s.fl, { marginTop: 20 }]}>
+                <Text style={[styles.fl, styles.flGap]}>
                   {est ? "Recebes mesada?" : "Trabalhas atualmente?"}
                 </Text>
-                <View
-                  style={[s.seg, { backgroundColor: t.panel, marginTop: 8 }]}
-                >
+                <View style={styles.seg}>
                   {[true, false].map((v, i) => (
                     <Pressable
                       key={i}
-                      style={[
-                        s.segBtn,
-                        renda === v && { backgroundColor: t.acc },
-                      ]}
+                      style={[styles.segBtn, renda === v && styles.segBtnOn]}
                       onPress={() => setRenda(v)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: renda === v }}
+                      accessibilityLabel={v ? "Sim" : "Não"}
                     >
-                      <Text style={[s.segTxt, renda === v && s.segTxtOn]}>
+                      <Text
+                        style={[styles.segTxt, renda === v && styles.segTxtOn]}
+                      >
                         {v ? "Sim" : "Não"}
                       </Text>
                     </Pressable>
                   ))}
                 </View>
-                {renda && (
+                {renda ? (
                   <TextInput
-                    style={s.inputBox}
+                    style={styles.input}
                     value={valor}
                     onChangeText={setValor}
                     keyboardType="decimal-pad"
@@ -293,18 +286,17 @@ export default function Onboarding() {
                         ? "Valor da mesada por mês (Kz)"
                         : "Salário mensal (Kz)"
                     }
-                    placeholderTextColor={t.muted}
+                    placeholderTextColor={colors.textMuted}
+                    accessibilityLabel="Valor mensal"
                   />
-                )}
+                ) : null}
               </>
-            )}
+            ) : null}
 
-            {step === 4 && (
+            {step === 4 ? (
               <>
-                <Text style={[s.h1, { marginTop: 0 }]}>
-                  Protege os teus dados
-                </Text>
-                <Text style={s.sub}>Queres pedir um PIN ao abrir a app?</Text>
+                <Text style={styles.h1}>Protege os teus dados</Text>
+                <Text style={styles.sub}>Queres pedir um PIN ao abrir a app?</Text>
                 <Opcao
                   on={pinEnabled === true}
                   icon="lock"
@@ -330,32 +322,34 @@ export default function Onboarding() {
                   }}
                 />
               </>
-            )}
+            ) : null}
 
-            {step === 5 && (
-              <View style={{ alignItems: "center", paddingTop: 50 }}>
-                <View style={[s.okc, { borderRadius: 48 }]}>
-                  <Feather name={ICON.ok} size={44} color="#fff" />
+            {step === 5 ? (
+              <View style={styles.centerBlock}>
+                <View style={styles.okc}>
+                  <Feather name={ICON.ok} size={44} color={colors.glassText} />
                 </View>
-                <Text style={[s.h1, { marginTop: 0, textAlign: "center" }]}>
+                <Text style={[styles.h1, styles.center]}>
                   Tudo pronto, {nome.trim() || "amigo"}!
                 </Text>
-                <Text style={[s.sub, { textAlign: "center" }]}>
+                <Text style={[styles.sub, styles.center]}>
                   Perfil {est ? "Estudante" : "Profissional"} configurado. Já
                   podes organizar o teu dinheiro.
                 </Text>
               </View>
-            )}
-          </Animated.View>
+            ) : null}
+          </EntradaAnimada>
         </ScrollView>
 
-        {!!erro && <Text style={[styles.erro, { color: t.neg }]}>{erro}</Text>}
+        {erro ? <Text style={styles.erro}>{erro}</Text> : null}
 
         <Pressable
-          style={[s.go, { marginTop: 18 }]}
+          style={styles.go}
           onPress={() => void avancar()}
+          accessibilityRole="button"
+          accessibilityLabel={label}
         >
-          <Text style={s.goTxt}>{label}</Text>
+          <Text style={styles.goTxt}>{label}</Text>
         </Pressable>
       </View>
 
@@ -378,14 +372,226 @@ export default function Onboarding() {
   );
 }
 
-const styles = StyleSheet.create({
-  top: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    minHeight: 46,
-  },
-  progress: { flex: 1, flexDirection: "row", gap: 6 },
-  bar: { flex: 1, height: 4, borderRadius: 4 },
-  erro: { fontSize: 12, textAlign: "center", marginTop: 8 },
-});
+const makeStyles = (colors: Cores) =>
+  StyleSheet.create({
+    // `.onb`
+    root: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    screen: {
+      flex: 1,
+      paddingHorizontal: 22,
+    },
+
+    // `.ob-top` / `.ob-p`
+    top: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      minHeight: 46,
+    },
+    backCirc: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.bgMid,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    progress: {
+      flex: 1,
+      flexDirection: "row",
+      gap: 6,
+    },
+    bar: {
+      flex: 1,
+      height: 4,
+      borderRadius: 4,
+    },
+
+    // `.ob-b`
+    body: {
+      flex: 1,
+    },
+    bodyContent: {
+      paddingTop: 22,
+    },
+
+    // `h1` / `.sub`
+    h1: {
+      fontFamily: fonts.medium,
+      fontSize: 27,
+      lineHeight: 34,
+      letterSpacing: -0.4,
+      color: colors.text,
+    },
+    sub: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 3,
+    },
+    center: {
+      textAlign: "center",
+    },
+    centerBlock: {
+      alignItems: "center",
+      paddingTop: 50,
+    },
+
+    // `.okc`
+    okc: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 22,
+    },
+    okcWelcome: {
+      width: 96,
+      height: 96,
+      borderRadius: 30,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 22,
+    },
+
+    // `.av.big`
+    avatarWrap: {
+      alignItems: "center",
+      marginTop: 26,
+      marginBottom: 8,
+    },
+    avatarBig: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: colors.avatarBg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    avatarTxt: {
+      fontFamily: fonts.bold,
+      fontSize: 26,
+      color: colors.avatarText,
+    },
+
+    // `.in`
+    input: {
+      backgroundColor: colors.bgMid,
+      borderRadius: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      marginTop: 10,
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.text,
+    },
+
+    // `.fl`
+    fl: {
+      fontFamily: fonts.regular,
+      fontSize: 10,
+      color: colors.textMuted,
+      marginTop: 14,
+    },
+    flGap: {
+      marginTop: 20,
+    },
+
+    // `.oc`
+    oc: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      width: "100%",
+      backgroundColor: colors.bgMid,
+      borderRadius: 22,
+      padding: 16,
+      marginTop: 12,
+      borderWidth: 2,
+      borderColor: "transparent",
+    },
+    ocOn: {
+      borderColor: colors.accent,
+    },
+    ocCirc: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: colors.chipNeutralBg,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    ocBody: {
+      flex: 1,
+      minWidth: 0,
+    },
+    ocTitle: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: colors.text,
+    },
+    ocSub: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
+
+    // `.seg` (variante do onboarding: fundo `--panel`)
+    seg: {
+      flexDirection: "row",
+      backgroundColor: colors.bgMid,
+      borderRadius: 99,
+      padding: 3,
+      gap: 3,
+      marginTop: 8,
+    },
+    segBtn: {
+      flex: 1,
+      paddingVertical: 8,
+      borderRadius: 99,
+      alignItems: "center",
+    },
+    segBtnOn: {
+      backgroundColor: colors.accent,
+    },
+    segTxt: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    segTxtOn: {
+      color: colors.glassText,
+    },
+
+    // `.go`
+    go: {
+      width: "100%",
+      height: 50,
+      marginTop: 18,
+      borderRadius: 25,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    goTxt: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: colors.glassText,
+    },
+
+    erro: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.danger,
+      textAlign: "center",
+      marginTop: 8,
+    },
+  });

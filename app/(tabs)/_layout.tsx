@@ -11,8 +11,13 @@ import {
   View,
 } from "react-native";
 
-import { FONT, ICON } from "../../data";
-import { useTema, useEstilosTema, type Cores } from "../../src/ui/tema";
+import { ICON } from "../../data";
+import {
+  fonts,
+  useTema,
+  useEstilosTema,
+  type Cores,
+} from "../../src/ui/tema";
 
 type IconName = ComponentProps<typeof Feather>["name"];
 
@@ -207,9 +212,10 @@ const makeStyles = (colors: Cores) =>
       justifyContent: "center",
     },
     label: {
-      fontFamily: FONT.med,
+      fontFamily: fonts.medium,
       fontSize: 13,
       color: "#000000",
+      maxWidth: 90,
     },
     measure: {
       position: "absolute",

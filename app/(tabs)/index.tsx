@@ -469,7 +469,7 @@ const makeStyles = (colors: Cores) =>
       width: 8,
       height: 8,
       borderRadius: 4,
-      backgroundColor: colors.warn,
+      backgroundColor: colors.amber,
     },
     alrTxt: {
       flex: 1,
@@ -493,7 +493,7 @@ const makeStyles = (colors: Cores) =>
     sal: {
       height: 100,
       borderRadius: 24,
-      backgroundColor: colors.warn,
+      backgroundColor: colors.amber,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
@@ -518,7 +518,7 @@ const makeStyles = (colors: Cores) =>
       borderRadius: 8,
       marginLeft: -5,
       borderWidth: 1.5,
-      borderColor: colors.warn,
+      borderColor: colors.amber,
     },
     salTxt: {
       fontFamily: fonts.regular,
